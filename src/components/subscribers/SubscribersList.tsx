@@ -1,0 +1,189 @@
+import { useState } from 'react';
+import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subscriber';
+import { SubscriberCard } from './SubscriberCard';
+import { SubscriberForm } from './SubscriberForm';
+import { RenewDialog } from './RenewDialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Plus, Search, Filter, Users } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface SubscribersListProps {
+  subscribers: Subscriber[];
+  stats: {
+    captains: string[];
+  };
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  filterStatus: SubscriptionStatus | 'all';
+  setFilterStatus: (status: SubscriptionStatus | 'all') => void;
+  filterCaptain: string;
+  setFilterCaptain: (captain: string) => void;
+  addSubscriber: (data: SubscriberFormData) => Subscriber;
+  updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => void;
+  deleteSubscriber: (id: string) => void;
+  archiveSubscriber: (id: string) => void;
+  renewSubscription: (id: string, newEndDate: string, paidAmount: number) => void;
+}
+
+export const SubscribersList = ({
+  subscribers,
+  stats,
+  searchQuery,
+  setSearchQuery,
+  filterStatus,
+  setFilterStatus,
+  filterCaptain,
+  setFilterCaptain,
+  addSubscriber,
+  updateSubscriber,
+  deleteSubscriber,
+  archiveSubscriber,
+  renewSubscription,
+}: SubscribersListProps) => {
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isRenewOpen, setIsRenewOpen] = useState(false);
+  const [editingSubscriber, setEditingSubscriber] = useState<Subscriber | null>(null);
+  const [renewingSubscriber, setRenewingSubscriber] = useState<Subscriber | null>(null);
+  const { toast } = useToast();
+
+  const handleAddOrEdit = (data: SubscriberFormData) => {
+    if (editingSubscriber) {
+      updateSubscriber(editingSubscriber.id, data);
+      toast({ title: 'تم تحديث بيانات المشترك بنجاح' });
+    } else {
+      addSubscriber(data);
+      toast({ title: 'تم إضافة المشترك بنجاح' });
+    }
+    setEditingSubscriber(null);
+  };
+
+  const handleEdit = (subscriber: Subscriber) => {
+    setEditingSubscriber(subscriber);
+    setIsFormOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm('هل أنت متأكد من حذف هذا المشترك؟')) {
+      deleteSubscriber(id);
+      toast({ title: 'تم حذف المشترك', variant: 'destructive' });
+    }
+  };
+
+  const handleRenew = (subscriber: Subscriber) => {
+    setRenewingSubscriber(subscriber);
+    setIsRenewOpen(true);
+  };
+
+  const handleWhatsApp = (subscriber: Subscriber) => {
+    const message = encodeURIComponent(
+      `مرحباً ${subscriber.name}، هذا تذكير بخصوص اشتراكك في الجيم. ينتهي اشتراكك بتاريخ ${subscriber.endDate}.`
+    );
+    window.open(`https://wa.me/${subscriber.phone}?text=${message}`, '_blank');
+  };
+
+  const captains = ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
+
+  return (
+    <div className="space-y-4 pb-20">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Users className="w-5 h-5 text-primary" />
+          قائمة المشتركين
+        </h2>
+        <Button onClick={() => setIsFormOpen(true)} className="gap-2">
+          <Plus className="w-4 h-4" />
+          إضافة مشترك
+        </Button>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="بحث عن مشترك..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pr-10"
+          />
+        </div>
+        <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as SubscriptionStatus | 'all')}>
+          <SelectTrigger className="w-full sm:w-40">
+            <Filter className="w-4 h-4 ml-2" />
+            <SelectValue placeholder="الحالة" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">الكل</SelectItem>
+            <SelectItem value="active">نشط</SelectItem>
+            <SelectItem value="expiring">قارب على الانتهاء</SelectItem>
+            <SelectItem value="expired">منتهي</SelectItem>
+            <SelectItem value="pending">معلق</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterCaptain} onValueChange={setFilterCaptain}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="الكابتن" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">كل الكباتن</SelectItem>
+            {captains.map((captain) => (
+              <SelectItem key={captain} value={captain}>
+                {captain}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {subscribers.length === 0 ? (
+        <div className="text-center py-12">
+          <Users className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
+          <p className="text-muted-foreground text-lg">لا يوجد مشتركين</p>
+          <p className="text-sm text-muted-foreground">أضف مشتركاً جديداً للبدء</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {subscribers.map((subscriber) => (
+            <SubscriberCard
+              key={subscriber.id}
+              subscriber={subscriber}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onArchive={archiveSubscriber}
+              onRenew={handleRenew}
+              onWhatsApp={handleWhatsApp}
+            />
+          ))}
+        </div>
+      )}
+
+      <SubscriberForm
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setEditingSubscriber(null);
+        }}
+        onSubmit={handleAddOrEdit}
+        editingSubscriber={editingSubscriber}
+        captains={captains}
+      />
+
+      <RenewDialog
+        isOpen={isRenewOpen}
+        onClose={() => {
+          setIsRenewOpen(false);
+          setRenewingSubscriber(null);
+        }}
+        subscriber={renewingSubscriber}
+        onRenew={renewSubscription}
+      />
+    </div>
+  );
+};
