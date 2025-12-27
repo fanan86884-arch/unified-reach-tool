@@ -1,10 +1,12 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Settings as SettingsIcon, MessageSquare, Save } from 'lucide-react';
-import { useState } from 'react';
+import { Settings as SettingsIcon, MessageSquare, Save, DollarSign } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useSettings, SubscriptionPrices } from '@/hooks/useSettings';
 
 const defaultTemplates = [
   {
@@ -33,9 +35,22 @@ const defaultTemplates = [
   },
 ];
 
+const subscriptionLabels = {
+  monthly: 'شهري',
+  quarterly: 'ربع سنوي',
+  'semi-annual': 'نصف سنوي',
+  annual: 'سنوي',
+};
+
 export const Settings = () => {
   const [templates, setTemplates] = useState(defaultTemplates);
+  const { prices, savePrices } = useSettings();
+  const [localPrices, setLocalPrices] = useState<SubscriptionPrices>(prices);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setLocalPrices(prices);
+  }, [prices]);
 
   const handleTemplateChange = (id: string, content: string) => {
     setTemplates((prev) =>
@@ -43,9 +58,14 @@ export const Settings = () => {
     );
   };
 
+  const handlePriceChange = (type: keyof SubscriptionPrices, value: number) => {
+    setLocalPrices((prev) => ({ ...prev, [type]: value }));
+  };
+
   const handleSave = () => {
     localStorage.setItem('whatsapp_templates', JSON.stringify(templates));
-    toast({ title: 'تم حفظ القوالب بنجاح' });
+    savePrices(localPrices);
+    toast({ title: 'تم حفظ الإعدادات بنجاح' });
   };
 
   return (
@@ -54,6 +74,30 @@ export const Settings = () => {
         <SettingsIcon className="w-5 h-5 text-primary" />
         الإعدادات
       </h2>
+
+      <Card className="p-4 card-shadow">
+        <h3 className="font-bold mb-4 flex items-center gap-2">
+          <DollarSign className="w-5 h-5 text-primary" />
+          أسعار الاشتراكات
+        </h3>
+        <div className="grid grid-cols-2 gap-4">
+          {(Object.keys(subscriptionLabels) as Array<keyof typeof subscriptionLabels>).map((type) => (
+            <div key={type} className="space-y-2">
+              <Label>{subscriptionLabels[type]}</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={localPrices[type]}
+                  onChange={(e) => handlePriceChange(type, Number(e.target.value))}
+                  min={0}
+                  dir="ltr"
+                />
+                <span className="text-sm text-muted-foreground">جنيه</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
 
       <Card className="p-4 card-shadow">
         <h3 className="font-bold mb-4 flex items-center gap-2">
@@ -78,12 +122,12 @@ export const Settings = () => {
             </div>
           ))}
         </div>
-
-        <Button onClick={handleSave} className="mt-4 w-full">
-          <Save className="w-4 h-4" />
-          حفظ القوالب
-        </Button>
       </Card>
+
+      <Button onClick={handleSave} className="w-full">
+        <Save className="w-4 h-4" />
+        حفظ الإعدادات
+      </Button>
     </div>
   );
 };

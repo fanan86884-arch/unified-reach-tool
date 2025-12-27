@@ -3,6 +3,7 @@ import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subs
 import { SubscriberCard } from './SubscriberCard';
 import { SubscriberForm } from './SubscriberForm';
 import { RenewDialog } from './RenewDialog';
+import { WhatsAppDialog } from './WhatsAppDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Search, Filter, Users } from 'lucide-react';
+import { Plus, Search, Filter, Users, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface SubscribersListProps {
@@ -26,6 +27,8 @@ interface SubscribersListProps {
   setFilterStatus: (status: SubscriptionStatus | 'all') => void;
   filterCaptain: string;
   setFilterCaptain: (captain: string) => void;
+  filterDateRange: string;
+  setFilterDateRange: (range: string) => void;
   addSubscriber: (data: SubscriberFormData) => Subscriber;
   updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => void;
   deleteSubscriber: (id: string) => void;
@@ -42,6 +45,8 @@ export const SubscribersList = ({
   setFilterStatus,
   filterCaptain,
   setFilterCaptain,
+  filterDateRange,
+  setFilterDateRange,
   addSubscriber,
   updateSubscriber,
   deleteSubscriber,
@@ -50,8 +55,10 @@ export const SubscribersList = ({
 }: SubscribersListProps) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isRenewOpen, setIsRenewOpen] = useState(false);
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   const [editingSubscriber, setEditingSubscriber] = useState<Subscriber | null>(null);
   const [renewingSubscriber, setRenewingSubscriber] = useState<Subscriber | null>(null);
+  const [whatsAppSubscriber, setWhatsAppSubscriber] = useState<Subscriber | null>(null);
   const { toast } = useToast();
 
   const handleAddOrEdit = (data: SubscriberFormData) => {
@@ -83,10 +90,8 @@ export const SubscribersList = ({
   };
 
   const handleWhatsApp = (subscriber: Subscriber) => {
-    const message = encodeURIComponent(
-      `مرحباً ${subscriber.name}، هذا تذكير بخصوص اشتراكك في الجيم. ينتهي اشتراكك بتاريخ ${subscriber.endDate}.`
-    );
-    window.open(`https://wa.me/${subscriber.phone}?text=${message}`, '_blank');
+    setWhatsAppSubscriber(subscriber);
+    setIsWhatsAppOpen(true);
   };
 
   const captains = ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
@@ -104,7 +109,7 @@ export const SubscribersList = ({
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col gap-3">
         <div className="relative flex-1">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -114,32 +119,47 @@ export const SubscribersList = ({
             className="pr-10"
           />
         </div>
-        <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as SubscriptionStatus | 'all')}>
-          <SelectTrigger className="w-full sm:w-40">
-            <Filter className="w-4 h-4 ml-2" />
-            <SelectValue placeholder="الحالة" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">الكل</SelectItem>
-            <SelectItem value="active">نشط</SelectItem>
-            <SelectItem value="expiring">قارب على الانتهاء</SelectItem>
-            <SelectItem value="expired">منتهي</SelectItem>
-            <SelectItem value="pending">معلق</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={filterCaptain} onValueChange={setFilterCaptain}>
-          <SelectTrigger className="w-full sm:w-40">
-            <SelectValue placeholder="الكابتن" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">كل الكباتن</SelectItem>
-            {captains.map((captain) => (
-              <SelectItem key={captain} value={captain}>
-                {captain}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap gap-3">
+          <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as SubscriptionStatus | 'all')}>
+            <SelectTrigger className="w-full sm:w-40">
+              <Filter className="w-4 h-4 ml-2" />
+              <SelectValue placeholder="الحالة" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل الحالات</SelectItem>
+              <SelectItem value="active">نشط</SelectItem>
+              <SelectItem value="expiring">قارب على الانتهاء</SelectItem>
+              <SelectItem value="expired">منتهي</SelectItem>
+              <SelectItem value="pending">معلق</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterCaptain} onValueChange={setFilterCaptain}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="الكابتن" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل الكباتن</SelectItem>
+              {captains.map((captain) => (
+                <SelectItem key={captain} value={captain}>
+                  {captain}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterDateRange} onValueChange={setFilterDateRange}>
+            <SelectTrigger className="w-full sm:w-44">
+              <Calendar className="w-4 h-4 ml-2" />
+              <SelectValue placeholder="التاريخ" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل الفترات</SelectItem>
+              <SelectItem value="today">ينتهي اليوم</SelectItem>
+              <SelectItem value="week">ينتهي هذا الأسبوع</SelectItem>
+              <SelectItem value="month">ينتهي هذا الشهر</SelectItem>
+              <SelectItem value="expired">منتهي</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {subscribers.length === 0 ? (
@@ -183,6 +203,15 @@ export const SubscribersList = ({
         }}
         subscriber={renewingSubscriber}
         onRenew={renewSubscription}
+      />
+
+      <WhatsAppDialog
+        isOpen={isWhatsAppOpen}
+        onClose={() => {
+          setIsWhatsAppOpen(false);
+          setWhatsAppSubscriber(null);
+        }}
+        subscriber={whatsAppSubscriber}
       />
     </div>
   );

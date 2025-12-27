@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subscriber';
-import { differenceInDays, parseISO, isAfter, isBefore, startOfDay } from 'date-fns';
+import { differenceInDays, parseISO, startOfDay, endOfDay, endOfWeek, endOfMonth, isWithinInterval, isBefore } from 'date-fns';
 
 const STORAGE_KEY = 'gym_subscribers';
 
@@ -22,6 +22,7 @@ export const useSubscribers = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<SubscriptionStatus | 'all'>('all');
   const [filterCaptain, setFilterCaptain] = useState<string>('all');
+  const [filterDateRange, setFilterDateRange] = useState<string>('all');
 
   // Load from localStorage
   useEffect(() => {
@@ -122,15 +123,48 @@ export const useSubscribers = () => {
   );
 
   const filteredSubscribers = useMemo(() => {
+    const today = new Date();
+    
     return activeSubscribers.filter((sub) => {
       const matchesSearch =
         sub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         sub.phone.includes(searchQuery);
       const matchesStatus = filterStatus === 'all' || sub.status === filterStatus;
       const matchesCaptain = filterCaptain === 'all' || sub.captain === filterCaptain;
-      return matchesSearch && matchesStatus && matchesCaptain;
+      
+      // فلترة التاريخ
+      let matchesDate = true;
+      if (filterDateRange !== 'all') {
+        const endDate = parseISO(sub.endDate);
+        
+        switch (filterDateRange) {
+          case 'today':
+            matchesDate = isWithinInterval(endDate, {
+              start: startOfDay(today),
+              end: endOfDay(today),
+            });
+            break;
+          case 'week':
+            matchesDate = isWithinInterval(endDate, {
+              start: startOfDay(today),
+              end: endOfWeek(today, { weekStartsOn: 6 }),
+            });
+            break;
+          case 'month':
+            matchesDate = isWithinInterval(endDate, {
+              start: startOfDay(today),
+              end: endOfMonth(today),
+            });
+            break;
+          case 'expired':
+            matchesDate = isBefore(endDate, startOfDay(today));
+            break;
+        }
+      }
+      
+      return matchesSearch && matchesStatus && matchesCaptain && matchesDate;
     });
-  }, [activeSubscribers, searchQuery, filterStatus, filterCaptain]);
+  }, [activeSubscribers, searchQuery, filterStatus, filterCaptain, filterDateRange]);
 
   const stats = useMemo(() => {
     const active = activeSubscribers.filter((s) => s.status === 'active');
@@ -148,7 +182,17 @@ export const useSubscribers = () => {
   }, [activeSubscribers]);
 
   const findByPhone = (phone: string): Subscriber | undefined => {
-    return subscribers.find((s) => s.phone === phone);
+    // تنظيف رقم الهاتف للمطابقة
+    const cleanPhone = phone.replace(/\D/g, '');
+    return subscribers.find((s) => {
+      const subPhone = s.phone.replace(/\D/g, '');
+      // مطابقة مع أو بدون مفتاح الدولة
+      return subPhone === cleanPhone || 
+             subPhone === '20' + cleanPhone ||
+             '20' + subPhone === cleanPhone ||
+             subPhone.endsWith(cleanPhone) ||
+             cleanPhone.endsWith(subPhone);
+    });
   };
 
   return {
@@ -162,6 +206,8 @@ export const useSubscribers = () => {
     setFilterStatus,
     filterCaptain,
     setFilterCaptain,
+    filterDateRange,
+    setFilterDateRange,
     addSubscriber,
     updateSubscriber,
     deleteSubscriber,
