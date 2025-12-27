@@ -29,11 +29,11 @@ interface SubscribersListProps {
   setFilterCaptain: (captain: string) => void;
   filterDateRange: string;
   setFilterDateRange: (range: string) => void;
-  addSubscriber: (data: SubscriberFormData) => Subscriber;
-  updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => void;
-  deleteSubscriber: (id: string) => void;
-  archiveSubscriber: (id: string) => void;
-  renewSubscription: (id: string, newEndDate: string, paidAmount: number) => void;
+  addSubscriber: (data: SubscriberFormData) => Promise<Subscriber | null> | Subscriber;
+  updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => void | Promise<void>;
+  deleteSubscriber: (id: string) => void | Promise<void>;
+  archiveSubscriber: (id: string) => void | Promise<void>;
+  renewSubscription: (id: string, newEndDate: string, paidAmount: number) => void | Promise<void>;
 }
 
 export const SubscribersList = ({

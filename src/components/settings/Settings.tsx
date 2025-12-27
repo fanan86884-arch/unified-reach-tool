@@ -3,10 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Settings as SettingsIcon, MessageSquare, Save, DollarSign } from 'lucide-react';
+import { Settings as SettingsIcon, MessageSquare, Save, DollarSign, LogOut, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useSettings, SubscriptionPrices } from '@/hooks/useSettings';
+import { useCloudSettings, SubscriptionPrices } from '@/hooks/useCloudSettings';
+import { useAuth } from '@/hooks/useAuth';
 
 const defaultTemplates = [
   {
@@ -44,8 +45,10 @@ const subscriptionLabels = {
 
 export const Settings = () => {
   const [templates, setTemplates] = useState(defaultTemplates);
-  const { prices, savePrices } = useSettings();
+  const { prices, loading, savePrices } = useCloudSettings();
+  const { signOut, user } = useAuth();
   const [localPrices, setLocalPrices] = useState<SubscriptionPrices>(prices);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -62,11 +65,28 @@ export const Settings = () => {
     setLocalPrices((prev) => ({ ...prev, [type]: value }));
   };
 
-  const handleSave = () => {
-    localStorage.setItem('whatsapp_templates', JSON.stringify(templates));
-    savePrices(localPrices);
-    toast({ title: 'تم حفظ الإعدادات بنجاح' });
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      localStorage.setItem('whatsapp_templates', JSON.stringify(templates));
+      await savePrices(localPrices);
+      toast({ title: 'تم حفظ الإعدادات بنجاح' });
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-20">
@@ -124,10 +144,23 @@ export const Settings = () => {
         </div>
       </Card>
 
-      <Button onClick={handleSave} className="w-full">
-        <Save className="w-4 h-4" />
+      <Button onClick={handleSave} className="w-full" disabled={isSaving}>
+        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
         حفظ الإعدادات
       </Button>
+
+      <Card className="p-4 card-shadow">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-medium">الحساب</p>
+            <p className="text-sm text-muted-foreground">{user?.email}</p>
+          </div>
+          <Button variant="destructive" onClick={handleSignOut}>
+            <LogOut className="w-4 h-4" />
+            تسجيل الخروج
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Subscriber, SubscriberFormData, SubscriptionType } from '@/types/subscriber';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,12 +17,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { addMonths, format, parse } from 'date-fns';
-import { useSettings } from '@/hooks/useSettings';
+import { useCloudSettings } from '@/hooks/useCloudSettings';
 
 interface SubscriberFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: SubscriberFormData) => void;
+  onSubmit: (data: SubscriberFormData) => void | Promise<void>;
   editingSubscriber?: Subscriber | null;
   captains: string[];
 }
@@ -63,6 +63,34 @@ const formatDateForStorage = (displayDate: string): string => {
   }
 };
 
+const getInitialFormData = (editingSubscriber: Subscriber | null | undefined, defaultPrice: number, captain: string): SubscriberFormData => {
+  if (editingSubscriber) {
+    return {
+      name: editingSubscriber.name,
+      phone: editingSubscriber.phone,
+      subscriptionType: editingSubscriber.subscriptionType,
+      startDate: editingSubscriber.startDate,
+      endDate: editingSubscriber.endDate,
+      paidAmount: editingSubscriber.paidAmount,
+      remainingAmount: editingSubscriber.remainingAmount,
+      captain: editingSubscriber.captain,
+    };
+  }
+  
+  const today = new Date();
+  const endDate = addMonths(today, 1);
+  return {
+    name: '',
+    phone: '',
+    subscriptionType: 'monthly',
+    startDate: format(today, 'yyyy-MM-dd'),
+    endDate: format(endDate, 'yyyy-MM-dd'),
+    paidAmount: 0,
+    remainingAmount: defaultPrice,
+    captain: captain,
+  };
+};
+
 export const SubscriberForm = ({
   isOpen,
   onClose,
@@ -70,54 +98,33 @@ export const SubscriberForm = ({
   editingSubscriber,
   captains,
 }: SubscriberFormProps) => {
-  const { getPrice, calculateRemaining } = useSettings();
+  const { getPrice, calculateRemaining, loading: settingsLoading } = useCloudSettings();
+  const defaultCaptain = captains[0] || 'كابتن خالد';
   
-  const [formData, setFormData] = useState<SubscriberFormData>({
-    name: '',
-    phone: '',
-    subscriptionType: 'monthly',
-    startDate: format(new Date(), 'yyyy-MM-dd'),
-    endDate: format(addMonths(new Date(), 1), 'yyyy-MM-dd'),
-    paidAmount: 0,
-    remainingAmount: getPrice('monthly'),
-    captain: captains[0] || 'كابتن خالد',
-  });
+  const [formData, setFormData] = useState<SubscriberFormData>(() => 
+    getInitialFormData(editingSubscriber, 200, defaultCaptain)
+  );
+  
+  const [displayStartDate, setDisplayStartDate] = useState('');
+  const [displayEndDate, setDisplayEndDate] = useState('');
+  const isInitialized = useRef(false);
 
-  const [displayStartDate, setDisplayStartDate] = useState(formatDateForDisplay(formData.startDate));
-  const [displayEndDate, setDisplayEndDate] = useState(formatDateForDisplay(formData.endDate));
-
+  // Initialize form only when dialog opens
   useEffect(() => {
-    if (editingSubscriber) {
-      setFormData({
-        name: editingSubscriber.name,
-        phone: editingSubscriber.phone,
-        subscriptionType: editingSubscriber.subscriptionType,
-        startDate: editingSubscriber.startDate,
-        endDate: editingSubscriber.endDate,
-        paidAmount: editingSubscriber.paidAmount,
-        remainingAmount: editingSubscriber.remainingAmount,
-        captain: editingSubscriber.captain,
-      });
-      setDisplayStartDate(formatDateForDisplay(editingSubscriber.startDate));
-      setDisplayEndDate(formatDateForDisplay(editingSubscriber.endDate));
-    } else {
-      const today = new Date();
-      const endDate = addMonths(today, 1);
-      const price = getPrice('monthly');
-      setFormData({
-        name: '',
-        phone: '',
-        subscriptionType: 'monthly',
-        startDate: format(today, 'yyyy-MM-dd'),
-        endDate: format(endDate, 'yyyy-MM-dd'),
-        paidAmount: 0,
-        remainingAmount: price,
-        captain: captains[0] || 'كابتن خالد',
-      });
-      setDisplayStartDate(format(today, 'dd/MM/yyyy'));
-      setDisplayEndDate(format(endDate, 'dd/MM/yyyy'));
+    if (!isOpen) {
+      isInitialized.current = false;
+      return;
     }
-  }, [editingSubscriber, isOpen, captains, getPrice]);
+
+    if (isInitialized.current) return;
+    isInitialized.current = true;
+
+    const price = getPrice('monthly');
+    const data = getInitialFormData(editingSubscriber, price, defaultCaptain);
+    setFormData(data);
+    setDisplayStartDate(formatDateForDisplay(data.startDate));
+    setDisplayEndDate(formatDateForDisplay(data.endDate));
+  }, [isOpen, editingSubscriber, defaultCaptain, getPrice]);
 
   const handleSubscriptionTypeChange = (type: SubscriptionType) => {
     const startDate = new Date(formData.startDate);
@@ -136,7 +143,6 @@ export const SubscriberForm = ({
   const handleStartDateChange = (displayValue: string) => {
     setDisplayStartDate(displayValue);
     
-    // محاولة تحويل التاريخ إذا كان بالتنسيق الصحيح
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(displayValue)) {
       try {
         const storageDate = formatDateForStorage(displayValue);
@@ -180,11 +186,15 @@ export const SubscriberForm = ({
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    await onSubmit(formData);
     onClose();
   };
+
+  if (settingsLoading) {
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

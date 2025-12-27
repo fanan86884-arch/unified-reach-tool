@@ -6,7 +6,8 @@ import { Statistics } from '@/components/statistics/Statistics';
 import { Archive } from '@/components/archive/Archive';
 import { Notifications } from '@/components/notifications/Notifications';
 import { Settings } from '@/components/settings/Settings';
-import { useSubscribers } from '@/hooks/useSubscribers';
+import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('subscribers');
@@ -14,6 +15,7 @@ const Index = () => {
     subscribers,
     archivedSubscribers,
     stats,
+    loading,
     searchQuery,
     setSearchQuery,
     filterStatus,
@@ -28,7 +30,15 @@ const Index = () => {
     archiveSubscriber,
     restoreSubscriber,
     renewSubscription,
-  } = useSubscribers();
+  } = useCloudSubscribers();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (activeTab) {
