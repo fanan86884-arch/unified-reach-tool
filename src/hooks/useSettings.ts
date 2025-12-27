@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { SubscriptionType } from '@/types/subscriber';
 
 export interface SubscriptionPrices {
@@ -34,20 +34,24 @@ export const useSettings = () => {
     }
   }, []);
 
-  const savePrices = (newPrices: SubscriptionPrices) => {
+  const savePrices = useCallback((newPrices: SubscriptionPrices) => {
     setPrices(newPrices);
-    const settings = { prices: newPrices };
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ prices: newPrices }));
+  }, []);
 
-  const getPrice = (type: SubscriptionType): number => {
-    return prices[type];
-  };
+  const getPrice = useCallback(
+    (type: SubscriptionType): number => {
+      return prices[type];
+    },
+    [prices]
+  );
 
-  const calculateRemaining = (type: SubscriptionType, paidAmount: number): number => {
-    const total = prices[type];
-    return Math.max(0, total - paidAmount);
-  };
+  const calculateRemaining = useCallback(
+    (type: SubscriptionType, paidAmount: number): number => {
+      return Math.max(0, prices[type] - paidAmount);
+    },
+    [prices]
+  );
 
   return {
     prices,
@@ -56,3 +60,4 @@ export const useSettings = () => {
     calculateRemaining,
   };
 };
+
