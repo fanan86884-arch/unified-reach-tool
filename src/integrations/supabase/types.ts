@@ -14,7 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      settings: {
+        Row: {
+          annual_price: number
+          created_at: string
+          id: string
+          monthly_price: number
+          quarterly_price: number
+          semi_annual_price: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          annual_price?: number
+          created_at?: string
+          id?: string
+          monthly_price?: number
+          quarterly_price?: number
+          semi_annual_price?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          annual_price?: number
+          created_at?: string
+          id?: string
+          monthly_price?: number
+          quarterly_price?: number
+          semi_annual_price?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscribers: {
+        Row: {
+          captain: string
+          created_at: string
+          end_date: string
+          id: string
+          is_archived: boolean
+          name: string
+          paid_amount: number
+          phone: string
+          remaining_amount: number
+          start_date: string
+          status: string
+          subscription_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          captain?: string
+          created_at?: string
+          end_date: string
+          id?: string
+          is_archived?: boolean
+          name: string
+          paid_amount?: number
+          phone: string
+          remaining_amount?: number
+          start_date?: string
+          status?: string
+          subscription_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          captain?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_archived?: boolean
+          name?: string
+          paid_amount?: number
+          phone?: string
+          remaining_amount?: number
+          start_date?: string
+          status?: string
+          subscription_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
