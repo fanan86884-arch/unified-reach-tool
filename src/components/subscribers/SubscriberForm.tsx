@@ -16,7 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { addMonths, addDays, format } from 'date-fns';
+import { addMonths, format, parse } from 'date-fns';
+import { useSettings } from '@/hooks/useSettings';
 
 interface SubscriberFormProps {
   isOpen: boolean;
@@ -33,6 +34,35 @@ const subscriptionDurations: Record<SubscriptionType, number> = {
   annual: 12,
 };
 
+const subscriptionLabels: Record<SubscriptionType, string> = {
+  monthly: 'شهري',
+  quarterly: 'ربع سنوي',
+  'semi-annual': 'نصف سنوي',
+  annual: 'سنوي',
+};
+
+// تحويل من yyyy-MM-dd إلى dd/MM/yyyy للعرض
+const formatDateForDisplay = (dateStr: string): string => {
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    return format(date, 'dd/MM/yyyy');
+  } catch {
+    return dateStr;
+  }
+};
+
+// تحويل من dd/MM/yyyy إلى yyyy-MM-dd للتخزين
+const formatDateForStorage = (displayDate: string): string => {
+  if (!displayDate) return '';
+  try {
+    const parsed = parse(displayDate, 'dd/MM/yyyy', new Date());
+    return format(parsed, 'yyyy-MM-dd');
+  } catch {
+    return displayDate;
+  }
+};
+
 export const SubscriberForm = ({
   isOpen,
   onClose,
@@ -40,6 +70,8 @@ export const SubscriberForm = ({
   editingSubscriber,
   captains,
 }: SubscriberFormProps) => {
+  const { getPrice, calculateRemaining } = useSettings();
+  
   const [formData, setFormData] = useState<SubscriberFormData>({
     name: '',
     phone: '',
@@ -47,9 +79,12 @@ export const SubscriberForm = ({
     startDate: format(new Date(), 'yyyy-MM-dd'),
     endDate: format(addMonths(new Date(), 1), 'yyyy-MM-dd'),
     paidAmount: 0,
-    remainingAmount: 0,
+    remainingAmount: getPrice('monthly'),
     captain: captains[0] || 'كابتن خالد',
   });
+
+  const [displayStartDate, setDisplayStartDate] = useState(formatDateForDisplay(formData.startDate));
+  const [displayEndDate, setDisplayEndDate] = useState(formatDateForDisplay(formData.endDate));
 
   useEffect(() => {
     if (editingSubscriber) {
@@ -63,37 +98,85 @@ export const SubscriberForm = ({
         remainingAmount: editingSubscriber.remainingAmount,
         captain: editingSubscriber.captain,
       });
+      setDisplayStartDate(formatDateForDisplay(editingSubscriber.startDate));
+      setDisplayEndDate(formatDateForDisplay(editingSubscriber.endDate));
     } else {
+      const today = new Date();
+      const endDate = addMonths(today, 1);
+      const price = getPrice('monthly');
       setFormData({
         name: '',
         phone: '',
         subscriptionType: 'monthly',
-        startDate: format(new Date(), 'yyyy-MM-dd'),
-        endDate: format(addMonths(new Date(), 1), 'yyyy-MM-dd'),
+        startDate: format(today, 'yyyy-MM-dd'),
+        endDate: format(endDate, 'yyyy-MM-dd'),
         paidAmount: 0,
-        remainingAmount: 0,
+        remainingAmount: price,
         captain: captains[0] || 'كابتن خالد',
       });
+      setDisplayStartDate(format(today, 'dd/MM/yyyy'));
+      setDisplayEndDate(format(endDate, 'dd/MM/yyyy'));
     }
-  }, [editingSubscriber, isOpen, captains]);
+  }, [editingSubscriber, isOpen, captains, getPrice]);
 
   const handleSubscriptionTypeChange = (type: SubscriptionType) => {
     const startDate = new Date(formData.startDate);
     const endDate = addMonths(startDate, subscriptionDurations[type]);
+    const newRemaining = calculateRemaining(type, formData.paidAmount);
+    
     setFormData({
       ...formData,
       subscriptionType: type,
       endDate: format(endDate, 'yyyy-MM-dd'),
+      remainingAmount: newRemaining,
     });
+    setDisplayEndDate(format(endDate, 'dd/MM/yyyy'));
   };
 
-  const handleStartDateChange = (date: string) => {
-    const startDate = new Date(date);
-    const endDate = addMonths(startDate, subscriptionDurations[formData.subscriptionType]);
+  const handleStartDateChange = (displayValue: string) => {
+    setDisplayStartDate(displayValue);
+    
+    // محاولة تحويل التاريخ إذا كان بالتنسيق الصحيح
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(displayValue)) {
+      try {
+        const storageDate = formatDateForStorage(displayValue);
+        const startDate = new Date(storageDate);
+        const endDate = addMonths(startDate, subscriptionDurations[formData.subscriptionType]);
+        
+        setFormData({
+          ...formData,
+          startDate: storageDate,
+          endDate: format(endDate, 'yyyy-MM-dd'),
+        });
+        setDisplayEndDate(format(endDate, 'dd/MM/yyyy'));
+      } catch (e) {
+        // تجاهل الأخطاء أثناء الكتابة
+      }
+    }
+  };
+
+  const handleEndDateChange = (displayValue: string) => {
+    setDisplayEndDate(displayValue);
+    
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(displayValue)) {
+      try {
+        const storageDate = formatDateForStorage(displayValue);
+        setFormData({
+          ...formData,
+          endDate: storageDate,
+        });
+      } catch (e) {
+        // تجاهل الأخطاء أثناء الكتابة
+      }
+    }
+  };
+
+  const handlePaidAmountChange = (value: number) => {
+    const remaining = calculateRemaining(formData.subscriptionType, value);
     setFormData({
       ...formData,
-      startDate: date,
-      endDate: format(endDate, 'yyyy-MM-dd'),
+      paidAmount: value,
+      remainingAmount: remaining,
     });
   };
 
@@ -133,6 +216,7 @@ export const SubscriberForm = ({
               required
               dir="ltr"
             />
+            <p className="text-xs text-muted-foreground">رقم مصري بدون مفتاح الدولة</p>
           </div>
 
           <div className="space-y-2">
@@ -145,10 +229,11 @@ export const SubscriberForm = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="monthly">شهري</SelectItem>
-                <SelectItem value="quarterly">ربع سنوي</SelectItem>
-                <SelectItem value="semi-annual">نصف سنوي</SelectItem>
-                <SelectItem value="annual">سنوي</SelectItem>
+                {Object.entries(subscriptionLabels).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label} - {getPrice(value as SubscriptionType)} جنيه
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -175,9 +260,9 @@ export const SubscriberForm = ({
               <Label htmlFor="startDate">تاريخ البداية</Label>
               <Input
                 id="startDate"
-                type="date"
-                value={formData.startDate}
+                value={displayStartDate}
                 onChange={(e) => handleStartDateChange(e.target.value)}
+                placeholder="يوم/شهر/سنة"
                 dir="ltr"
               />
             </div>
@@ -185,9 +270,9 @@ export const SubscriberForm = ({
               <Label htmlFor="endDate">تاريخ الانتهاء</Label>
               <Input
                 id="endDate"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                value={displayEndDate}
+                onChange={(e) => handleEndDateChange(e.target.value)}
+                placeholder="يوم/شهر/سنة"
                 dir="ltr"
               />
             </div>
@@ -200,9 +285,7 @@ export const SubscriberForm = ({
                 id="paidAmount"
                 type="number"
                 value={formData.paidAmount}
-                onChange={(e) =>
-                  setFormData({ ...formData, paidAmount: Number(e.target.value) })
-                }
+                onChange={(e) => handlePaidAmountChange(Number(e.target.value))}
                 min={0}
                 dir="ltr"
               />
@@ -213,10 +296,8 @@ export const SubscriberForm = ({
                 id="remainingAmount"
                 type="number"
                 value={formData.remainingAmount}
-                onChange={(e) =>
-                  setFormData({ ...formData, remainingAmount: Number(e.target.value) })
-                }
-                min={0}
+                readOnly
+                className="bg-muted"
                 dir="ltr"
               />
             </div>

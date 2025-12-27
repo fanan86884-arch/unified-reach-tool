@@ -20,6 +20,8 @@ const Index = () => {
     setFilterStatus,
     filterCaptain,
     setFilterCaptain,
+    filterDateRange,
+    setFilterDateRange,
     addSubscriber,
     updateSubscriber,
     deleteSubscriber,
@@ -41,6 +43,8 @@ const Index = () => {
             setFilterStatus={setFilterStatus}
             filterCaptain={filterCaptain}
             setFilterCaptain={setFilterCaptain}
+            filterDateRange={filterDateRange}
+            setFilterDateRange={setFilterDateRange}
             addSubscriber={addSubscriber}
             updateSubscriber={updateSubscriber}
             deleteSubscriber={deleteSubscriber}
