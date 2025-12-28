@@ -1,4 +1,4 @@
-export type SubscriptionStatus = 'active' | 'expiring' | 'expired' | 'pending';
+export type SubscriptionStatus = 'active' | 'expiring' | 'expired' | 'pending' | 'paused';
 
 export type SubscriptionType = 'monthly' | 'quarterly' | 'semi-annual' | 'annual';
 
@@ -14,6 +14,8 @@ export interface Subscriber {
   captain: string;
   status: SubscriptionStatus;
   isArchived: boolean;
+  isPaused: boolean;
+  pausedUntil: string | null;
   createdAt: string;
   updatedAt: string;
 }
