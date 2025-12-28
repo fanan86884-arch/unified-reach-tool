@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Subscriber, SubscriptionType } from '@/types/subscriber';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,18 +35,43 @@ const subscriptionDurations: Record<SubscriptionType, number> = {
 export const RenewDialog = ({ isOpen, onClose, subscriber, onRenew }: RenewDialogProps) => {
   const [renewalType, setRenewalType] = useState<SubscriptionType>('monthly');
   const [paidAmount, setPaidAmount] = useState(0);
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [useCustomDate, setUseCustomDate] = useState(false);
+
+  useEffect(() => {
+    if (subscriber && isOpen) {
+      const currentEndDate = parseISO(subscriber.endDate);
+      const calculatedDate = addMonths(
+        currentEndDate > new Date() ? currentEndDate : new Date(),
+        subscriptionDurations[renewalType]
+      );
+      setCustomEndDate(format(calculatedDate, 'yyyy-MM-dd'));
+    }
+  }, [subscriber, renewalType, isOpen]);
 
   if (!subscriber) return null;
 
   const currentEndDate = parseISO(subscriber.endDate);
-  const newEndDate = addMonths(
+  const calculatedEndDate = addMonths(
     currentEndDate > new Date() ? currentEndDate : new Date(),
     subscriptionDurations[renewalType]
   );
 
+  const finalEndDate = useCustomDate ? customEndDate : format(calculatedEndDate, 'yyyy-MM-dd');
+
+  const handleRenewalTypeChange = (value: SubscriptionType) => {
+    setRenewalType(value);
+    setUseCustomDate(false);
+  };
+
+  const handleCustomDateChange = (value: string) => {
+    setCustomEndDate(value);
+    setUseCustomDate(true);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onRenew(subscriber.id, format(newEndDate, 'yyyy-MM-dd'), paidAmount);
+    onRenew(subscriber.id, finalEndDate, paidAmount);
     onClose();
   };
 
@@ -61,7 +86,7 @@ export const RenewDialog = ({ isOpen, onClose, subscriber, onRenew }: RenewDialo
             <Label>نوع التجديد</Label>
             <Select
               value={renewalType}
-              onValueChange={(value) => setRenewalType(value as SubscriptionType)}
+              onValueChange={handleRenewalTypeChange}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -75,9 +100,18 @@ export const RenewDialog = ({ isOpen, onClose, subscriber, onRenew }: RenewDialo
             </Select>
           </div>
 
-          <div className="p-3 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">تاريخ الانتهاء الجديد:</p>
-            <p className="font-bold text-lg">{format(newEndDate, 'yyyy-MM-dd')}</p>
+          <div className="space-y-2">
+            <Label htmlFor="endDate">تاريخ الانتهاء الجديد</Label>
+            <Input
+              id="endDate"
+              type="date"
+              value={finalEndDate}
+              onChange={(e) => handleCustomDateChange(e.target.value)}
+              dir="ltr"
+            />
+            {useCustomDate && (
+              <p className="text-xs text-muted-foreground">تم تعديل التاريخ يدوياً</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -85,10 +119,11 @@ export const RenewDialog = ({ isOpen, onClose, subscriber, onRenew }: RenewDialo
             <Input
               id="paidAmount"
               type="number"
-              value={paidAmount}
+              value={paidAmount || ''}
               onChange={(e) => setPaidAmount(Number(e.target.value))}
               min={0}
               dir="ltr"
+              placeholder="0"
             />
           </div>
 

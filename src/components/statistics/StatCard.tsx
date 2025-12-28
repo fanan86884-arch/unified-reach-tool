@@ -8,7 +8,7 @@ interface StatCardProps {
   title: string;
   count: number;
   icon: LucideIcon;
-  variant: 'success' | 'warning' | 'destructive' | 'accent' | 'primary';
+  variant: 'success' | 'warning' | 'destructive' | 'accent' | 'primary' | 'muted';
   onSendAll: () => void;
 }
 
@@ -18,6 +18,7 @@ const variantStyles = {
   destructive: 'bg-destructive/10 text-destructive border-destructive/20',
   accent: 'bg-accent/10 text-accent border-accent/20',
   primary: 'bg-primary/10 text-primary border-primary/20',
+  muted: 'bg-muted/50 text-muted-foreground border-muted',
 };
 
 const iconBgStyles = {
@@ -26,6 +27,7 @@ const iconBgStyles = {
   destructive: 'bg-destructive',
   accent: 'bg-accent',
   primary: 'bg-primary',
+  muted: 'bg-muted-foreground',
 };
 
 export const StatCard = ({ title, count, icon: Icon, variant, onSendAll }: StatCardProps) => {

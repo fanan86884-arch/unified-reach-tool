@@ -3,7 +3,7 @@ import { Subscriber } from '@/types/subscriber';
 import { StatCard } from './StatCard';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BarChart3, Users, Clock, AlertTriangle, XCircle, MessageCircle } from 'lucide-react';
+import { BarChart3, Users, Clock, AlertTriangle, XCircle, MessageCircle, Pause } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -14,6 +14,7 @@ interface StatisticsProps {
     expiring: Subscriber[];
     expired: Subscriber[];
     pending: Subscriber[];
+    paused: Subscriber[];
     byCaptain: Record<string, Subscriber[]>;
     captains: string[];
   };
@@ -206,6 +207,18 @@ export const Statistics = ({ stats }: StatisticsProps) => {
             sendWhatsAppToAll(
               stats.pending,
               'مرحباً {الاسم}، نود تذكيرك بأن لديك مبلغ متبقي {المبلغ_المتبقي} جنيه. يرجى التواصل معنا.'
+            )
+          }
+        />
+        <StatCard
+          title="اشتراكات موقوفة"
+          count={stats.paused.length}
+          icon={Pause}
+          variant="muted"
+          onSendAll={() =>
+            sendWhatsAppToAll(
+              stats.paused,
+              'مرحباً {الاسم}، نأمل أن تكون بخير. نحن في انتظارك للعودة!'
             )
           }
         />
