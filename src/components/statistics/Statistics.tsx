@@ -1,9 +1,12 @@
+import { useState, useEffect } from 'react';
 import { Subscriber } from '@/types/subscriber';
 import { StatCard } from './StatCard';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart3, Users, Clock, AlertTriangle, XCircle, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { format, parseISO } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
 interface StatisticsProps {
   stats: {
@@ -16,8 +19,68 @@ interface StatisticsProps {
   };
 }
 
+const WHATSAPP_QUEUE_KEY = 'whatsapp_queue';
+
+const formatPhone = (phone: string): string => {
+  const cleaned = phone.replace(/\D/g, '');
+  if (cleaned.startsWith('0')) {
+    return '20' + cleaned.slice(1);
+  }
+  if (cleaned.startsWith('20')) {
+    return cleaned;
+  }
+  return '20' + cleaned;
+};
+
+const formatDate = (dateStr: string): string => {
+  return format(parseISO(dateStr), 'dd/MM/yyyy', { locale: ar });
+};
+
 export const Statistics = ({ stats }: StatisticsProps) => {
   const { toast } = useToast();
+  const [currentQueue, setCurrentQueue] = useState<{ subscribers: Subscriber[]; message: string; index: number } | null>(null);
+
+  // Load queue from localStorage on mount
+  useEffect(() => {
+    const savedQueue = localStorage.getItem(WHATSAPP_QUEUE_KEY);
+    if (savedQueue) {
+      const queue = JSON.parse(savedQueue);
+      setCurrentQueue(queue);
+    }
+  }, []);
+
+  // Send next message when queue updates
+  useEffect(() => {
+    if (currentQueue && currentQueue.index < currentQueue.subscribers.length) {
+      const sub = currentQueue.subscribers[currentQueue.index];
+      const phone = formatPhone(sub.phone);
+      const encodedMessage = encodeURIComponent(
+        currentQueue.message
+          .replace('{الاسم}', sub.name)
+          .replace('{تاريخ_الانتهاء}', formatDate(sub.endDate))
+          .replace('{المبلغ_المتبقي}', sub.remainingAmount.toString())
+      );
+      
+      window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+      
+      // Update queue for next subscriber
+      const newIndex = currentQueue.index + 1;
+      if (newIndex < currentQueue.subscribers.length) {
+        const newQueue = { ...currentQueue, index: newIndex };
+        setCurrentQueue(newQueue);
+        localStorage.setItem(WHATSAPP_QUEUE_KEY, JSON.stringify(newQueue));
+        toast({ 
+          title: `تم إرسال ${newIndex} من ${currentQueue.subscribers.length}`, 
+          description: 'اضغط "إرسال للكل" للمشترك التالي'
+        });
+      } else {
+        // Queue finished
+        setCurrentQueue(null);
+        localStorage.removeItem(WHATSAPP_QUEUE_KEY);
+        toast({ title: 'تم إرسال جميع الرسائل بنجاح!' });
+      }
+    }
+  }, [currentQueue?.index]);
 
   const sendWhatsAppToAll = (subscribers: Subscriber[], message: string) => {
     if (subscribers.length === 0) {
@@ -25,19 +88,69 @@ export const Statistics = ({ stats }: StatisticsProps) => {
       return;
     }
 
-    subscribers.forEach((sub, index) => {
-      setTimeout(() => {
+    // Check if there's an existing queue for this category
+    if (currentQueue && currentQueue.subscribers.length === subscribers.length) {
+      // Continue with next subscriber
+      const newIndex = currentQueue.index;
+      if (newIndex < subscribers.length) {
+        const sub = subscribers[newIndex];
+        const phone = formatPhone(sub.phone);
         const encodedMessage = encodeURIComponent(
           message
             .replace('{الاسم}', sub.name)
-            .replace('{تاريخ_الانتهاء}', sub.endDate)
+            .replace('{تاريخ_الانتهاء}', formatDate(sub.endDate))
             .replace('{المبلغ_المتبقي}', sub.remainingAmount.toString())
         );
-        window.open(`https://wa.me/${sub.phone}?text=${encodedMessage}`, '_blank');
-      }, index * 500);
-    });
+        
+        window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+        
+        const nextIndex = newIndex + 1;
+        if (nextIndex < subscribers.length) {
+          const newQueue = { subscribers, message, index: nextIndex };
+          setCurrentQueue(newQueue);
+          localStorage.setItem(WHATSAPP_QUEUE_KEY, JSON.stringify(newQueue));
+          toast({ 
+            title: `تم إرسال ${nextIndex} من ${subscribers.length}`, 
+            description: 'اضغط "إرسال للكل" للمشترك التالي'
+          });
+        } else {
+          setCurrentQueue(null);
+          localStorage.removeItem(WHATSAPP_QUEUE_KEY);
+          toast({ title: 'تم إرسال جميع الرسائل بنجاح!' });
+        }
+      }
+      return;
+    }
 
-    toast({ title: `جاري فتح ${subscribers.length} محادثة واتساب` });
+    // Start new queue
+    const queue = { subscribers, message, index: 0 };
+    setCurrentQueue(queue);
+    localStorage.setItem(WHATSAPP_QUEUE_KEY, JSON.stringify(queue));
+    
+    const sub = subscribers[0];
+    const phone = formatPhone(sub.phone);
+    const encodedMessage = encodeURIComponent(
+      message
+        .replace('{الاسم}', sub.name)
+        .replace('{تاريخ_الانتهاء}', formatDate(sub.endDate))
+        .replace('{المبلغ_المتبقي}', sub.remainingAmount.toString())
+    );
+    
+    window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+    
+    if (subscribers.length > 1) {
+      const newQueue = { subscribers, message, index: 1 };
+      setCurrentQueue(newQueue);
+      localStorage.setItem(WHATSAPP_QUEUE_KEY, JSON.stringify(newQueue));
+      toast({ 
+        title: `تم إرسال 1 من ${subscribers.length}`, 
+        description: 'اضغط "إرسال للكل" للمشترك التالي'
+      });
+    } else {
+      setCurrentQueue(null);
+      localStorage.removeItem(WHATSAPP_QUEUE_KEY);
+      toast({ title: 'تم إرسال الرسالة بنجاح!' });
+    }
   };
 
   return (
