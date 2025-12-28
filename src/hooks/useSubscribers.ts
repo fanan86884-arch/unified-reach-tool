@@ -6,14 +6,16 @@ const STORAGE_KEY = 'gym_subscribers';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-const calculateStatus = (endDate: string, remainingAmount: number): SubscriptionStatus => {
+const calculateStatus = (endDate: string, remainingAmount: number, isPaused?: boolean): SubscriptionStatus => {
+  if (isPaused) return 'paused';
+  
   const today = startOfDay(new Date());
   const end = startOfDay(parseISO(endDate));
   const daysRemaining = differenceInDays(end, today);
 
-  if (remainingAmount > 0) return 'pending';
   if (daysRemaining < 0) return 'expired';
   if (daysRemaining <= 7) return 'expiring';
+  if (remainingAmount > 0) return 'pending';
   return 'active';
 };
 
@@ -51,8 +53,10 @@ export const useSubscribers = () => {
     const newSubscriber: Subscriber = {
       ...data,
       id: generateId(),
-      status: calculateStatus(data.endDate, data.remainingAmount),
+      status: calculateStatus(data.endDate, data.remainingAmount, false),
       isArchived: false,
+      isPaused: false,
+      pausedUntil: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

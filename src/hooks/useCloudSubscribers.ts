@@ -4,14 +4,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { differenceInDays, parseISO, startOfDay, endOfDay, endOfWeek, endOfMonth, isWithinInterval, isBefore } from 'date-fns';
 import { useAuth } from './useAuth';
 
-const calculateStatus = (endDate: string, remainingAmount: number): SubscriptionStatus => {
+const calculateStatus = (endDate: string, remainingAmount: number, isPaused?: boolean): SubscriptionStatus => {
+  if (isPaused) return 'paused';
+  
   const today = startOfDay(new Date());
   const end = startOfDay(parseISO(endDate));
   const daysRemaining = differenceInDays(end, today);
 
-  if (remainingAmount > 0) return 'pending';
   if (daysRemaining < 0) return 'expired';
   if (daysRemaining <= 7) return 'expiring';
+  if (remainingAmount > 0) return 'pending';
   return 'active';
 };
 
@@ -27,6 +29,8 @@ const mapDbToSubscriber = (row: any): Subscriber => ({
   captain: row.captain,
   status: row.status as SubscriptionStatus,
   isArchived: row.is_archived,
+  isPaused: row.is_paused || false,
+  pausedUntil: row.paused_until || null,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -57,11 +61,26 @@ export const useCloudSubscribers = () => {
       }
 
       const mapped = (data || []).map(mapDbToSubscriber);
-      // Recalculate statuses
-      const updated = mapped.map(sub => ({
-        ...sub,
-        status: calculateStatus(sub.endDate, sub.remainingAmount),
-      }));
+      // Recalculate statuses - check pause status first
+      const updated = mapped.map(sub => {
+        // Check if pause has ended
+        if (sub.isPaused && sub.pausedUntil) {
+          const pauseEnd = parseISO(sub.pausedUntil);
+          if (pauseEnd < new Date()) {
+            // Pause ended, update status
+            return {
+              ...sub,
+              isPaused: false,
+              pausedUntil: null,
+              status: calculateStatus(sub.endDate, sub.remainingAmount, false),
+            };
+          }
+        }
+        return {
+          ...sub,
+          status: calculateStatus(sub.endDate, sub.remainingAmount, sub.isPaused),
+        };
+      });
       setSubscribers(updated);
     } catch (err) {
       console.error('Error:', err);
