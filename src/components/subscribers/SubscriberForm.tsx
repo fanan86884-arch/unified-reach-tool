@@ -294,10 +294,11 @@ export const SubscriberForm = ({
               <Input
                 id="paidAmount"
                 type="number"
-                value={formData.paidAmount}
-                onChange={(e) => handlePaidAmountChange(Number(e.target.value))}
+                value={formData.paidAmount || ''}
+                onChange={(e) => handlePaidAmountChange(Number(e.target.value) || 0)}
                 min={0}
                 dir="ltr"
+                placeholder="0"
               />
             </div>
             <div className="space-y-2">
