@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subscriber';
-import { SubscriberCard } from './SubscriberCard';
+import { SubscriberCardCompact } from './SubscriberCardCompact';
 import { SubscriberForm } from './SubscriberForm';
 import { RenewDialog } from './RenewDialog';
+import { PauseDialog } from './PauseDialog';
 import { WhatsAppDialog } from './WhatsAppDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,8 @@ interface SubscribersListProps {
   deleteSubscriber: (id: string) => void | Promise<void>;
   archiveSubscriber: (id: string) => void | Promise<void>;
   renewSubscription: (id: string, newEndDate: string, paidAmount: number) => void | Promise<void>;
+  pauseSubscription?: (id: string, pauseUntil: string) => void | Promise<void>;
+  resumeSubscription?: (id: string) => void | Promise<void>;
 }
 
 export const SubscribersList = ({
@@ -52,12 +55,16 @@ export const SubscribersList = ({
   deleteSubscriber,
   archiveSubscriber,
   renewSubscription,
+  pauseSubscription,
+  resumeSubscription,
 }: SubscribersListProps) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isRenewOpen, setIsRenewOpen] = useState(false);
+  const [isPauseOpen, setIsPauseOpen] = useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   const [editingSubscriber, setEditingSubscriber] = useState<Subscriber | null>(null);
   const [renewingSubscriber, setRenewingSubscriber] = useState<Subscriber | null>(null);
+  const [pausingSubscriber, setPausingSubscriber] = useState<Subscriber | null>(null);
   const [whatsAppSubscriber, setWhatsAppSubscriber] = useState<Subscriber | null>(null);
   const { toast } = useToast();
 
@@ -87,6 +94,18 @@ export const SubscribersList = ({
   const handleRenew = (subscriber: Subscriber) => {
     setRenewingSubscriber(subscriber);
     setIsRenewOpen(true);
+  };
+
+  const handlePause = (subscriber: Subscriber) => {
+    setPausingSubscriber(subscriber);
+    setIsPauseOpen(true);
+  };
+
+  const handleResume = (id: string) => {
+    if (resumeSubscription) {
+      resumeSubscription(id);
+      toast({ title: 'تم استئناف الاشتراك بنجاح' });
+    }
   };
 
   const handleWhatsApp = (subscriber: Subscriber) => {
@@ -131,6 +150,7 @@ export const SubscribersList = ({
               <SelectItem value="expiring">قارب على الانتهاء</SelectItem>
               <SelectItem value="expired">منتهي</SelectItem>
               <SelectItem value="pending">معلق</SelectItem>
+              <SelectItem value="paused">موقوف</SelectItem>
             </SelectContent>
           </Select>
           <Select value={filterCaptain} onValueChange={setFilterCaptain}>
@@ -169,9 +189,9 @@ export const SubscribersList = ({
           <p className="text-sm text-muted-foreground">أضف مشتركاً جديداً للبدء</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {subscribers.map((subscriber) => (
-            <SubscriberCard
+            <SubscriberCardCompact
               key={subscriber.id}
               subscriber={subscriber}
               onEdit={handleEdit}
@@ -179,6 +199,8 @@ export const SubscribersList = ({
               onArchive={archiveSubscriber}
               onRenew={handleRenew}
               onWhatsApp={handleWhatsApp}
+              onPause={handlePause}
+              onResume={handleResume}
             />
           ))}
         </div>
@@ -203,6 +225,21 @@ export const SubscribersList = ({
         }}
         subscriber={renewingSubscriber}
         onRenew={renewSubscription}
+      />
+
+      <PauseDialog
+        isOpen={isPauseOpen}
+        onClose={() => {
+          setIsPauseOpen(false);
+          setPausingSubscriber(null);
+        }}
+        subscriber={pausingSubscriber}
+        onPause={(id, pauseUntil) => {
+          if (pauseSubscription) {
+            pauseSubscription(id, pauseUntil);
+            toast({ title: 'تم إيقاف الاشتراك بنجاح' });
+          }
+        }}
       />
 
       <WhatsAppDialog

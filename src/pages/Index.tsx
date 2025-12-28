@@ -30,6 +30,8 @@ const Index = () => {
     archiveSubscriber,
     restoreSubscriber,
     renewSubscription,
+    pauseSubscription,
+    resumeSubscription,
   } = useCloudSubscribers();
 
   if (loading) {
@@ -60,6 +62,8 @@ const Index = () => {
             deleteSubscriber={deleteSubscriber}
             archiveSubscriber={archiveSubscriber}
             renewSubscription={renewSubscription}
+            pauseSubscription={pauseSubscription}
+            resumeSubscription={resumeSubscription}
           />
         );
       case 'statistics':

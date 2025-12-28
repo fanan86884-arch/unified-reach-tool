@@ -54,8 +54,10 @@ export type Database = {
           end_date: string
           id: string
           is_archived: boolean
+          is_paused: boolean
           name: string
           paid_amount: number
+          paused_until: string | null
           phone: string
           remaining_amount: number
           start_date: string
@@ -70,8 +72,10 @@ export type Database = {
           end_date: string
           id?: string
           is_archived?: boolean
+          is_paused?: boolean
           name: string
           paid_amount?: number
+          paused_until?: string | null
           phone: string
           remaining_amount?: number
           start_date?: string
@@ -86,8 +90,10 @@ export type Database = {
           end_date?: string
           id?: string
           is_archived?: boolean
+          is_paused?: boolean
           name?: string
           paid_amount?: number
+          paused_until?: string | null
           phone?: string
           remaining_amount?: number
           start_date?: string

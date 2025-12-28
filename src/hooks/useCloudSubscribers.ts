@@ -121,7 +121,7 @@ export const useCloudSubscribers = () => {
   const addSubscriber = useCallback(async (data: SubscriberFormData): Promise<Subscriber | null> => {
     if (!user) return null;
 
-    const status = calculateStatus(data.endDate, data.remainingAmount);
+    const status = calculateStatus(data.endDate, data.remainingAmount, false);
 
     const { data: newData, error } = await supabase
       .from('subscribers')
@@ -137,6 +137,8 @@ export const useCloudSubscribers = () => {
         captain: data.captain,
         status,
         is_archived: false,
+        is_paused: false,
+        paused_until: null,
       })
       .select()
       .single();
@@ -167,7 +169,8 @@ export const useCloudSubscribers = () => {
       if (subscriber) {
         updateData.status = calculateStatus(
           data.endDate ?? subscriber.endDate,
-          data.remainingAmount ?? subscriber.remainingAmount
+          data.remainingAmount ?? subscriber.remainingAmount,
+          subscriber.isPaused
         );
       }
     }
@@ -221,7 +224,7 @@ export const useCloudSubscribers = () => {
 
     const newPaidAmount = subscriber.paidAmount + paidAmount;
     const newRemainingAmount = Math.max(0, subscriber.remainingAmount - paidAmount);
-    const status = calculateStatus(newEndDate, newRemainingAmount);
+    const status = calculateStatus(newEndDate, newRemainingAmount, false);
 
     const { error } = await supabase
       .from('subscribers')
@@ -235,6 +238,44 @@ export const useCloudSubscribers = () => {
 
     if (error) {
       console.error('Error renewing subscription:', error);
+    }
+  }, [subscribers]);
+
+  const pauseSubscription = useCallback(async (id: string, pauseUntil: string) => {
+    const subscriber = subscribers.find(s => s.id === id);
+    if (!subscriber) return;
+
+    const { error } = await supabase
+      .from('subscribers')
+      .update({
+        is_paused: true,
+        paused_until: pauseUntil,
+        status: 'paused',
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error pausing subscription:', error);
+    }
+  }, [subscribers]);
+
+  const resumeSubscription = useCallback(async (id: string) => {
+    const subscriber = subscribers.find(s => s.id === id);
+    if (!subscriber) return;
+
+    const status = calculateStatus(subscriber.endDate, subscriber.remainingAmount, false);
+
+    const { error } = await supabase
+      .from('subscribers')
+      .update({
+        is_paused: false,
+        paused_until: null,
+        status,
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error resuming subscription:', error);
     }
   }, [subscribers]);
 
@@ -296,6 +337,7 @@ export const useCloudSubscribers = () => {
     const expiring = activeSubscribers.filter((s) => s.status === 'expiring');
     const expired = activeSubscribers.filter((s) => s.status === 'expired');
     const pending = activeSubscribers.filter((s) => s.status === 'pending');
+    const paused = activeSubscribers.filter((s) => s.status === 'paused');
 
     const captains = [...new Set(activeSubscribers.map((s) => s.captain))];
     const byCaptain = captains.reduce((acc, captain) => {
@@ -303,7 +345,7 @@ export const useCloudSubscribers = () => {
       return acc;
     }, {} as Record<string, Subscriber[]>);
 
-    return { active, expiring, expired, pending, byCaptain, captains };
+    return { active, expiring, expired, pending, paused, byCaptain, captains };
   }, [activeSubscribers]);
 
   const findByPhone = useCallback((phone: string): Subscriber | undefined => {
@@ -338,6 +380,8 @@ export const useCloudSubscribers = () => {
     archiveSubscriber,
     restoreSubscriber,
     renewSubscription,
+    pauseSubscription,
+    resumeSubscription,
     findByPhone,
   };
 };
