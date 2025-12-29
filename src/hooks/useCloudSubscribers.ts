@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subscriber';
 import { supabase } from '@/integrations/supabase/client';
-import { differenceInDays, parseISO, startOfDay, endOfDay, endOfWeek, endOfMonth, isWithinInterval, isBefore } from 'date-fns';
+import { differenceInDays, parseISO, startOfDay } from 'date-fns';
 import { useAuth } from './useAuth';
 
+// حساب الحالة: نشط حتى لو معلق، قارب على الانتهاء = نشط أيضاً، منتهي = غير نشط
 const calculateStatus = (endDate: string, remainingAmount: number, isPaused?: boolean): SubscriptionStatus => {
   if (isPaused) return 'paused';
   
@@ -11,10 +12,19 @@ const calculateStatus = (endDate: string, remainingAmount: number, isPaused?: bo
   const end = startOfDay(parseISO(endDate));
   const daysRemaining = differenceInDays(end, today);
 
+  // منتهي إذا انتهت المدة
   if (daysRemaining < 0) return 'expired';
+  
+  // قارب على الانتهاء (لكن لا يزال نشطاً)
   if (daysRemaining <= 7) return 'expiring';
-  if (remainingAmount > 0) return 'pending';
+  
+  // نشط بغض النظر عن المبلغ المتبقي (طالما لم ينتهِ)
   return 'active';
+};
+
+// تحديد ما إذا كان معلقاً (له مبلغ متبقي)
+const hasPendingAmount = (remainingAmount: number): boolean => {
+  return remainingAmount > 0;
 };
 
 const mapDbToSubscriber = (row: any): Subscriber => ({
@@ -53,7 +63,7 @@ export const useCloudSubscribers = () => {
         .from('subscribers')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('start_date', { ascending: false }); // ترتيب حسب تاريخ الاشتراك
 
       if (error) {
         console.error('Error fetching subscribers:', error);
@@ -233,6 +243,8 @@ export const useCloudSubscribers = () => {
         paid_amount: newPaidAmount,
         remaining_amount: newRemainingAmount,
         status,
+        is_paused: false,
+        paused_until: null,
       })
       .eq('id', id);
 
@@ -290,8 +302,6 @@ export const useCloudSubscribers = () => {
   );
 
   const filteredSubscribers = useMemo(() => {
-    const today = new Date();
-    
     return activeSubscribers.filter((sub) => {
       const matchesSearch =
         sub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -299,44 +309,20 @@ export const useCloudSubscribers = () => {
       const matchesStatus = filterStatus === 'all' || sub.status === filterStatus;
       const matchesCaptain = filterCaptain === 'all' || sub.captain === filterCaptain;
       
-      let matchesDate = true;
-      if (filterDateRange !== 'all') {
-        const endDate = parseISO(sub.endDate);
-        
-        switch (filterDateRange) {
-          case 'today':
-            matchesDate = isWithinInterval(endDate, {
-              start: startOfDay(today),
-              end: endOfDay(today),
-            });
-            break;
-          case 'week':
-            matchesDate = isWithinInterval(endDate, {
-              start: startOfDay(today),
-              end: endOfWeek(today, { weekStartsOn: 6 }),
-            });
-            break;
-          case 'month':
-            matchesDate = isWithinInterval(endDate, {
-              start: startOfDay(today),
-              end: endOfMonth(today),
-            });
-            break;
-          case 'expired':
-            matchesDate = isBefore(endDate, startOfDay(today));
-            break;
-        }
-      }
-      
-      return matchesSearch && matchesStatus && matchesCaptain && matchesDate;
+      return matchesSearch && matchesStatus && matchesCaptain;
     });
-  }, [activeSubscribers, searchQuery, filterStatus, filterCaptain, filterDateRange]);
+  }, [activeSubscribers, searchQuery, filterStatus, filterCaptain]);
 
   const stats = useMemo(() => {
-    const active = activeSubscribers.filter((s) => s.status === 'active');
+    // الاشتراكات النشطة: نشط + قارب على الانتهاء (لأنهم لم ينتهوا بعد)
+    const active = activeSubscribers.filter((s) => s.status === 'active' || s.status === 'expiring');
+    // قارب على الانتهاء (فقط للإحصائية)
     const expiring = activeSubscribers.filter((s) => s.status === 'expiring');
+    // منتهي
     const expired = activeSubscribers.filter((s) => s.status === 'expired');
-    const pending = activeSubscribers.filter((s) => s.status === 'pending');
+    // معلق (له مبلغ متبقي) - يشمل جميع الحالات ما عدا الموقوف
+    const pending = activeSubscribers.filter((s) => hasPendingAmount(s.remainingAmount) && s.status !== 'paused');
+    // موقوف
     const paused = activeSubscribers.filter((s) => s.status === 'paused');
 
     const captains = [...new Set(activeSubscribers.map((s) => s.captain))];

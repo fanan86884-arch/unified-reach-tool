@@ -10,6 +10,7 @@ interface StatCardProps {
   icon: LucideIcon;
   variant: 'success' | 'warning' | 'destructive' | 'accent' | 'primary' | 'muted';
   onSendAll: () => void;
+  buttonLabel?: string;
 }
 
 const variantStyles = {
@@ -30,7 +31,7 @@ const iconBgStyles = {
   muted: 'bg-muted-foreground',
 };
 
-export const StatCard = ({ title, count, icon: Icon, variant, onSendAll }: StatCardProps) => {
+export const StatCard = ({ title, count, icon: Icon, variant, onSendAll, buttonLabel = 'إرسال للكل' }: StatCardProps) => {
   return (
     <Card
       className={cn(
@@ -58,7 +59,7 @@ export const StatCard = ({ title, count, icon: Icon, variant, onSendAll }: StatC
         disabled={count === 0}
       >
         <MessageCircle className="w-4 h-4" />
-        إرسال للكل
+        {buttonLabel}
       </Button>
     </Card>
   );
