@@ -34,6 +34,12 @@ const defaultTemplates = [
     content:
       'مرحباً {الاسم}، انتهى اشتراكك في الجيم. نفتقدك! تواصل معنا لتجديد اشتراكك والعودة للتمرين.',
   },
+  {
+    id: 'paused',
+    name: 'اشتراك موقوف',
+    content:
+      'مرحباً {الاسم}، نود أن نخبرك بأنه تم إيقاف اشتراكك لمدة {المدة_المحددة} وأنه سينتهي اشتراكك بتاريخ {تاريخ_الانتهاء}',
+  },
 ];
 
 const subscriptionLabels = {
@@ -54,6 +60,19 @@ export const Settings = () => {
   useEffect(() => {
     setLocalPrices(prices);
   }, [prices]);
+
+  useEffect(() => {
+    const savedTemplates = localStorage.getItem('whatsapp_templates');
+    if (savedTemplates) {
+      const parsed = JSON.parse(savedTemplates);
+      // Merge with default templates to include new ones
+      const merged = defaultTemplates.map(defaultT => {
+        const saved = parsed.find((t: any) => t.id === defaultT.id);
+        return saved || defaultT;
+      });
+      setTemplates(merged);
+    }
+  }, []);
 
   const handleTemplateChange = (id: string, content: string) => {
     setTemplates((prev) =>
@@ -126,7 +145,7 @@ export const Settings = () => {
         </h3>
         <p className="text-sm text-muted-foreground mb-4">
           يمكنك استخدام المتغيرات التالية: {'{الاسم}'}, {'{تاريخ_الاشتراك}'},{' '}
-          {'{تاريخ_الانتهاء}'}, {'{المبلغ_المدفوع}'}, {'{المبلغ_المتبقي}'}
+          {'{تاريخ_الانتهاء}'}, {'{المبلغ_المدفوع}'}, {'{المبلغ_المتبقي}'}, {'{المدة_المحددة}'}
         </p>
 
         <div className="space-y-4">

@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart3, Users, Clock, AlertTriangle, XCircle, MessageCircle, Pause } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInDays } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
 interface StatisticsProps {
@@ -20,7 +20,7 @@ interface StatisticsProps {
   };
 }
 
-const WHATSAPP_QUEUE_KEY = 'whatsapp_queue';
+const WHATSAPP_QUEUE_PREFIX = 'whatsapp_queue_';
 
 const formatPhone = (phone: string): string => {
   const cleaned = phone.replace(/\D/g, '');
@@ -37,121 +37,85 @@ const formatDate = (dateStr: string): string => {
   return format(parseISO(dateStr), 'dd/MM/yyyy', { locale: ar });
 };
 
+const formatPauseDuration = (subscriber: Subscriber): string => {
+  if (!subscriber.pausedUntil) return '';
+  const pauseEnd = parseISO(subscriber.pausedUntil);
+  const today = new Date();
+  const days = differenceInDays(pauseEnd, today);
+  if (days <= 7) return `${days} أيام`;
+  if (days <= 14) return 'أسبوعين';
+  if (days <= 30) return 'شهر';
+  return `${days} يوم`;
+};
+
 export const Statistics = ({ stats }: StatisticsProps) => {
   const { toast } = useToast();
-  const [currentQueue, setCurrentQueue] = useState<{ subscribers: Subscriber[]; message: string; index: number } | null>(null);
+  const [queues, setQueues] = useState<Record<string, number>>({});
 
-  // Load queue from localStorage on mount
+  // Load queues from localStorage on mount
   useEffect(() => {
-    const savedQueue = localStorage.getItem(WHATSAPP_QUEUE_KEY);
-    if (savedQueue) {
-      const queue = JSON.parse(savedQueue);
-      setCurrentQueue(queue);
-    }
-  }, []);
-
-  // Send next message when queue updates
-  useEffect(() => {
-    if (currentQueue && currentQueue.index < currentQueue.subscribers.length) {
-      const sub = currentQueue.subscribers[currentQueue.index];
-      const phone = formatPhone(sub.phone);
-      const encodedMessage = encodeURIComponent(
-        currentQueue.message
-          .replace('{الاسم}', sub.name)
-          .replace('{تاريخ_الانتهاء}', formatDate(sub.endDate))
-          .replace('{المبلغ_المتبقي}', sub.remainingAmount.toString())
-      );
-      
-      window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
-      
-      // Update queue for next subscriber
-      const newIndex = currentQueue.index + 1;
-      if (newIndex < currentQueue.subscribers.length) {
-        const newQueue = { ...currentQueue, index: newIndex };
-        setCurrentQueue(newQueue);
-        localStorage.setItem(WHATSAPP_QUEUE_KEY, JSON.stringify(newQueue));
-        toast({ 
-          title: `تم إرسال ${newIndex} من ${currentQueue.subscribers.length}`, 
-          description: 'اضغط "إرسال للكل" للمشترك التالي'
-        });
-      } else {
-        // Queue finished
-        setCurrentQueue(null);
-        localStorage.removeItem(WHATSAPP_QUEUE_KEY);
-        toast({ title: 'تم إرسال جميع الرسائل بنجاح!' });
+    const loadedQueues: Record<string, number> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(WHATSAPP_QUEUE_PREFIX)) {
+        const queueData = JSON.parse(localStorage.getItem(key) || '{}');
+        loadedQueues[key] = queueData.index || 0;
       }
     }
-  }, [currentQueue?.index]);
+    setQueues(loadedQueues);
+  }, []);
 
-  const sendWhatsAppToAll = (subscribers: Subscriber[], message: string) => {
+  const sendWhatsAppToAll = (categoryId: string, subscribers: Subscriber[], getMessage: (sub: Subscriber) => string) => {
     if (subscribers.length === 0) {
       toast({ title: 'لا يوجد مشتركين في هذه الفئة', variant: 'destructive' });
       return;
     }
 
-    // Check if there's an existing queue for this category
-    if (currentQueue && currentQueue.subscribers.length === subscribers.length) {
-      // Continue with next subscriber
-      const newIndex = currentQueue.index;
-      if (newIndex < subscribers.length) {
-        const sub = subscribers[newIndex];
-        const phone = formatPhone(sub.phone);
-        const encodedMessage = encodeURIComponent(
-          message
-            .replace('{الاسم}', sub.name)
-            .replace('{تاريخ_الانتهاء}', formatDate(sub.endDate))
-            .replace('{المبلغ_المتبقي}', sub.remainingAmount.toString())
-        );
-        
-        window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
-        
-        const nextIndex = newIndex + 1;
-        if (nextIndex < subscribers.length) {
-          const newQueue = { subscribers, message, index: nextIndex };
-          setCurrentQueue(newQueue);
-          localStorage.setItem(WHATSAPP_QUEUE_KEY, JSON.stringify(newQueue));
-          toast({ 
-            title: `تم إرسال ${nextIndex} من ${subscribers.length}`, 
-            description: 'اضغط "إرسال للكل" للمشترك التالي'
-          });
-        } else {
-          setCurrentQueue(null);
-          localStorage.removeItem(WHATSAPP_QUEUE_KEY);
-          toast({ title: 'تم إرسال جميع الرسائل بنجاح!' });
-        }
-      }
-      return;
+    const queueKey = WHATSAPP_QUEUE_PREFIX + categoryId;
+    let currentIndex = queues[queueKey] || 0;
+
+    // التأكد من أن الفهرس ضمن النطاق
+    if (currentIndex >= subscribers.length) {
+      currentIndex = 0;
     }
 
-    // Start new queue
-    const queue = { subscribers, message, index: 0 };
-    setCurrentQueue(queue);
-    localStorage.setItem(WHATSAPP_QUEUE_KEY, JSON.stringify(queue));
-    
-    const sub = subscribers[0];
+    const sub = subscribers[currentIndex];
     const phone = formatPhone(sub.phone);
-    const encodedMessage = encodeURIComponent(
-      message
-        .replace('{الاسم}', sub.name)
-        .replace('{تاريخ_الانتهاء}', formatDate(sub.endDate))
-        .replace('{المبلغ_المتبقي}', sub.remainingAmount.toString())
-    );
+    const message = getMessage(sub);
+    const encodedMessage = encodeURIComponent(message);
     
+    // فتح الواتساب مباشرة
     window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
     
-    if (subscribers.length > 1) {
-      const newQueue = { subscribers, message, index: 1 };
-      setCurrentQueue(newQueue);
-      localStorage.setItem(WHATSAPP_QUEUE_KEY, JSON.stringify(newQueue));
+    // تحديث الفهرس للمشترك التالي
+    const nextIndex = currentIndex + 1;
+    if (nextIndex >= subscribers.length) {
+      // انتهت القائمة
+      localStorage.removeItem(queueKey);
+      setQueues(prev => {
+        const newQueues = { ...prev };
+        delete newQueues[queueKey];
+        return newQueues;
+      });
+      toast({ title: 'تم إرسال جميع الرسائل بنجاح!' });
+    } else {
+      // حفظ الفهرس التالي
+      localStorage.setItem(queueKey, JSON.stringify({ index: nextIndex, total: subscribers.length }));
+      setQueues(prev => ({ ...prev, [queueKey]: nextIndex }));
       toast({ 
-        title: `تم إرسال 1 من ${subscribers.length}`, 
+        title: `تم إرسال ${currentIndex + 1} من ${subscribers.length}`, 
         description: 'اضغط "إرسال للكل" للمشترك التالي'
       });
-    } else {
-      setCurrentQueue(null);
-      localStorage.removeItem(WHATSAPP_QUEUE_KEY);
-      toast({ title: 'تم إرسال الرسالة بنجاح!' });
     }
+  };
+
+  const getQueueProgress = (categoryId: string, total: number): string => {
+    const queueKey = WHATSAPP_QUEUE_PREFIX + categoryId;
+    const currentIndex = queues[queueKey];
+    if (currentIndex !== undefined && currentIndex > 0) {
+      return ` (${currentIndex}/${total})`;
+    }
+    return '';
   };
 
   return (
@@ -161,7 +125,7 @@ export const Statistics = ({ stats }: StatisticsProps) => {
         الإحصائيات
       </h2>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard
           title="اشتراكات نشطة"
           count={stats.active.length}
@@ -169,10 +133,12 @@ export const Statistics = ({ stats }: StatisticsProps) => {
           variant="success"
           onSendAll={() =>
             sendWhatsAppToAll(
+              'active',
               stats.active,
-              'مرحباً {الاسم}، شكراً لاشتراكك معنا! نتمنى لك تمريناً موفقاً.'
+              (sub) => `مرحباً ${sub.name}، شكراً لاشتراكك معنا! نتمنى لك تمريناً موفقاً.`
             )
           }
+          buttonLabel={`إرسال للكل${getQueueProgress('active', stats.active.length)}`}
         />
         <StatCard
           title="قاربت على الانتهاء"
@@ -181,10 +147,12 @@ export const Statistics = ({ stats }: StatisticsProps) => {
           variant="warning"
           onSendAll={() =>
             sendWhatsAppToAll(
+              'expiring',
               stats.expiring,
-              'مرحباً {الاسم}، اشتراكك سينتهي قريباً بتاريخ {تاريخ_الانتهاء}. يرجى التواصل معنا للتجديد.'
+              (sub) => `مرحباً ${sub.name}، اشتراكك سينتهي قريباً بتاريخ ${formatDate(sub.endDate)}. يرجى التواصل معنا للتجديد.`
             )
           }
+          buttonLabel={`إرسال للكل${getQueueProgress('expiring', stats.expiring.length)}`}
         />
         <StatCard
           title="اشتراكات منتهية"
@@ -193,10 +161,12 @@ export const Statistics = ({ stats }: StatisticsProps) => {
           variant="destructive"
           onSendAll={() =>
             sendWhatsAppToAll(
+              'expired',
               stats.expired,
-              'مرحباً {الاسم}، اشتراكك انتهى. نفتقدك! تواصل معنا لتجديد اشتراكك والعودة للتمرين.'
+              (sub) => `مرحباً ${sub.name}، اشتراكك انتهى. نفتقدك! تواصل معنا لتجديد اشتراكك والعودة للتمرين.`
             )
           }
+          buttonLabel={`إرسال للكل${getQueueProgress('expired', stats.expired.length)}`}
         />
         <StatCard
           title="اشتراكات معلقة"
@@ -205,10 +175,12 @@ export const Statistics = ({ stats }: StatisticsProps) => {
           variant="accent"
           onSendAll={() =>
             sendWhatsAppToAll(
+              'pending',
               stats.pending,
-              'مرحباً {الاسم}، نود تذكيرك بأن لديك مبلغ متبقي {المبلغ_المتبقي} جنيه. يرجى التواصل معنا.'
+              (sub) => `مرحباً ${sub.name}، نود تذكيرك بأن لديك مبلغ متبقي ${sub.remainingAmount} جنيه. يرجى التواصل معنا.`
             )
           }
+          buttonLabel={`إرسال للكل${getQueueProgress('pending', stats.pending.length)}`}
         />
         <StatCard
           title="اشتراكات موقوفة"
@@ -217,41 +189,48 @@ export const Statistics = ({ stats }: StatisticsProps) => {
           variant="muted"
           onSendAll={() =>
             sendWhatsAppToAll(
+              'paused',
               stats.paused,
-              'مرحباً {الاسم}، نأمل أن تكون بخير. نحن في انتظارك للعودة!'
+              (sub) => `مرحباً ${sub.name}، نود أن نخبرك بأنه تم إيقاف اشتراكك لمدة ${formatPauseDuration(sub)} وأنه سينتهي اشتراكك بتاريخ ${formatDate(sub.endDate)}`
             )
           }
+          buttonLabel={`إرسال للكل${getQueueProgress('paused', stats.paused.length)}`}
         />
       </div>
 
       <h3 className="text-lg font-bold mt-8">إحصائيات الكباتن</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {stats.captains.map((captain) => (
-          <Card key={captain} className="p-4 card-shadow">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-medium">{captain}</h4>
-              <span className="text-2xl font-bold text-primary">
-                {stats.byCaptain[captain]?.length || 0}
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground mb-3">مشترك</p>
-            <Button
-              variant="whatsapp"
-              size="sm"
-              className="w-full"
-              onClick={() =>
-                sendWhatsAppToAll(
-                  stats.byCaptain[captain] || [],
-                  `مرحباً {الاسم}، رسالة من ${captain}.`
-                )
-              }
-              disabled={!stats.byCaptain[captain]?.length}
-            >
-              <MessageCircle className="w-4 h-4" />
-              إرسال للكل
-            </Button>
-          </Card>
-        ))}
+        {stats.captains.map((captain) => {
+          const captainSubs = stats.byCaptain[captain] || [];
+          const queueProgress = getQueueProgress(`captain_${captain}`, captainSubs.length);
+          return (
+            <Card key={captain} className="p-4 card-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium">{captain}</h4>
+                <span className="text-2xl font-bold text-primary">
+                  {captainSubs.length}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">مشترك</p>
+              <Button
+                variant="whatsapp"
+                size="sm"
+                className="w-full"
+                onClick={() =>
+                  sendWhatsAppToAll(
+                    `captain_${captain}`,
+                    captainSubs,
+                    (sub) => `مرحباً ${sub.name}، رسالة من ${captain}.`
+                  )
+                }
+                disabled={!captainSubs.length}
+              >
+                <MessageCircle className="w-4 h-4" />
+                إرسال للكل{queueProgress}
+              </Button>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

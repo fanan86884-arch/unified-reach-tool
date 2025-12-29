@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Search, Filter, Users, Calendar } from 'lucide-react';
+import { Plus, Search, Filter, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface SubscribersListProps {
@@ -48,8 +48,6 @@ export const SubscribersList = ({
   setFilterStatus,
   filterCaptain,
   setFilterCaptain,
-  filterDateRange,
-  setFilterDateRange,
   addSubscriber,
   updateSubscriber,
   deleteSubscriber,
@@ -149,7 +147,6 @@ export const SubscribersList = ({
               <SelectItem value="active">نشط</SelectItem>
               <SelectItem value="expiring">قارب على الانتهاء</SelectItem>
               <SelectItem value="expired">منتهي</SelectItem>
-              <SelectItem value="pending">معلق</SelectItem>
               <SelectItem value="paused">موقوف</SelectItem>
             </SelectContent>
           </Select>
@@ -164,19 +161,6 @@ export const SubscribersList = ({
                   {captain}
                 </SelectItem>
               ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterDateRange} onValueChange={setFilterDateRange}>
-            <SelectTrigger className="w-full sm:w-44">
-              <Calendar className="w-4 h-4 ml-2" />
-              <SelectValue placeholder="التاريخ" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">كل الفترات</SelectItem>
-              <SelectItem value="today">ينتهي اليوم</SelectItem>
-              <SelectItem value="week">ينتهي هذا الأسبوع</SelectItem>
-              <SelectItem value="month">ينتهي هذا الشهر</SelectItem>
-              <SelectItem value="expired">منتهي</SelectItem>
             </SelectContent>
           </Select>
         </div>
