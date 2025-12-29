@@ -74,7 +74,12 @@ export const SubscriberCardCompact = ({
               )}
             </p>
           </div>
-          <Badge className={cn('border shrink-0', status.className)}>{status.label}</Badge>
+          <Badge className={cn('border shrink-0', status.className)}>
+            {status.label}
+            {(subscriber.status === 'active' || subscriber.status === 'expiring') && !subscriber.isPaused && daysRemaining > 0 && (
+              <span className="mr-1">({daysRemaining})</span>
+            )}
+          </Badge>
         </div>
         <Button variant="ghost" size="sm" className="mr-2">
           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
