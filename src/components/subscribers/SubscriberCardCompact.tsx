@@ -62,31 +62,48 @@ export const SubscriberCardCompact = ({
         label: 'منتهي', 
         className: 'status-expired',
         showDays: true,
-        daysCount: Math.abs(daysRemaining) - 30
+        daysCount: Math.abs(daysRemaining) - 30,
+        isExpiring: false
+      };
+    }
+    // قارب على الانتهاء
+    if (subscriber.status === 'expiring' && !subscriber.isPaused) {
+      return { 
+        label: 'قارب على الانتهاء', 
+        className: 'status-expiring',
+        showDays: false,
+        daysCount: 0,
+        isExpiring: true
       };
     }
     return { 
       ...statusConfig[subscriber.status],
       showDays: false,
-      daysCount: 0
+      daysCount: 0,
+      isExpiring: false
     };
   };
 
   const displayStatus = getDisplayStatus();
 
-  // تحديد الرموز المطلوب عرضها
+  // تحديد الرموز المطلوب عرضها - نشط وعليه فلوس = رمز نشط + رمز معلق
   const getStatusIcons = () => {
     const icons = [];
+    if (subscriber.status === 'active' && subscriber.remainingAmount > 0 && !subscriber.isPaused) {
+      icons.push({ icon: Clock, color: 'text-warning' });
+    }
     if (subscriber.isPaused) {
       icons.push({ icon: Pause, color: 'text-muted-foreground' });
-    }
-    if (subscriber.status === 'expiring' && !subscriber.isPaused) {
-      icons.push({ icon: AlertTriangle, color: 'text-warning' });
     }
     return icons;
   };
 
   const statusIcons = getStatusIcons();
+
+  // تنسيق التاريخ كأرقام فقط
+  const formatDateNumeric = (dateStr: string) => {
+    return format(parseISO(dateStr), 'dd/MM/yyyy');
+  };
 
   return (
     <Card className="card-shadow hover:card-shadow-hover transition-all duration-300 animate-fade-in overflow-hidden">
@@ -98,28 +115,39 @@ export const SubscriberCardCompact = ({
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-foreground truncate">{subscriber.name}</h3>
-            <p className="text-sm text-muted-foreground">
-              {format(parseISO(subscriber.endDate), 'dd MMM yyyy', { locale: ar })}
+            <div className="text-sm text-muted-foreground">
+              <span>{formatDateNumeric(subscriber.startDate)}</span>
+              <span className="mx-1">-</span>
+              <span>{formatDateNumeric(subscriber.endDate)}</span>
               {subscriber.isPaused && subscriber.pausedUntil && (
                 <span className="mr-2 text-warning">
                   (موقوف حتى {format(parseISO(subscriber.pausedUntil), 'dd/MM')})
                 </span>
               )}
-            </p>
+            </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {statusIcons.map((item, index) => (
               <item.icon key={index} className={cn('w-4 h-4', item.color)} />
             ))}
-            <Badge className={cn('border', displayStatus.className)}>
-              {displayStatus.label}
-              {displayStatus.showDays && (
-                <span className="mr-1">({displayStatus.daysCount})</span>
-              )}
-              {(subscriber.status === 'active' || subscriber.status === 'expiring') && !subscriber.isPaused && daysRemaining > 0 && !displayStatus.showDays && (
-                <span className="mr-1">({daysRemaining})</span>
-              )}
-            </Badge>
+            {displayStatus.isExpiring ? (
+              <div className="flex items-center gap-1">
+                <AlertTriangle className="w-4 h-4 text-warning" />
+                <Badge className={cn('border', displayStatus.className)}>
+                  {displayStatus.label} ({daysRemaining})
+                </Badge>
+              </div>
+            ) : (
+              <Badge className={cn('border', displayStatus.className)}>
+                {displayStatus.label}
+                {displayStatus.showDays && (
+                  <span className="mr-1">({displayStatus.daysCount})</span>
+                )}
+                {subscriber.status === 'active' && !subscriber.isPaused && daysRemaining > 0 && !displayStatus.showDays && (
+                  <span className="mr-1">({daysRemaining})</span>
+                )}
+              </Badge>
+            )}
           </div>
         </div>
         <Button variant="ghost" size="sm" className="mr-2">
