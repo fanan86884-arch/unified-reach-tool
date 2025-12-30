@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Edit, Trash2, Archive, RotateCcw, MessageCircle, RefreshCw, 
-  ChevronDown, ChevronUp, Pause, Play 
+  ChevronDown, ChevronUp, Pause, Play, Clock, AlertTriangle
 } from 'lucide-react';
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -53,7 +53,40 @@ export const SubscriberCardCompact = ({
 }: SubscriberCardCompactProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const daysRemaining = differenceInDays(parseISO(subscriber.endDate), new Date());
-  const status = statusConfig[subscriber.status];
+  
+  // تحديد الحالة الفعلية للعرض
+  const getDisplayStatus = () => {
+    // إذا مر أكثر من 30 يوم بعد الانتهاء
+    if (daysRemaining < -30) {
+      return { 
+        label: 'منتهي', 
+        className: 'status-expired',
+        showDays: true,
+        daysCount: Math.abs(daysRemaining) - 30
+      };
+    }
+    return { 
+      ...statusConfig[subscriber.status],
+      showDays: false,
+      daysCount: 0
+    };
+  };
+
+  const displayStatus = getDisplayStatus();
+
+  // تحديد الرموز المطلوب عرضها
+  const getStatusIcons = () => {
+    const icons = [];
+    if (subscriber.isPaused) {
+      icons.push({ icon: Pause, color: 'text-muted-foreground' });
+    }
+    if (subscriber.status === 'expiring' && !subscriber.isPaused) {
+      icons.push({ icon: AlertTriangle, color: 'text-warning' });
+    }
+    return icons;
+  };
+
+  const statusIcons = getStatusIcons();
 
   return (
     <Card className="card-shadow hover:card-shadow-hover transition-all duration-300 animate-fade-in overflow-hidden">
@@ -74,12 +107,20 @@ export const SubscriberCardCompact = ({
               )}
             </p>
           </div>
-          <Badge className={cn('border shrink-0', status.className)}>
-            {status.label}
-            {(subscriber.status === 'active' || subscriber.status === 'expiring') && !subscriber.isPaused && daysRemaining > 0 && (
-              <span className="mr-1">({daysRemaining})</span>
-            )}
-          </Badge>
+          <div className="flex items-center gap-1 shrink-0">
+            {statusIcons.map((item, index) => (
+              <item.icon key={index} className={cn('w-4 h-4', item.color)} />
+            ))}
+            <Badge className={cn('border', displayStatus.className)}>
+              {displayStatus.label}
+              {displayStatus.showDays && (
+                <span className="mr-1">({displayStatus.daysCount})</span>
+              )}
+              {(subscriber.status === 'active' || subscriber.status === 'expiring') && !subscriber.isPaused && daysRemaining > 0 && !displayStatus.showDays && (
+                <span className="mr-1">({daysRemaining})</span>
+              )}
+            </Badge>
+          </div>
         </div>
         <Button variant="ghost" size="sm" className="mr-2">
           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
