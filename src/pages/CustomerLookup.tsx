@@ -4,18 +4,18 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Phone, User, Calendar, CreditCard, Dumbbell } from 'lucide-react';
+import { Search, Phone, User, Calendar, CreditCard, Dumbbell, PhoneCall } from 'lucide-react';
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-
-const STORAGE_KEY = 'gym_subscribers';
+import { supabase } from '@/integrations/supabase/client';
 
 const statusConfig = {
   active: { label: 'نشط', className: 'status-active' },
   expiring: { label: 'قارب على الانتهاء', className: 'status-expiring' },
   expired: { label: 'منتهي', className: 'status-expired' },
   pending: { label: 'معلق (مبلغ متبقي)', className: 'status-pending' },
+  paused: { label: 'موقوف', className: 'bg-muted text-muted-foreground' },
 };
 
 const subscriptionTypeLabels = {
@@ -25,34 +25,60 @@ const subscriptionTypeLabels = {
   annual: 'سنوي',
 };
 
+const captainContacts = [
+  { name: 'الكابتن محمد', phone: '01002690364' },
+  { name: 'الكابتن خالد', phone: '01127353006' },
+];
+
 export const CustomerLookup = () => {
   const [phone, setPhone] = useState('');
   const [result, setResult] = useState<Subscriber | null>(null);
   const [searched, setSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     setIsSearching(true);
     setSearched(true);
 
-    // Simulate search delay for better UX
-    setTimeout(() => {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          const subscribers: Subscriber[] = JSON.parse(stored);
-          const found = subscribers.find(
-            (s) => s.phone === phone || s.phone.includes(phone)
-          );
-          setResult(found || null);
-        } catch (e) {
-          setResult(null);
-        }
+    try {
+      const { data, error } = await supabase
+        .from('subscribers')
+        .select('*')
+        .or(`phone.eq.${phone},phone.ilike.%${phone}%`)
+        .eq('is_archived', false)
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const row = data[0];
+        const subscriber: Subscriber = {
+          id: row.id,
+          name: row.name,
+          phone: row.phone,
+          subscriptionType: row.subscription_type as any,
+          startDate: row.start_date,
+          endDate: row.end_date,
+          paidAmount: row.paid_amount,
+          remainingAmount: row.remaining_amount,
+          captain: row.captain,
+          status: row.status as any,
+          isArchived: row.is_archived,
+          isPaused: row.is_paused,
+          pausedUntil: row.paused_until,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        };
+        setResult(subscriber);
       } else {
         setResult(null);
       }
-      setIsSearching(false);
-    }, 500);
+    } catch (e) {
+      console.error('Search error:', e);
+      setResult(null);
+    }
+    
+    setIsSearching(false);
   };
 
   const daysRemaining = result
@@ -208,6 +234,33 @@ export const CustomerLookup = () => {
             )}
           </div>
         )}
+
+        {/* Contact Us Section */}
+        <Card className="mt-6 p-6 card-shadow">
+          <h3 className="font-bold text-lg mb-4 text-center">اتصل بنا</h3>
+          <div className="space-y-3">
+            {captainContacts.map((contact, index) => (
+              <a
+                key={index}
+                href={`tel:${contact.phone}`}
+                className="flex items-center justify-between p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center">
+                    <PhoneCall className="w-5 h-5 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-bold">{contact.name}</p>
+                    <p className="text-sm text-muted-foreground" dir="ltr">{contact.phone}</p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm">
+                  اتصال
+                </Button>
+              </a>
+            ))}
+          </div>
+        </Card>
       </div>
     </div>
   );
