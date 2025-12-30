@@ -56,23 +56,24 @@ export const SubscriberCardCompact = ({
   
   // تحديد الحالة الفعلية للعرض
   const getDisplayStatus = () => {
-    // إذا مر أكثر من 30 يوم بعد الانتهاء
-    if (daysRemaining < -30) {
+    // إذا انتهى الاشتراك (الأيام المتبقية <= 0)
+    if (daysRemaining <= 0 && !subscriber.isPaused) {
+      const daysSinceExpiry = Math.abs(daysRemaining);
       return { 
         label: 'منتهي', 
         className: 'status-expired',
         showDays: true,
-        daysCount: Math.abs(daysRemaining) - 30,
+        daysCount: daysSinceExpiry,
         isExpiring: false
       };
     }
-    // قارب على الانتهاء
+    // قارب على الانتهاء (الأيام المتبقية > 0 وحالته expiring)
     if (subscriber.status === 'expiring' && !subscriber.isPaused) {
       return { 
         label: 'قارب على الانتهاء', 
         className: 'status-expiring',
-        showDays: false,
-        daysCount: 0,
+        showDays: true,
+        daysCount: daysRemaining,
         isExpiring: true
       };
     }
@@ -134,7 +135,7 @@ export const SubscriberCardCompact = ({
               <div className="flex items-center gap-1">
                 <AlertTriangle className="w-4 h-4 text-warning" />
                 <Badge className={cn('border', displayStatus.className)}>
-                  {displayStatus.label} ({daysRemaining})
+                  {displayStatus.label} ({displayStatus.daysCount})
                 </Badge>
               </div>
             ) : (

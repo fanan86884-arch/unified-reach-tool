@@ -104,10 +104,29 @@
 
   html {
     direction: rtl;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     @apply bg-background text-foreground font-cairo antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* iOS-style scrolling */
+  .overflow-auto,
+  .overflow-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* iOS-style inputs */
+  input, textarea, select {
+    @apply appearance-none;
+  }
+
+  /* iOS-style buttons */
+  button {
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
