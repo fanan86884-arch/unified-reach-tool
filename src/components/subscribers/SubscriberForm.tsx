@@ -271,9 +271,22 @@ export const SubscriberForm = ({
               <Label htmlFor="startDate">تاريخ البداية</Label>
               <Input
                 id="startDate"
-                value={displayStartDate}
-                onChange={(e) => handleStartDateChange(e.target.value)}
-                placeholder="يوم/شهر/سنة"
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => {
+                  const storageDate = e.target.value;
+                  if (storageDate) {
+                    const startDate = new Date(storageDate);
+                    const endDate = addDays(startDate, subscriptionDurations[formData.subscriptionType]);
+                    setFormData({
+                      ...formData,
+                      startDate: storageDate,
+                      endDate: format(endDate, 'yyyy-MM-dd'),
+                    });
+                    setDisplayStartDate(formatDateForDisplay(storageDate));
+                    setDisplayEndDate(format(endDate, 'dd/MM/yyyy'));
+                  }
+                }}
                 dir="ltr"
               />
             </div>
@@ -281,9 +294,18 @@ export const SubscriberForm = ({
               <Label htmlFor="endDate">تاريخ الانتهاء</Label>
               <Input
                 id="endDate"
-                value={displayEndDate}
-                onChange={(e) => handleEndDateChange(e.target.value)}
-                placeholder="يوم/شهر/سنة"
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => {
+                  const storageDate = e.target.value;
+                  if (storageDate) {
+                    setFormData({
+                      ...formData,
+                      endDate: storageDate,
+                    });
+                    setDisplayEndDate(formatDateForDisplay(storageDate));
+                  }
+                }}
                 dir="ltr"
               />
             </div>
