@@ -48,6 +48,29 @@ const formatPauseDuration = (subscriber: Subscriber): string => {
   return `${days} يوم`;
 };
 
+// الحصول على نماذج الواتساب من الإعدادات
+const getTemplates = () => {
+  try {
+    const saved = localStorage.getItem('whatsapp_templates');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('Error loading templates:', e);
+  }
+  return null;
+};
+
+const replaceVariables = (template: string, subscriber: Subscriber): string => {
+  return template
+    .replace(/{الاسم}/g, subscriber.name)
+    .replace(/{تاريخ_الاشتراك}/g, formatDate(subscriber.startDate))
+    .replace(/{تاريخ_الانتهاء}/g, formatDate(subscriber.endDate))
+    .replace(/{المبلغ_المدفوع}/g, String(subscriber.paidAmount))
+    .replace(/{المبلغ_المتبقي}/g, String(subscriber.remainingAmount))
+    .replace(/{المدة_المحددة}/g, formatPauseDuration(subscriber));
+};
+
 export const Statistics = ({ stats }: StatisticsProps) => {
   const { toast } = useToast();
   const [queues, setQueues] = useState<Record<string, number>>({});
@@ -64,6 +87,18 @@ export const Statistics = ({ stats }: StatisticsProps) => {
     }
     setQueues(loadedQueues);
   }, []);
+
+  // دالة للحصول على الرسالة من النماذج المحفوظة
+  const getMessageFromTemplate = (templateId: string, sub: Subscriber, defaultMsg: string): string => {
+    const templates = getTemplates();
+    if (templates) {
+      const template = templates.find((t: any) => t.id === templateId);
+      if (template) {
+        return replaceVariables(template.content, sub);
+      }
+    }
+    return defaultMsg;
+  };
 
   const sendWhatsAppToAll = (categoryId: string, subscribers: Subscriber[], getMessage: (sub: Subscriber) => string) => {
     if (subscribers.length === 0) {
@@ -135,7 +170,7 @@ export const Statistics = ({ stats }: StatisticsProps) => {
             sendWhatsAppToAll(
               'active',
               stats.active,
-              (sub) => `مرحباً ${sub.name}، شكراً لاشتراكك معنا! نتمنى لك تمريناً موفقاً.`
+              (sub) => getMessageFromTemplate('subscription', sub, `مرحباً ${sub.name}، شكراً لاشتراكك معنا! نتمنى لك تمريناً موفقاً.`)
             )
           }
           buttonLabel={`إرسال للكل${getQueueProgress('active', stats.active.length)}`}
@@ -149,7 +184,7 @@ export const Statistics = ({ stats }: StatisticsProps) => {
             sendWhatsAppToAll(
               'expiring',
               stats.expiring,
-              (sub) => `مرحباً ${sub.name}، اشتراكك سينتهي قريباً بتاريخ ${formatDate(sub.endDate)}. يرجى التواصل معنا للتجديد.`
+              (sub) => getMessageFromTemplate('expiry', sub, `مرحباً ${sub.name}، اشتراكك سينتهي قريباً بتاريخ ${formatDate(sub.endDate)}. يرجى التواصل معنا للتجديد.`)
             )
           }
           buttonLabel={`إرسال للكل${getQueueProgress('expiring', stats.expiring.length)}`}
@@ -163,7 +198,7 @@ export const Statistics = ({ stats }: StatisticsProps) => {
             sendWhatsAppToAll(
               'expired',
               stats.expired,
-              (sub) => `مرحباً ${sub.name}، اشتراكك انتهى. نفتقدك! تواصل معنا لتجديد اشتراكك والعودة للتمرين.`
+              (sub) => getMessageFromTemplate('expired', sub, `مرحباً ${sub.name}، اشتراكك انتهى. نفتقدك! تواصل معنا لتجديد اشتراكك والعودة للتمرين.`)
             )
           }
           buttonLabel={`إرسال للكل${getQueueProgress('expired', stats.expired.length)}`}
@@ -177,7 +212,7 @@ export const Statistics = ({ stats }: StatisticsProps) => {
             sendWhatsAppToAll(
               'pending',
               stats.pending,
-              (sub) => `مرحباً ${sub.name}، نود تذكيرك بأن لديك مبلغ متبقي ${sub.remainingAmount} جنيه. يرجى التواصل معنا.`
+              (sub) => getMessageFromTemplate('reminder', sub, `مرحباً ${sub.name}، نود تذكيرك بأن لديك مبلغ متبقي ${sub.remainingAmount} جنيه. يرجى التواصل معنا.`)
             )
           }
           buttonLabel={`إرسال للكل${getQueueProgress('pending', stats.pending.length)}`}
@@ -191,7 +226,7 @@ export const Statistics = ({ stats }: StatisticsProps) => {
             sendWhatsAppToAll(
               'paused',
               stats.paused,
-              (sub) => `مرحباً ${sub.name}، نود أن نخبرك بأنه تم إيقاف اشتراكك لمدة ${formatPauseDuration(sub)} وأنه سينتهي اشتراكك بتاريخ ${formatDate(sub.endDate)}`
+              (sub) => getMessageFromTemplate('paused', sub, `مرحباً ${sub.name}، نود أن نخبرك بأنه تم إيقاف اشتراكك لمدة ${formatPauseDuration(sub)} وأنه سينتهي اشتراكك بتاريخ ${formatDate(sub.endDate)}`)
             )
           }
           buttonLabel={`إرسال للكل${getQueueProgress('paused', stats.paused.length)}`}

@@ -316,8 +316,9 @@ export const useCloudSubscribers = () => {
   const stats = useMemo(() => {
     // الاشتراكات النشطة: نشط + قارب على الانتهاء (لأنهم لم ينتهوا بعد)
     const active = activeSubscribers.filter((s) => s.status === 'active' || s.status === 'expiring');
-    // قارب على الانتهاء (فقط للإحصائية)
+    // قارب على الانتهاء (فقط الذين لم ينتهوا - status === 'expiring')
     const expiring = activeSubscribers.filter((s) => s.status === 'expiring');
+    // منتهي
     // منتهي
     const expired = activeSubscribers.filter((s) => s.status === 'expired');
     // معلق (له مبلغ متبقي) - يشمل جميع الحالات ما عدا الموقوف
