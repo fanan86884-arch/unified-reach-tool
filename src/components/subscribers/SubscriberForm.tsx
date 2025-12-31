@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { addMonths, format, parse } from 'date-fns';
+import { addDays, format, parse } from 'date-fns';
 import { useCloudSettings } from '@/hooks/useCloudSettings';
 
 interface SubscriberFormProps {
@@ -27,11 +27,12 @@ interface SubscriberFormProps {
   captains: string[];
 }
 
+// مدة الاشتراك بالأيام (الشهر = 30 يوم)
 const subscriptionDurations: Record<SubscriptionType, number> = {
-  monthly: 1,
-  quarterly: 3,
-  'semi-annual': 6,
-  annual: 12,
+  monthly: 30,
+  quarterly: 90,
+  'semi-annual': 180,
+  annual: 365,
 };
 
 const subscriptionLabels: Record<SubscriptionType, string> = {
@@ -78,7 +79,7 @@ const getInitialFormData = (editingSubscriber: Subscriber | null | undefined, de
   }
   
   const today = new Date();
-  const endDate = addMonths(today, 1);
+  const endDate = addDays(today, 30);
   return {
     name: '',
     phone: '',
@@ -128,7 +129,7 @@ export const SubscriberForm = ({
 
   const handleSubscriptionTypeChange = (type: SubscriptionType) => {
     const startDate = new Date(formData.startDate);
-    const endDate = addMonths(startDate, subscriptionDurations[type]);
+    const endDate = addDays(startDate, subscriptionDurations[type]);
     const newRemaining = calculateRemaining(type, formData.paidAmount);
     
     setFormData({
@@ -147,7 +148,7 @@ export const SubscriberForm = ({
       try {
         const storageDate = formatDateForStorage(displayValue);
         const startDate = new Date(storageDate);
-        const endDate = addMonths(startDate, subscriptionDurations[formData.subscriptionType]);
+        const endDate = addDays(startDate, subscriptionDurations[formData.subscriptionType]);
         
         setFormData({
           ...formData,

@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Edit, Trash2, Archive, RotateCcw, MessageCircle, RefreshCw, 
-  ChevronDown, ChevronUp, Pause, Play, Clock, AlertTriangle
+  ChevronDown, ChevronUp, Pause, Play, Clock, AlertCircle
 } from 'lucide-react';
 import { differenceInDays, parseISO, format } from 'date-fns';
-import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 interface SubscriberCardCompactProps {
@@ -23,14 +22,6 @@ interface SubscriberCardCompactProps {
   onResume: (id: string) => void;
   isArchived?: boolean;
 }
-
-const statusConfig = {
-  active: { label: 'نشط', className: 'status-active' },
-  expiring: { label: 'قارب على الانتهاء', className: 'status-expiring' },
-  expired: { label: 'منتهي', className: 'status-expired' },
-  pending: { label: 'معلق', className: 'status-pending' },
-  paused: { label: 'موقوف', className: 'bg-muted text-muted-foreground' },
-};
 
 const subscriptionTypeLabels = {
   monthly: 'شهري',
@@ -54,52 +45,60 @@ export const SubscriberCardCompact = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const daysRemaining = differenceInDays(parseISO(subscriber.endDate), new Date());
   
-  // تحديد الحالة الفعلية للعرض
+  // تحديد الحالة للعرض
   const getDisplayStatus = () => {
+    // إذا كان الاشتراك موقوف
+    if (subscriber.isPaused) {
+      return { 
+        label: 'موقوف', 
+        className: 'bg-muted text-muted-foreground',
+        showDays: false,
+        daysCount: 0,
+        isExpiring: false,
+        isExpired: false
+      };
+    }
+    
     // إذا انتهى الاشتراك (الأيام المتبقية <= 0)
-    if (daysRemaining <= 0 && !subscriber.isPaused) {
+    if (daysRemaining <= 0) {
       const daysSinceExpiry = Math.abs(daysRemaining);
       return { 
         label: 'منتهي', 
-        className: 'status-expired',
+        className: 'bg-destructive text-destructive-foreground',
         showDays: true,
         daysCount: daysSinceExpiry,
-        isExpiring: false
+        isExpiring: false,
+        isExpired: true
       };
     }
-    // قارب على الانتهاء (الأيام المتبقية > 0 وحالته expiring)
-    if (subscriber.status === 'expiring' && !subscriber.isPaused) {
+    
+    // قارب على الانتهاء (3 أيام أو أقل)
+    if (daysRemaining <= 3) {
       return { 
-        label: 'قارب على الانتهاء', 
-        className: 'status-expiring',
+        label: 'نشط', 
+        className: 'status-warning bg-warning text-warning-foreground',
         showDays: true,
         daysCount: daysRemaining,
-        isExpiring: true
+        isExpiring: true,
+        isExpired: false
       };
     }
+    
+    // نشط عادي
     return { 
-      ...statusConfig[subscriber.status],
-      showDays: false,
-      daysCount: 0,
-      isExpiring: false
+      label: 'نشط',
+      className: 'status-active',
+      showDays: true,
+      daysCount: daysRemaining,
+      isExpiring: false,
+      isExpired: false
     };
   };
 
   const displayStatus = getDisplayStatus();
-
-  // تحديد الرموز المطلوب عرضها - نشط وعليه فلوس = رمز نشط + رمز معلق
-  const getStatusIcons = () => {
-    const icons = [];
-    if (subscriber.status === 'active' && subscriber.remainingAmount > 0 && !subscriber.isPaused) {
-      icons.push({ icon: Clock, color: 'text-warning' });
-    }
-    if (subscriber.isPaused) {
-      icons.push({ icon: Pause, color: 'text-muted-foreground' });
-    }
-    return icons;
-  };
-
-  const statusIcons = getStatusIcons();
+  
+  // هل عليه فلوس متبقية؟
+  const hasRemainingAmount = subscriber.remainingAmount > 0;
 
   // تنسيق التاريخ كأرقام فقط
   const formatDateNumeric = (dateStr: string) => {
@@ -128,27 +127,24 @@ export const SubscriberCardCompact = ({
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            {statusIcons.map((item, index) => (
-              <item.icon key={index} className={cn('w-4 h-4', item.color)} />
-            ))}
-            {displayStatus.isExpiring ? (
-              <div className="flex items-center gap-1">
-                <AlertTriangle className="w-4 h-4 text-warning" />
-                <Badge className={cn('border', displayStatus.className)}>
-                  {displayStatus.label} ({displayStatus.daysCount})
-                </Badge>
-              </div>
-            ) : (
-              <Badge className={cn('border', displayStatus.className)}>
-                {displayStatus.label}
-                {displayStatus.showDays && (
-                  <span className="mr-1">({displayStatus.daysCount})</span>
-                )}
-                {subscriber.status === 'active' && !subscriber.isPaused && daysRemaining > 0 && !displayStatus.showDays && (
-                  <span className="mr-1">({daysRemaining})</span>
-                )}
-              </Badge>
+            {/* رمز التعجب لو عليه فلوس */}
+            {hasRemainingAmount && (
+              <AlertCircle className="w-4 h-4 text-warning" />
             )}
+            {/* رمز العقرب (الساعة) لو قارب على الانتهاء */}
+            {displayStatus.isExpiring && (
+              <Clock className="w-4 h-4 text-warning" />
+            )}
+            {/* رمز الإيقاف */}
+            {subscriber.isPaused && (
+              <Pause className="w-4 h-4 text-muted-foreground" />
+            )}
+            <Badge className={cn('border', displayStatus.className)}>
+              {displayStatus.label}
+              {displayStatus.showDays && (
+                <span className="mr-1">({displayStatus.daysCount})</span>
+              )}
+            </Badge>
           </div>
         </div>
         <Button variant="ghost" size="sm" className="mr-2">
