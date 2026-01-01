@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, Phone, User, Calendar, CreditCard, Dumbbell, PhoneCall } from 'lucide-react';
-import { differenceInDays, parseISO, format } from 'date-fns';
+import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -81,9 +81,23 @@ export const CustomerLookup = () => {
     setIsSearching(false);
   };
 
-  const daysRemaining = result
-    ? differenceInDays(parseISO(result.endDate), new Date())
+  const daysDiff = result
+    ? differenceInCalendarDays(startOfDay(parseISO(result.endDate)), startOfDay(new Date()))
     : 0;
+
+  const daysRemaining = result ? daysDiff + 1 : 0;
+
+  const statusKey: keyof typeof statusConfig = !result
+    ? 'active'
+    : result.isPaused
+    ? 'paused'
+    : daysDiff < 0
+    ? 'expired'
+    : daysRemaining <= 3
+    ? 'expiring'
+    : 'active';
+
+  const isExpired = result ? statusKey === 'expired' : false;
 
   return (
     <div className="min-h-screen bg-background">
@@ -141,8 +155,8 @@ export const CustomerLookup = () => {
                       <p className="text-sm text-muted-foreground">{result.phone}</p>
                     </div>
                   </div>
-                  <Badge className={cn('border', statusConfig[result.status].className)}>
-                    {statusConfig[result.status].label}
+                  <Badge className={cn('border', statusConfig[statusKey].className)}>
+                    {statusConfig[statusKey].label}
                   </Badge>
                 </div>
 
@@ -171,16 +185,14 @@ export const CustomerLookup = () => {
                     <p
                       className={cn(
                         'text-sm font-medium mt-1',
-                        daysRemaining <= 0
+                        isExpired
                           ? 'text-destructive'
                           : daysRemaining <= 7
                           ? 'text-warning'
                           : 'text-success'
                       )}
                     >
-                      {daysRemaining <= 0
-                        ? 'الاشتراك منتهي'
-                        : `متبقي ${daysRemaining} يوم`}
+                      {isExpired ? 'الاشتراك منتهي' : `متبقي ${daysRemaining} يوم`}
                     </p>
                   </div>
 

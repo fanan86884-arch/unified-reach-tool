@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Archive, RotateCcw, MessageCircle, RefreshCw } from 'lucide-react';
-import { differenceInDays, parseISO, format } from 'date-fns';
+import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -42,7 +42,11 @@ export const SubscriberCard = ({
   onWhatsApp,
   isArchived = false,
 }: SubscriberCardProps) => {
-  const daysRemaining = differenceInDays(parseISO(subscriber.endDate), new Date());
+  const daysDiff = differenceInCalendarDays(
+    startOfDay(parseISO(subscriber.endDate)),
+    startOfDay(new Date())
+  );
+  const daysRemaining = daysDiff + 1;
   const status = statusConfig[subscriber.status];
 
   return (
@@ -72,18 +76,18 @@ export const SubscriberCard = ({
         </div>
         <div>
           <span className="text-muted-foreground">الأيام المتبقية:</span>
-          <p
-            className={cn(
-              'font-bold',
-              daysRemaining <= 0
-                ? 'text-destructive'
-                : daysRemaining <= 7
-                ? 'text-warning'
-                : 'text-success'
-            )}
-          >
-            {daysRemaining <= 0 ? 'منتهي' : `${daysRemaining} يوم`}
-          </p>
+           <p
+             className={cn(
+               'font-bold',
+               daysDiff < 0
+                 ? 'text-destructive'
+                 : daysRemaining <= 7
+                 ? 'text-warning'
+                 : 'text-success'
+             )}
+           >
+             {daysDiff < 0 ? 'منتهي' : `${daysRemaining} يوم`}
+           </p>
         </div>
         <div>
           <span className="text-muted-foreground">المدفوع:</span>
