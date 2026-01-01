@@ -43,7 +43,8 @@ export const SubscriberCardCompact = ({
   isArchived = false,
 }: SubscriberCardCompactProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const daysRemaining = differenceInDays(parseISO(subscriber.endDate), new Date());
+  // إضافة 1 لاحتساب اليوم الحالي ضمن الأيام المتبقية
+  const daysRemaining = differenceInDays(parseISO(subscriber.endDate), new Date()) + 1;
   
   // تحديد الحالة للعرض
   const getDisplayStatus = () => {
