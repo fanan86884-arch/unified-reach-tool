@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { addMonths, format, parseISO } from 'date-fns';
+import { addDays, format, parseISO } from 'date-fns';
 
 interface RenewDialogProps {
   isOpen: boolean;
@@ -25,11 +25,12 @@ interface RenewDialogProps {
   onRenew: (id: string, newEndDate: string, paidAmount: number) => void;
 }
 
+// مدة الاشتراك بالأيام (الشهر = 30 يوم)
 const subscriptionDurations: Record<SubscriptionType, number> = {
-  monthly: 1,
-  quarterly: 3,
-  'semi-annual': 6,
-  annual: 12,
+  monthly: 30,
+  quarterly: 90,
+  'semi-annual': 180,
+  annual: 365,
 };
 
 export const RenewDialog = ({ isOpen, onClose, subscriber, onRenew }: RenewDialogProps) => {
@@ -41,7 +42,7 @@ export const RenewDialog = ({ isOpen, onClose, subscriber, onRenew }: RenewDialo
   useEffect(() => {
     if (subscriber && isOpen) {
       const currentEndDate = parseISO(subscriber.endDate);
-      const calculatedDate = addMonths(
+      const calculatedDate = addDays(
         currentEndDate > new Date() ? currentEndDate : new Date(),
         subscriptionDurations[renewalType]
       );
@@ -52,7 +53,7 @@ export const RenewDialog = ({ isOpen, onClose, subscriber, onRenew }: RenewDialo
   if (!subscriber) return null;
 
   const currentEndDate = parseISO(subscriber.endDate);
-  const calculatedEndDate = addMonths(
+  const calculatedEndDate = addDays(
     currentEndDate > new Date() ? currentEndDate : new Date(),
     subscriptionDurations[renewalType]
   );
