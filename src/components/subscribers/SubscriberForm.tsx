@@ -199,7 +199,8 @@ export const SubscriberForm = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
+        <div className="overflow-y-auto flex-1 -mx-6 px-6 scrollbar-thin" style={{ WebkitOverflowScrolling: 'touch' }}>
         <DialogHeader>
           <DialogTitle>
             {editingSubscriber ? 'تعديل مشترك' : 'إضافة مشترك جديد'}
@@ -346,6 +347,7 @@ export const SubscriberForm = ({
             </Button>
           </div>
         </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

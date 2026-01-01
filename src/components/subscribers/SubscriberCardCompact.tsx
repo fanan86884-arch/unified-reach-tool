@@ -64,7 +64,7 @@ export const SubscriberCardCompact = ({
       const daysSinceExpiry = Math.abs(daysRemaining);
       return { 
         label: 'منتهي', 
-        className: 'bg-destructive text-destructive-foreground',
+        className: 'bg-destructive/15 text-destructive border-destructive/30',
         showDays: true,
         daysCount: daysSinceExpiry,
         isExpiring: false,
@@ -75,8 +75,8 @@ export const SubscriberCardCompact = ({
     // قارب على الانتهاء (3 أيام أو أقل)
     if (daysRemaining <= 3) {
       return { 
-        label: 'نشط', 
-        className: 'status-warning bg-warning text-warning-foreground',
+        label: 'متبقي', 
+        className: 'bg-warning/15 text-warning border-warning/30',
         showDays: true,
         daysCount: daysRemaining,
         isExpiring: true,
@@ -87,7 +87,7 @@ export const SubscriberCardCompact = ({
     // نشط عادي
     return { 
       label: 'نشط',
-      className: 'status-active',
+      className: 'bg-success/15 text-success border-success/30',
       showDays: true,
       daysCount: daysRemaining,
       isExpiring: false,
@@ -116,9 +116,9 @@ export const SubscriberCardCompact = ({
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-foreground truncate">{subscriber.name}</h3>
             <div className="text-sm text-muted-foreground">
-              <span>{formatDateNumeric(subscriber.startDate)}</span>
-              <span className="mx-1">-</span>
               <span>{formatDateNumeric(subscriber.endDate)}</span>
+              <span className="mx-1">-</span>
+              <span>{formatDateNumeric(subscriber.startDate)}</span>
               {subscriber.isPaused && subscriber.pausedUntil && (
                 <span className="mr-2 text-warning">
                   (موقوف حتى {format(parseISO(subscriber.pausedUntil), 'dd/MM')})
@@ -127,9 +127,9 @@ export const SubscriberCardCompact = ({
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            {/* رمز التعجب لو عليه فلوس */}
+            {/* رمز التعجب لو عليه فلوس - باللون الأحمر */}
             {hasRemainingAmount && (
-              <AlertCircle className="w-4 h-4 text-warning" />
+              <AlertCircle className="w-4 h-4 text-destructive" />
             )}
             {/* رمز العقرب (الساعة) لو قارب على الانتهاء */}
             {displayStatus.isExpiring && (
