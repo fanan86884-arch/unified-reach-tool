@@ -7,7 +7,7 @@ import {
   Edit, Trash2, Archive, RotateCcw, MessageCircle, RefreshCw, 
   ChevronDown, ChevronUp, Pause, Play, Clock, AlertCircle
 } from 'lucide-react';
-import { differenceInDays, parseISO, format } from 'date-fns';
+import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface SubscriberCardCompactProps {
@@ -43,56 +43,59 @@ export const SubscriberCardCompact = ({
   isArchived = false,
 }: SubscriberCardCompactProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  // إضافة 1 لاحتساب اليوم الحالي ضمن الأيام المتبقية
-  const daysRemaining = differenceInDays(parseISO(subscriber.endDate), new Date()) + 1;
-  
+
+  // حساب الأيام المتبقية بشكل صحيح (حسب التقويم) مع احتساب اليوم الحالي
+  const today = startOfDay(new Date());
+  const endDate = startOfDay(parseISO(subscriber.endDate));
+  const daysDiff = differenceInCalendarDays(endDate, today); // سالب = منتهي
+  const daysRemaining = daysDiff + 1; // شامل اليوم الحالي
   // تحديد الحالة للعرض
   const getDisplayStatus = () => {
     // إذا كان الاشتراك موقوف
     if (subscriber.isPaused) {
-      return { 
-        label: 'موقوف', 
+      return {
+        label: 'موقوف',
         className: 'bg-muted text-muted-foreground',
         showDays: false,
         daysCount: 0,
         isExpiring: false,
-        isExpired: false
+        isExpired: false,
       };
     }
-    
-    // إذا انتهى الاشتراك (الأيام المتبقية <= 0)
-    if (daysRemaining <= 0) {
-      const daysSinceExpiry = Math.abs(daysRemaining);
-      return { 
-        label: 'منتهي', 
+
+    // إذا انتهى الاشتراك (تاريخ الانتهاء قبل اليوم)
+    if (daysDiff < 0) {
+      const daysSinceExpiry = Math.abs(daysDiff);
+      return {
+        label: 'منتهي',
         className: 'bg-destructive/15 text-destructive border-destructive/30',
         showDays: true,
         daysCount: daysSinceExpiry,
         isExpiring: false,
-        isExpired: true
+        isExpired: true,
       };
     }
-    
+
     // قارب على الانتهاء (3 أيام أو أقل)
     if (daysRemaining <= 3) {
-      return { 
-        label: 'متبقي', 
+      return {
+        label: 'متبقي',
         className: 'bg-warning/15 text-warning border-warning/30',
         showDays: true,
         daysCount: daysRemaining,
         isExpiring: true,
-        isExpired: false
+        isExpired: false,
       };
     }
-    
+
     // نشط عادي
-    return { 
+    return {
       label: 'نشط',
       className: 'bg-success/15 text-success border-success/30',
       showDays: true,
       daysCount: daysRemaining,
       isExpiring: false,
-      isExpired: false
+      isExpired: false,
     };
   };
 
@@ -171,20 +174,20 @@ export const SubscriberCardCompact = ({
             </div>
             <div>
               <span className="text-muted-foreground">الأيام المتبقية:</span>
-              <p
-                className={cn(
-                  'font-bold',
-                  subscriber.isPaused
-                    ? 'text-muted-foreground'
-                    : daysRemaining <= 0
-                    ? 'text-destructive'
-                    : daysRemaining <= 7
-                    ? 'text-warning'
-                    : 'text-success'
-                )}
-              >
-                {subscriber.isPaused ? 'موقوف' : daysRemaining <= 0 ? 'منتهي' : `${daysRemaining} يوم`}
-              </p>
+               <p
+                 className={cn(
+                   'font-bold',
+                   subscriber.isPaused
+                     ? 'text-muted-foreground'
+                     : daysDiff < 0
+                     ? 'text-destructive'
+                     : daysRemaining <= 7
+                     ? 'text-warning'
+                     : 'text-success'
+                 )}
+               >
+                 {subscriber.isPaused ? 'موقوف' : daysDiff < 0 ? 'منتهي' : `${daysRemaining} يوم`}
+               </p>
             </div>
             <div>
               <span className="text-muted-foreground">المدفوع:</span>
