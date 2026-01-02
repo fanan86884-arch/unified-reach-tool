@@ -58,6 +58,7 @@ export const SubscriberCardCompact = ({
         className: 'bg-muted text-muted-foreground',
         showDays: false,
         daysCount: 0,
+        daysLabel: '',
         isExpiring: false,
         isExpired: false,
       };
@@ -66,11 +67,25 @@ export const SubscriberCardCompact = ({
     // إذا انتهى الاشتراك (تاريخ الانتهاء قبل اليوم)
     if (daysDiff < 0) {
       const daysSinceExpiry = Math.abs(daysDiff);
+      // إذا مر شهر (30 يوم) أو أكثر، نعرض بالشهور
+      if (daysSinceExpiry >= 30) {
+        const months = Math.floor(daysSinceExpiry / 30);
+        return {
+          label: 'منتهي',
+          className: 'bg-destructive/15 text-destructive border-destructive/30',
+          showDays: true,
+          daysCount: months,
+          daysLabel: months === 1 ? 'شهر' : 'شهور',
+          isExpiring: false,
+          isExpired: true,
+        };
+      }
       return {
         label: 'منتهي',
         className: 'bg-destructive/15 text-destructive border-destructive/30',
         showDays: true,
         daysCount: daysSinceExpiry,
+        daysLabel: 'يوم',
         isExpiring: false,
         isExpired: true,
       };
@@ -83,6 +98,7 @@ export const SubscriberCardCompact = ({
         className: 'bg-warning/15 text-warning border-warning/30',
         showDays: true,
         daysCount: daysRemaining,
+        daysLabel: 'يوم',
         isExpiring: true,
         isExpired: false,
       };
@@ -94,6 +110,7 @@ export const SubscriberCardCompact = ({
       className: 'bg-success/15 text-success border-success/30',
       showDays: true,
       daysCount: daysRemaining,
+      daysLabel: 'يوم',
       isExpiring: false,
       isExpired: false,
     };
@@ -146,7 +163,7 @@ export const SubscriberCardCompact = ({
             <Badge className={cn('border', displayStatus.className)}>
               {displayStatus.label}
               {displayStatus.showDays && (
-                <span className="mr-1">({displayStatus.daysCount})</span>
+                <span className="mr-1">({displayStatus.daysCount} {displayStatus.daysLabel})</span>
               )}
             </Badge>
           </div>

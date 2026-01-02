@@ -8,6 +8,8 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCloudSettings, SubscriptionPrices } from '@/hooks/useCloudSettings';
 import { useAuth } from '@/hooks/useAuth';
+import { ExcelExportImport } from './ExcelExportImport';
+import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 
 const defaultTemplates = [
   {
@@ -53,6 +55,7 @@ export const Settings = () => {
   const [templates, setTemplates] = useState(defaultTemplates);
   const { prices, loading, savePrices } = useCloudSettings();
   const { signOut, user } = useAuth();
+  const { allSubscribers, addSubscriber } = useCloudSubscribers();
   const [localPrices, setLocalPrices] = useState<SubscriptionPrices>(prices);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
@@ -162,6 +165,9 @@ export const Settings = () => {
           ))}
         </div>
       </Card>
+
+      {/* Excel Export/Import */}
+      <ExcelExportImport subscribers={allSubscribers} onImport={addSubscriber} />
 
       <Button onClick={handleSave} className="w-full" disabled={isSaving}>
         {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
