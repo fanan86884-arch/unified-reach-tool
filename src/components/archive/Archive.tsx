@@ -4,6 +4,8 @@ import { SubscriberCardCompact } from '@/components/subscribers/SubscriberCardCo
 import { Archive as ArchiveIcon, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
+import { WhatsAppDialog } from '@/components/subscribers/WhatsAppDialog';
+import { RestoreConfirmDialog } from './RestoreConfirmDialog';
 
 interface ArchiveProps {
   archivedSubscribers: Subscriber[];
@@ -18,10 +20,19 @@ export const Archive = ({
 }: ArchiveProps) => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
+  const [whatsAppSubscriber, setWhatsAppSubscriber] = useState<Subscriber | null>(null);
+  const [restoreConfirmSubscriber, setRestoreConfirmSubscriber] = useState<Subscriber | null>(null);
 
-  const handleRestore = (id: string) => {
-    restoreSubscriber(id);
-    toast({ title: 'تم استعادة المشترك بنجاح' });
+  const handleRestore = (subscriber: Subscriber) => {
+    setRestoreConfirmSubscriber(subscriber);
+  };
+
+  const confirmRestore = () => {
+    if (restoreConfirmSubscriber) {
+      restoreSubscriber(restoreConfirmSubscriber.id);
+      toast({ title: 'تم استعادة المشترك بنجاح' });
+      setRestoreConfirmSubscriber(null);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -32,10 +43,7 @@ export const Archive = ({
   };
 
   const handleWhatsApp = (subscriber: Subscriber) => {
-    const message = encodeURIComponent(
-      `مرحباً ${subscriber.name}، نفتقدك في الجيم! تواصل معنا لتجديد اشتراكك.`
-    );
-    window.open(`https://wa.me/${subscriber.phone}?text=${message}`, '_blank');
+    setWhatsAppSubscriber(subscriber);
   };
 
   // فلترة المشتركين بناءً على البحث
@@ -78,7 +86,7 @@ export const Archive = ({
               onEdit={() => {}}
               onDelete={handleDelete}
               onArchive={() => {}}
-              onRestore={handleRestore}
+              onRestore={() => handleRestore(subscriber)}
               onRenew={() => {}}
               onWhatsApp={handleWhatsApp}
               onPause={() => {}}
@@ -88,6 +96,21 @@ export const Archive = ({
           ))}
         </div>
       )}
+
+      {/* WhatsApp Dialog */}
+      <WhatsAppDialog
+        isOpen={!!whatsAppSubscriber}
+        onClose={() => setWhatsAppSubscriber(null)}
+        subscriber={whatsAppSubscriber}
+      />
+
+      {/* Restore Confirm Dialog */}
+      <RestoreConfirmDialog
+        isOpen={!!restoreConfirmSubscriber}
+        onClose={() => setRestoreConfirmSubscriber(null)}
+        onConfirm={confirmRestore}
+        subscriber={restoreConfirmSubscriber}
+      />
     </div>
   );
 };

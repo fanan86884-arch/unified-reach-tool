@@ -54,6 +54,26 @@ export const useCloudSubscribers = () => {
   const [filterCaptain, setFilterCaptain] = useState<string>('all');
   const [filterDateRange, setFilterDateRange] = useState<string>('all');
 
+  // Auto-archive subscribers expired for 30+ days
+  const autoArchiveExpired = useCallback(async (subscribersList: Subscriber[]) => {
+    const today = startOfDay(new Date());
+    
+    for (const sub of subscribersList) {
+      if (sub.isArchived || sub.isPaused) continue;
+      
+      const endDate = startOfDay(parseISO(sub.endDate));
+      const daysSinceExpiry = differenceInDays(today, endDate);
+      
+      // إذا مر شهر (30 يوم) على انتهاء الاشتراك، ننقله للأرشيف تلقائياً
+      if (daysSinceExpiry >= 30) {
+        await supabase
+          .from('subscribers')
+          .update({ is_archived: true })
+          .eq('id', sub.id);
+      }
+    }
+  }, []);
+
   // Fetch subscribers
   const fetchSubscribers = useCallback(async () => {
     if (!user) return;
@@ -91,13 +111,17 @@ export const useCloudSubscribers = () => {
           status: calculateStatus(sub.endDate, sub.remainingAmount, sub.isPaused),
         };
       });
+      
+      // Auto-archive expired subscribers (30+ days)
+      await autoArchiveExpired(updated);
+      
       setSubscribers(updated);
     } catch (err) {
       console.error('Error:', err);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, autoArchiveExpired]);
 
   useEffect(() => {
     fetchSubscribers();
