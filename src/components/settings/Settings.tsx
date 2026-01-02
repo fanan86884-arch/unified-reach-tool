@@ -3,13 +3,30 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Settings as SettingsIcon, MessageSquare, Save, DollarSign, LogOut, Loader2 } from 'lucide-react';
+import { 
+  Settings as SettingsIcon, 
+  MessageSquare, 
+  Save, 
+  DollarSign, 
+  LogOut, 
+  Loader2,
+  ChevronDown,
+  History,
+  FileSpreadsheet,
+  User
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCloudSettings, SubscriptionPrices } from '@/hooks/useCloudSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { ExcelExportImport } from './ExcelExportImport';
+import { ActivityLogComponent } from './ActivityLog';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 const defaultTemplates = [
   {
@@ -51,6 +68,36 @@ const subscriptionLabels = {
   annual: 'سنوي',
 };
 
+interface SettingsSectionProps {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}
+
+const SettingsSection = ({ title, icon: Icon, children, defaultOpen = false }: SettingsSectionProps) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Card className="card-shadow overflow-hidden">
+        <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+          <div className="flex items-center gap-2">
+            <Icon className="w-5 h-5 text-primary" />
+            <h3 className="font-bold">{title}</h3>
+          </div>
+          <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="p-4 pt-0 border-t">
+            {children}
+          </div>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  );
+};
+
 export const Settings = () => {
   const [templates, setTemplates] = useState(defaultTemplates);
   const { prices, loading, savePrices } = useCloudSettings();
@@ -68,7 +115,6 @@ export const Settings = () => {
     const savedTemplates = localStorage.getItem('whatsapp_templates');
     if (savedTemplates) {
       const parsed = JSON.parse(savedTemplates);
-      // Merge with default templates to include new ones
       const merged = defaultTemplates.map(defaultT => {
         const saved = parsed.find((t: any) => t.id === defaultT.id);
         return saved || defaultT;
@@ -111,18 +157,15 @@ export const Settings = () => {
   }
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-4 pb-20">
       <h2 className="text-xl font-bold flex items-center gap-2">
         <SettingsIcon className="w-5 h-5 text-primary" />
         الإعدادات
       </h2>
 
-      <Card className="p-4 card-shadow">
-        <h3 className="font-bold mb-4 flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-primary" />
-          أسعار الاشتراكات
-        </h3>
-        <div className="grid grid-cols-2 gap-4">
+      {/* Subscription Prices */}
+      <SettingsSection title="أسعار الاشتراكات" icon={DollarSign} defaultOpen>
+        <div className="grid grid-cols-2 gap-4 mt-4">
           {(Object.keys(subscriptionLabels) as Array<keyof typeof subscriptionLabels>).map((type) => (
             <div key={type} className="space-y-2">
               <Label>{subscriptionLabels[type]}</Label>
@@ -139,45 +182,55 @@ export const Settings = () => {
             </div>
           ))}
         </div>
-      </Card>
+      </SettingsSection>
 
-      <Card className="p-4 card-shadow">
-        <h3 className="font-bold mb-4 flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-primary" />
-          نماذج رسائل واتساب
-        </h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          يمكنك استخدام المتغيرات التالية: {'{الاسم}'}, {'{تاريخ_الاشتراك}'},{' '}
-          {'{تاريخ_الانتهاء}'}, {'{المبلغ_المدفوع}'}, {'{المبلغ_المتبقي}'}, {'{المدة_المحددة}'}
-        </p>
-
-        <div className="space-y-4">
-          {templates.map((template) => (
-            <div key={template.id} className="space-y-2">
-              <Label>{template.name}</Label>
-              <Textarea
-                value={template.content}
-                onChange={(e) => handleTemplateChange(template.id, e.target.value)}
-                rows={3}
-                className="resize-none"
-              />
-            </div>
-          ))}
+      {/* WhatsApp Templates */}
+      <SettingsSection title="نماذج رسائل واتساب" icon={MessageSquare}>
+        <div className="mt-4">
+          <p className="text-sm text-muted-foreground mb-4">
+            المتغيرات: {'{الاسم}'}, {'{تاريخ_الاشتراك}'}, {'{تاريخ_الانتهاء}'}, {'{المبلغ_المدفوع}'}, {'{المبلغ_المتبقي}'}, {'{المدة_المحددة}'}
+          </p>
+          <div className="space-y-4">
+            {templates.map((template) => (
+              <div key={template.id} className="space-y-2">
+                <Label>{template.name}</Label>
+                <Textarea
+                  value={template.content}
+                  onChange={(e) => handleTemplateChange(template.id, e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
+            ))}
+          </div>
         </div>
-      </Card>
+      </SettingsSection>
 
       {/* Excel Export/Import */}
-      <ExcelExportImport subscribers={allSubscribers} onImport={addSubscriber} />
+      <SettingsSection title="تصدير واستيراد البيانات" icon={FileSpreadsheet}>
+        <div className="mt-4">
+          <ExcelExportImport subscribers={allSubscribers} onImport={addSubscriber} />
+        </div>
+      </SettingsSection>
 
+      {/* Activity Log */}
+      <SettingsSection title="سجل التغييرات" icon={History}>
+        <div className="mt-4">
+          <ActivityLogComponent />
+        </div>
+      </SettingsSection>
+
+      {/* Save Button */}
       <Button onClick={handleSave} className="w-full" disabled={isSaving}>
         {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
         حفظ الإعدادات
       </Button>
 
-      <Card className="p-4 card-shadow">
-        <div className="flex items-center justify-between">
+      {/* Account Section */}
+      <SettingsSection title="الحساب" icon={User}>
+        <div className="flex items-center justify-between mt-4">
           <div>
-            <p className="font-medium">الحساب</p>
+            <p className="font-medium">البريد الإلكتروني</p>
             <p className="text-sm text-muted-foreground">{user?.email}</p>
           </div>
           <Button variant="destructive" onClick={handleSignOut}>
@@ -185,7 +238,7 @@ export const Settings = () => {
             تسجيل الخروج
           </Button>
         </div>
-      </Card>
+      </SettingsSection>
     </div>
   );
 };

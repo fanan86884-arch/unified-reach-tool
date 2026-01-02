@@ -1,9 +1,31 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subscriber';
 import { supabase } from '@/integrations/supabase/client';
 import { differenceInDays, parseISO, startOfDay } from 'date-fns';
 import { useAuth } from './useAuth';
 
+// Activity logging helper
+const logActivity = async (
+  userId: string,
+  subscriberId: string | null,
+  subscriberName: string,
+  actionType: string,
+  actionDetails?: Record<string, any>,
+  previousData?: Partial<Subscriber>
+) => {
+  try {
+    await supabase.from('activity_log').insert({
+      user_id: userId,
+      subscriber_id: subscriberId,
+      subscriber_name: subscriberName,
+      action_type: actionType,
+      action_details: actionDetails || null,
+      previous_data: previousData || null,
+    });
+  } catch (err) {
+    console.error('Error logging activity:', err);
+  }
+};
 // حساب الحالة: نشط حتى لو معلق، قارب على الانتهاء = نشط أيضاً، منتهي = غير نشط
 const calculateStatus = (endDate: string, remainingAmount: number, isPaused?: boolean): SubscriptionStatus => {
   if (isPaused) return 'paused';
@@ -182,10 +204,19 @@ export const useCloudSubscribers = () => {
       return null;
     }
 
+    // Log activity
+    await logActivity(user.id, newData.id, data.name, 'add', {
+      subscriptionType: data.subscriptionType,
+      paidAmount: data.paidAmount,
+    });
+
     return mapDbToSubscriber(newData);
   }, [user]);
 
   const updateSubscriber = useCallback(async (id: string, data: Partial<SubscriberFormData>) => {
+    if (!user) return;
+    
+    const subscriber = subscribers.find(s => s.id === id);
     const updateData: any = {};
     
     if (data.name !== undefined) updateData.name = data.name;
@@ -199,7 +230,6 @@ export const useCloudSubscribers = () => {
 
     // Recalculate status if relevant fields changed
     if (data.endDate !== undefined || data.remainingAmount !== undefined) {
-      const subscriber = subscribers.find(s => s.id === id);
       if (subscriber) {
         updateData.status = calculateStatus(
           data.endDate ?? subscriber.endDate,
@@ -216,10 +246,17 @@ export const useCloudSubscribers = () => {
 
     if (error) {
       console.error('Error updating subscriber:', error);
+    } else if (subscriber) {
+      // Log activity with previous data
+      await logActivity(user.id, id, subscriber.name, 'update', data, subscriber);
     }
-  }, [subscribers]);
+  }, [user, subscribers]);
 
   const deleteSubscriber = useCallback(async (id: string) => {
+    if (!user) return;
+    
+    const subscriber = subscribers.find(s => s.id === id);
+    
     const { error } = await supabase
       .from('subscribers')
       .delete()
@@ -227,10 +264,16 @@ export const useCloudSubscribers = () => {
 
     if (error) {
       console.error('Error deleting subscriber:', error);
+    } else if (subscriber) {
+      await logActivity(user.id, null, subscriber.name, 'delete');
     }
-  }, []);
+  }, [user, subscribers]);
 
   const archiveSubscriber = useCallback(async (id: string) => {
+    if (!user) return;
+    
+    const subscriber = subscribers.find(s => s.id === id);
+    
     const { error } = await supabase
       .from('subscribers')
       .update({ is_archived: true })
@@ -238,10 +281,16 @@ export const useCloudSubscribers = () => {
 
     if (error) {
       console.error('Error archiving subscriber:', error);
+    } else if (subscriber) {
+      await logActivity(user.id, id, subscriber.name, 'archive', undefined, { ...subscriber, isArchived: false });
     }
-  }, []);
+  }, [user, subscribers]);
 
   const restoreSubscriber = useCallback(async (id: string) => {
+    if (!user) return;
+    
+    const subscriber = subscribers.find(s => s.id === id);
+    
     const { error } = await supabase
       .from('subscribers')
       .update({ is_archived: false })
@@ -249,10 +298,14 @@ export const useCloudSubscribers = () => {
 
     if (error) {
       console.error('Error restoring subscriber:', error);
+    } else if (subscriber) {
+      await logActivity(user.id, id, subscriber.name, 'restore', undefined, { ...subscriber, isArchived: true });
     }
-  }, []);
+  }, [user, subscribers]);
 
   const renewSubscription = useCallback(async (id: string, newEndDate: string, paidAmount: number) => {
+    if (!user) return;
+    
     const subscriber = subscribers.find(s => s.id === id);
     if (!subscriber) return;
 
@@ -274,10 +327,17 @@ export const useCloudSubscribers = () => {
 
     if (error) {
       console.error('Error renewing subscription:', error);
+    } else {
+      await logActivity(user.id, id, subscriber.name, 'renew', {
+        newEndDate,
+        paidAmount,
+      }, subscriber);
     }
-  }, [subscribers]);
+  }, [user, subscribers]);
 
   const pauseSubscription = useCallback(async (id: string, pauseUntil: string) => {
+    if (!user) return;
+    
     const subscriber = subscribers.find(s => s.id === id);
     if (!subscriber) return;
 
@@ -292,10 +352,14 @@ export const useCloudSubscribers = () => {
 
     if (error) {
       console.error('Error pausing subscription:', error);
+    } else {
+      await logActivity(user.id, id, subscriber.name, 'pause', { pauseUntil }, subscriber);
     }
-  }, [subscribers]);
+  }, [user, subscribers]);
 
   const resumeSubscription = useCallback(async (id: string) => {
+    if (!user) return;
+    
     const subscriber = subscribers.find(s => s.id === id);
     if (!subscriber) return;
 
@@ -312,8 +376,10 @@ export const useCloudSubscribers = () => {
 
     if (error) {
       console.error('Error resuming subscription:', error);
+    } else {
+      await logActivity(user.id, id, subscriber.name, 'resume', undefined, subscriber);
     }
-  }, [subscribers]);
+  }, [user, subscribers]);
 
   const activeSubscribers = useMemo(
     () => subscribers.filter((s) => !s.isArchived),
