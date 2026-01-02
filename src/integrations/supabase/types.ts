@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          action_details: Json | null
+          action_type: string
+          created_at: string
+          id: string
+          previous_data: Json | null
+          subscriber_id: string | null
+          subscriber_name: string
+          user_id: string
+        }
+        Insert: {
+          action_details?: Json | null
+          action_type: string
+          created_at?: string
+          id?: string
+          previous_data?: Json | null
+          subscriber_id?: string | null
+          subscriber_name: string
+          user_id: string
+        }
+        Update: {
+          action_details?: Json | null
+          action_type?: string
+          created_at?: string
+          id?: string
+          previous_data?: Json | null
+          subscriber_id?: string | null
+          subscriber_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_subscriber_id_fkey"
+            columns: ["subscriber_id"]
+            isOneToOne: false
+            referencedRelation: "subscribers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settings: {
         Row: {
           annual_price: number
