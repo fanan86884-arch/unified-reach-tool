@@ -1,8 +1,10 @@
 import { Subscriber } from '@/types/subscriber';
 import { Card } from '@/components/ui/card';
-import { Bell, Clock, AlertTriangle, XCircle, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Bell, Clock, XCircle, DollarSign, Trash2 } from 'lucide-react';
 import { differenceInDays, parseISO, startOfDay, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useState } from 'react';
 
 interface NotificationsProps {
   stats: {
@@ -40,6 +42,7 @@ const getRelativeTimeLabel = (dateStr: string): string => {
 };
 
 export const Notifications = ({ stats }: NotificationsProps) => {
+  const [isCleared, setIsCleared] = useState(false);
   const today = startOfDay(new Date());
   
   const notifications: Notification[] = [
@@ -92,11 +95,13 @@ export const Notifications = ({ stats }: NotificationsProps) => {
     })),
   ];
 
-  // Sort by priority then by timestamp
+  // Sort by timestamp (newest first)
   const sortedNotifications = notifications.sort((a, b) => {
-    if (a.priority !== b.priority) return a.priority - b.priority;
     return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
   });
+  
+  // If cleared, show empty state
+  const displayNotifications = isCleared ? [] : sortedNotifications;
 
   const variantStyles = {
     warning: 'border-warning/30 bg-warning/5',
@@ -111,7 +116,7 @@ export const Notifications = ({ stats }: NotificationsProps) => {
   };
 
   // Group notifications by date
-  const groupedByDate = sortedNotifications.reduce((groups, notif) => {
+  const groupedByDate = displayNotifications.reduce((groups, notif) => {
     const date = parseISO(notif.timestamp);
     let label: string;
     
@@ -130,6 +135,10 @@ export const Notifications = ({ stats }: NotificationsProps) => {
     return groups;
   }, {} as Record<string, Notification[]>);
 
+  const handleClearAll = () => {
+    setIsCleared(true);
+  };
+
   return (
     <div className="space-y-4 pb-20">
       <div className="flex items-center justify-between">
@@ -137,14 +146,27 @@ export const Notifications = ({ stats }: NotificationsProps) => {
           <Bell className="w-5 h-5 text-primary" />
           الإشعارات
         </h2>
-        {sortedNotifications.length > 0 && (
-          <span className="text-sm text-muted-foreground">
-            {sortedNotifications.length} إشعار
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {displayNotifications.length > 0 && (
+            <>
+              <span className="text-sm text-muted-foreground">
+                {displayNotifications.length} إشعار
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearAll}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="w-4 h-4 ml-1" />
+                حذف الكل
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
-      {sortedNotifications.length === 0 ? (
+      {displayNotifications.length === 0 ? (
         <div className="text-center py-12">
           <Bell className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
           <p className="text-muted-foreground text-lg">لا توجد إشعارات جديدة</p>

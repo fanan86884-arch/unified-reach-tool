@@ -163,8 +163,15 @@ export const Settings = () => {
         الإعدادات
       </h2>
 
+      {/* Activity Log - First */}
+      <SettingsSection title="سجل التغييرات" icon={History} defaultOpen>
+        <div className="mt-4">
+          <ActivityLogComponent />
+        </div>
+      </SettingsSection>
+
       {/* Subscription Prices */}
-      <SettingsSection title="أسعار الاشتراكات" icon={DollarSign} defaultOpen>
+      <SettingsSection title="أسعار الاشتراكات" icon={DollarSign}>
         <div className="grid grid-cols-2 gap-4 mt-4">
           {(Object.keys(subscriptionLabels) as Array<keyof typeof subscriptionLabels>).map((type) => (
             <div key={type} className="space-y-2">
@@ -210,13 +217,6 @@ export const Settings = () => {
       <SettingsSection title="تصدير واستيراد البيانات" icon={FileSpreadsheet}>
         <div className="mt-4">
           <ExcelExportImport subscribers={allSubscribers} onImport={addSubscriber} />
-        </div>
-      </SettingsSection>
-
-      {/* Activity Log */}
-      <SettingsSection title="سجل التغييرات" icon={History}>
-        <div className="mt-4">
-          <ActivityLogComponent />
         </div>
       </SettingsSection>
 
