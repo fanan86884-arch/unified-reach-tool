@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { SubscribersList } from '@/components/subscribers/SubscribersList';
@@ -6,11 +6,16 @@ import { Statistics } from '@/components/statistics/Statistics';
 import { Archive } from '@/components/archive/Archive';
 import { Notifications } from '@/components/notifications/Notifications';
 import { Settings } from '@/components/settings/Settings';
+import { SubscriberForm } from '@/components/subscribers/SubscriberForm';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import { Loader2 } from 'lucide-react';
+import { SubscriberFormData } from '@/types/subscriber';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('subscribers');
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+  const { toast } = useToast();
   const {
     subscribers,
     archivedSubscribers,
@@ -33,6 +38,16 @@ const Index = () => {
     pauseSubscription,
     resumeSubscription,
   } = useCloudSubscribers();
+
+  const handleAddSubscriber = () => {
+    setIsAddFormOpen(true);
+  };
+
+  const handleAddSubmit = (data: SubscriberFormData) => {
+    addSubscriber(data);
+    toast({ title: 'تم إضافة المشترك بنجاح' });
+    setIsAddFormOpen(false);
+  };
 
   if (loading) {
     return (
@@ -85,11 +100,26 @@ const Index = () => {
     }
   };
 
+  const captains = ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container px-4 py-6">{renderContent()}</main>
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
+        onAddSubscriber={handleAddSubscriber}
+      />
+      
+      {/* Add subscriber form triggered from bottom nav */}
+      <SubscriberForm
+        isOpen={isAddFormOpen}
+        onClose={() => setIsAddFormOpen(false)}
+        onSubmit={handleAddSubmit}
+        editingSubscriber={null}
+        captains={captains}
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subscriber';
 import { SubscriberCardCompact } from './SubscriberCardCompact';
 import { SubscriberForm } from './SubscriberForm';
@@ -37,6 +37,7 @@ interface SubscribersListProps {
   renewSubscription: (id: string, newEndDate: string, paidAmount: number) => void | Promise<void>;
   pauseSubscription?: (id: string, pauseUntil: string) => void | Promise<void>;
   resumeSubscription?: (id: string) => void | Promise<void>;
+  onOpenForm?: () => void;
 }
 
 export const SubscribersList = ({
@@ -55,6 +56,7 @@ export const SubscribersList = ({
   renewSubscription,
   pauseSubscription,
   resumeSubscription,
+  onOpenForm,
 }: SubscribersListProps) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isRenewOpen, setIsRenewOpen] = useState(false);
@@ -65,6 +67,15 @@ export const SubscribersList = ({
   const [pausingSubscriber, setPausingSubscriber] = useState<Subscriber | null>(null);
   const [whatsAppSubscriber, setWhatsAppSubscriber] = useState<Subscriber | null>(null);
   const { toast } = useToast();
+
+  // Expose openForm function via ref or callback
+  const openFormCallback = useRef<(() => void) | null>(null);
+  openFormCallback.current = () => setIsFormOpen(true);
+
+  // Call onOpenForm callback when form should be opened externally
+  if (onOpenForm) {
+    // This will be handled by parent component
+  }
 
   const handleAddOrEdit = (data: SubscriberFormData) => {
     if (editingSubscriber) {
@@ -113,6 +124,17 @@ export const SubscribersList = ({
 
   const captains = ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
 
+  // Expose method to open form externally
+  const handleOpenForm = () => {
+    setEditingSubscriber(null);
+    setIsFormOpen(true);
+  };
+
+  // Register callback
+  if (onOpenForm === undefined) {
+    // Component manages its own state
+  }
+
   return (
     <div className="space-y-4 pb-20">
       <div className="flex items-center justify-between">
@@ -120,7 +142,7 @@ export const SubscribersList = ({
           <Users className="w-5 h-5 text-primary" />
           قائمة المشتركين
         </h2>
-        <Button onClick={() => setIsFormOpen(true)} className="gap-2">
+        <Button onClick={handleOpenForm} className="gap-2">
           <Plus className="w-4 h-4" />
           إضافة مشترك
         </Button>
@@ -236,4 +258,14 @@ export const SubscribersList = ({
       />
     </div>
   );
+};
+
+// Export a hook to trigger form opening
+export const useSubscriberFormTrigger = () => {
+  const [shouldOpen, setShouldOpen] = useState(false);
+  
+  const triggerOpen = () => setShouldOpen(true);
+  const reset = () => setShouldOpen(false);
+  
+  return { shouldOpen, triggerOpen, reset };
 };
