@@ -8,13 +8,17 @@ import { Notifications } from '@/components/notifications/Notifications';
 import { Settings } from '@/components/settings/Settings';
 import { SubscriberForm } from '@/components/subscribers/SubscriberForm';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { SubscriberFormData } from '@/types/subscriber';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('subscribers');
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullStartY, setPullStartY] = useState(0);
+  const [pullDistance, setPullDistance] = useState(0);
+  const mainRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const {
     subscribers,
@@ -37,6 +41,7 @@ const Index = () => {
     renewSubscription,
     pauseSubscription,
     resumeSubscription,
+    refetch,
   } = useCloudSubscribers();
 
   const handleAddSubscriber = () => {
@@ -48,6 +53,34 @@ const Index = () => {
     toast({ title: 'تم إضافة المشترك بنجاح' });
     setIsAddFormOpen(false);
   };
+
+  // Pull-to-refresh handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (mainRef.current && mainRef.current.scrollTop === 0) {
+      setPullStartY(e.touches[0].clientY);
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (pullStartY > 0 && mainRef.current && mainRef.current.scrollTop === 0) {
+      const currentY = e.touches[0].clientY;
+      const distance = currentY - pullStartY;
+      if (distance > 0) {
+        setPullDistance(Math.min(distance, 150));
+      }
+    }
+  }, [pullStartY]);
+
+  const handleTouchEnd = useCallback(async () => {
+    if (pullDistance > 80) {
+      setIsRefreshing(true);
+      await refetch();
+      setIsRefreshing(false);
+      toast({ title: 'تم تحديث البيانات' });
+    }
+    setPullStartY(0);
+    setPullDistance(0);
+  }, [pullDistance, refetch, toast]);
 
   if (loading) {
     return (
@@ -105,7 +138,30 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container px-4 py-6">{renderContent()}</main>
+      
+      {/* Pull-to-refresh indicator */}
+      <div 
+        className="flex items-center justify-center overflow-hidden transition-all duration-200"
+        style={{ height: pullDistance > 0 ? pullDistance / 2 : 0 }}
+      >
+        <RefreshCw 
+          className={`w-6 h-6 text-primary transition-transform ${isRefreshing ? 'animate-spin' : ''}`}
+          style={{ 
+            transform: `rotate(${pullDistance * 2}deg)`,
+            opacity: pullDistance / 80 
+          }}
+        />
+      </div>
+      
+      <main 
+        ref={mainRef}
+        className="container px-4 py-6"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {renderContent()}
+      </main>
       <BottomNav 
         activeTab={activeTab} 
         onTabChange={setActiveTab} 
