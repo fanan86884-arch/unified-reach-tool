@@ -145,33 +145,44 @@ const Auth = () => {
     setMemberSearched(true);
 
     try {
+      // Clean phone number for better matching
+      const cleanPhone = memberPhone.trim().replace(/\D/g, '');
+      
+      // Search without user_id filter - members can search for their own data
       const { data, error } = await supabase
         .from('subscribers')
         .select('*')
-        .or(`phone.eq.${memberPhone},phone.ilike.%${memberPhone}%`)
-        .eq('is_archived', false)
-        .limit(1);
+        .eq('is_archived', false);
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        const row = data[0];
+      // Find matching phone number with flexible matching
+      const found = (data || []).find(row => {
+        const subPhone = row.phone.replace(/\D/g, '');
+        return subPhone === cleanPhone || 
+               subPhone.endsWith(cleanPhone) ||
+               cleanPhone.endsWith(subPhone) ||
+               subPhone.includes(cleanPhone) ||
+               cleanPhone.includes(subPhone);
+      });
+
+      if (found) {
         const subscriber: Subscriber = {
-          id: row.id,
-          name: row.name,
-          phone: row.phone,
-          subscriptionType: row.subscription_type as any,
-          startDate: row.start_date,
-          endDate: row.end_date,
-          paidAmount: row.paid_amount,
-          remainingAmount: row.remaining_amount,
-          captain: row.captain,
-          status: row.status as any,
-          isArchived: row.is_archived,
-          isPaused: row.is_paused,
-          pausedUntil: row.paused_until,
-          createdAt: row.created_at,
-          updatedAt: row.updated_at,
+          id: found.id,
+          name: found.name,
+          phone: found.phone,
+          subscriptionType: found.subscription_type as any,
+          startDate: found.start_date,
+          endDate: found.end_date,
+          paidAmount: found.paid_amount,
+          remainingAmount: found.remaining_amount,
+          captain: found.captain,
+          status: found.status as any,
+          isArchived: found.is_archived,
+          isPaused: found.is_paused,
+          pausedUntil: found.paused_until,
+          createdAt: found.created_at,
+          updatedAt: found.updated_at,
         };
         setMemberResult(subscriber);
       } else {
@@ -231,11 +242,9 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <div className="py-8 px-4 text-center">
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <img src={logo} alt="2B GYM" className="w-14 h-14 rounded-xl object-contain" />
-          <h1 className="text-2xl font-bold text-foreground">2B GYM</h1>
-        </div>
+      <div className="py-10 px-4 text-center">
+        <p className="text-lg text-muted-foreground mb-4">أهلا بك في</p>
+        <img src={logo} alt="2B GYM" className="w-28 h-28 mx-auto rounded-2xl object-contain mb-4" />
         {userType === 'selection' && (
           <p className="text-muted-foreground mt-2">اختر نوع الحساب للمتابعة</p>
         )}

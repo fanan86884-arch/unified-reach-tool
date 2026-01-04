@@ -309,15 +309,17 @@ export const useCloudSubscribers = () => {
     const subscriber = subscribers.find(s => s.id === id);
     if (!subscriber) return;
 
-    const newPaidAmount = subscriber.paidAmount + paidAmount;
+    // تجديد: تاريخ جديد = اليوم، مبلغ مدفوع = المبلغ الجديد فقط (ليس تراكمي)
+    const today = new Date().toISOString().split('T')[0];
     const newRemainingAmount = Math.max(0, subscriber.remainingAmount - paidAmount);
     const status = calculateStatus(newEndDate, newRemainingAmount, false);
 
     const { error } = await supabase
       .from('subscribers')
       .update({
+        start_date: today, // تحديث تاريخ البداية إلى اليوم
         end_date: newEndDate,
-        paid_amount: newPaidAmount,
+        paid_amount: paidAmount, // المبلغ المدفوع الجديد فقط
         remaining_amount: newRemainingAmount,
         status,
         is_paused: false,
@@ -329,6 +331,7 @@ export const useCloudSubscribers = () => {
       console.error('Error renewing subscription:', error);
     } else {
       await logActivity(user.id, id, subscriber.name, 'renew', {
+        newStartDate: today,
         newEndDate,
         paidAmount,
       }, subscriber);
@@ -460,5 +463,6 @@ export const useCloudSubscribers = () => {
     pauseSubscription,
     resumeSubscription,
     findByPhone,
+    refetch: fetchSubscribers,
   };
 };
