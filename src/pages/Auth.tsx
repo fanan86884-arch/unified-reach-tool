@@ -145,26 +145,35 @@ const Auth = () => {
     setMemberSearched(true);
 
     try {
-      // Clean phone number for better matching
+      // Clean phone number - remove all non-digits
       const cleanPhone = memberPhone.trim().replace(/\D/g, '');
       
-      // Search without user_id filter - members can search for their own data
+      console.log('Searching for phone:', cleanPhone);
+      
+      // Fetch all non-archived subscribers (using public RLS policy)
       const { data, error } = await supabase
         .from('subscribers')
         .select('*')
         .eq('is_archived', false);
 
-      if (error) throw error;
+      console.log('Query result:', { data, error });
+
+      if (error) {
+        console.error('Query error:', error);
+        throw error;
+      }
 
       // Find matching phone number with flexible matching
       const found = (data || []).find(row => {
-        const subPhone = row.phone.replace(/\D/g, '');
-        return subPhone === cleanPhone || 
-               subPhone.endsWith(cleanPhone) ||
-               cleanPhone.endsWith(subPhone) ||
-               subPhone.includes(cleanPhone) ||
-               cleanPhone.includes(subPhone);
+        const subPhone = (row.phone || '').replace(/\D/g, '');
+        // Check various matching patterns
+        const exactMatch = subPhone === cleanPhone;
+        const endsWithInput = subPhone.endsWith(cleanPhone) && cleanPhone.length >= 8;
+        const inputEndsWith = cleanPhone.endsWith(subPhone) && subPhone.length >= 8;
+        return exactMatch || endsWithInput || inputEndsWith;
       });
+
+      console.log('Found subscriber:', found);
 
       if (found) {
         const subscriber: Subscriber = {
