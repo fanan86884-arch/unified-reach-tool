@@ -42,7 +42,7 @@ const getRelativeTimeLabel = (dateStr: string): string => {
 };
 
 export const Notifications = ({ stats }: NotificationsProps) => {
-  const [isCleared, setIsCleared] = useState(false);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const today = startOfDay(new Date());
   
   const notifications: Notification[] = [
@@ -95,13 +95,20 @@ export const Notifications = ({ stats }: NotificationsProps) => {
     })),
   ];
 
-  // Sort by timestamp (newest first)
+  // Sort by priority first, then by timestamp (newest first)
   const sortedNotifications = notifications.sort((a, b) => {
+    // Primary sort by priority (1 = expired, 2 = expiring, 3 = pending)
+    if (a.priority !== b.priority) {
+      return a.priority - b.priority;
+    }
+    // Secondary sort by timestamp (newest first)
     return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
   });
   
-  // If cleared, show empty state
-  const displayNotifications = isCleared ? [] : sortedNotifications;
+  // Filter out deleted notifications using subscriber ID + type as unique key
+  const displayNotifications = sortedNotifications.filter(
+    notif => !deletedIds.has(`${notif.type}-${notif.subscriber.id}`)
+  );
 
   const variantStyles = {
     warning: 'border-warning/30 bg-warning/5',
@@ -136,7 +143,9 @@ export const Notifications = ({ stats }: NotificationsProps) => {
   }, {} as Record<string, Notification[]>);
 
   const handleClearAll = () => {
-    setIsCleared(true);
+    // Add all current notification IDs to deleted set
+    const allIds = new Set(sortedNotifications.map(n => `${n.type}-${n.subscriber.id}`));
+    setDeletedIds(allIds);
   };
 
   return (
