@@ -139,26 +139,9 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Pull-to-refresh indicator */}
-      <div 
-        className="flex items-center justify-center overflow-hidden transition-all duration-200"
-        style={{ height: pullDistance > 0 ? pullDistance / 2 : 0 }}
-      >
-        <RefreshCw 
-          className={`w-6 h-6 text-primary transition-transform ${isRefreshing ? 'animate-spin' : ''}`}
-          style={{ 
-            transform: `rotate(${pullDistance * 2}deg)`,
-            opacity: pullDistance / 80 
-          }}
-        />
-      </div>
-      
       <main 
         ref={mainRef}
         className="container px-4 py-6"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         {renderContent()}
       </main>

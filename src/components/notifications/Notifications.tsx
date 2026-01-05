@@ -41,8 +41,28 @@ const getRelativeTimeLabel = (dateStr: string): string => {
   return formatDistanceToNow(date, { addSuffix: true, locale: ar });
 };
 
+const DELETED_NOTIFICATIONS_KEY = 'deleted_notifications';
+
+// تحميل الإشعارات المحذوفة من localStorage
+const loadDeletedIds = (): Set<string> => {
+  try {
+    const stored = localStorage.getItem(DELETED_NOTIFICATIONS_KEY);
+    if (stored) {
+      return new Set(JSON.parse(stored));
+    }
+  } catch (e) {
+    console.error('Error loading deleted notifications:', e);
+  }
+  return new Set();
+};
+
+// حفظ الإشعارات المحذوفة في localStorage
+const saveDeletedIds = (ids: Set<string>) => {
+  localStorage.setItem(DELETED_NOTIFICATIONS_KEY, JSON.stringify([...ids]));
+};
+
 export const Notifications = ({ stats }: NotificationsProps) => {
-  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(() => loadDeletedIds());
   const today = startOfDay(new Date());
   
   const notifications: Notification[] = [
@@ -144,8 +164,9 @@ export const Notifications = ({ stats }: NotificationsProps) => {
 
   const handleClearAll = () => {
     // Add all current notification IDs to deleted set
-    const allIds = new Set(sortedNotifications.map(n => `${n.type}-${n.subscriber.id}`));
+    const allIds = new Set([...deletedIds, ...sortedNotifications.map(n => `${n.type}-${n.subscriber.id}`)]);
     setDeletedIds(allIds);
+    saveDeletedIds(allIds);
   };
 
   return (
