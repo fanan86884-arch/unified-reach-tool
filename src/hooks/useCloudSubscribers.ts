@@ -309,17 +309,33 @@ export const useCloudSubscribers = () => {
     const subscriber = subscribers.find(s => s.id === id);
     if (!subscriber) return;
 
-    // تجديد: تاريخ جديد = اليوم، مبلغ مدفوع = المبلغ الجديد فقط (ليس تراكمي)
-    const today = new Date().toISOString().split('T')[0];
+    // حساب تاريخ البداية والنهاية الجديد بناءً على التواريخ القديمة + شهر
+    const oldEndDate = new Date(subscriber.endDate);
+    const oldStartDate = new Date(subscriber.startDate);
+    
+    // تاريخ البداية الجديد = يوم بعد تاريخ الانتهاء القديم (أول يوم من الشهر الجديد)
+    const newStartDate = new Date(oldEndDate);
+    newStartDate.setDate(newStartDate.getDate() + 1);
+    
+    // حساب عدد الأيام في الاشتراك القديم
+    const subscriptionDays = Math.round((oldEndDate.getTime() - oldStartDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // تاريخ الانتهاء الجديد = تاريخ البداية الجديد + نفس عدد الأيام
+    const calculatedEndDate = new Date(newStartDate);
+    calculatedEndDate.setDate(calculatedEndDate.getDate() + subscriptionDays);
+    
+    const formattedStartDate = newStartDate.toISOString().split('T')[0];
+    const formattedEndDate = calculatedEndDate.toISOString().split('T')[0];
+    
     const newRemainingAmount = Math.max(0, subscriber.remainingAmount - paidAmount);
-    const status = calculateStatus(newEndDate, newRemainingAmount, false);
+    const status = calculateStatus(formattedEndDate, newRemainingAmount, false);
 
     const { error } = await supabase
       .from('subscribers')
       .update({
-        start_date: today, // تحديث تاريخ البداية إلى اليوم
-        end_date: newEndDate,
-        paid_amount: paidAmount, // المبلغ المدفوع الجديد فقط
+        start_date: formattedStartDate,
+        end_date: formattedEndDate,
+        paid_amount: paidAmount,
         remaining_amount: newRemainingAmount,
         status,
         is_paused: false,
@@ -331,8 +347,8 @@ export const useCloudSubscribers = () => {
       console.error('Error renewing subscription:', error);
     } else {
       await logActivity(user.id, id, subscriber.name, 'renew', {
-        newStartDate: today,
-        newEndDate,
+        newStartDate: formattedStartDate,
+        newEndDate: formattedEndDate,
         paidAmount,
       }, subscriber);
     }
