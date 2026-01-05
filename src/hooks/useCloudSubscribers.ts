@@ -360,19 +360,35 @@ export const useCloudSubscribers = () => {
     const subscriber = subscribers.find(s => s.id === id);
     if (!subscriber) return;
 
+    // حساب عدد أيام الإيقاف وإضافتها على تاريخ الانتهاء
+    const today = startOfDay(new Date());
+    const pauseEndDate = startOfDay(parseISO(pauseUntil));
+    const pauseDays = differenceInDays(pauseEndDate, today);
+    
+    // تاريخ الانتهاء الجديد = تاريخ الانتهاء الحالي + أيام الإيقاف
+    const currentEndDate = new Date(subscriber.endDate);
+    currentEndDate.setDate(currentEndDate.getDate() + pauseDays);
+    const newEndDate = currentEndDate.toISOString().split('T')[0];
+
     const { error } = await supabase
       .from('subscribers')
       .update({
         is_paused: true,
         paused_until: pauseUntil,
         status: 'paused',
+        end_date: newEndDate,
       })
       .eq('id', id);
 
     if (error) {
       console.error('Error pausing subscription:', error);
     } else {
-      await logActivity(user.id, id, subscriber.name, 'pause', { pauseUntil }, subscriber);
+      await logActivity(user.id, id, subscriber.name, 'pause', { 
+        pauseUntil, 
+        pauseDays,
+        oldEndDate: subscriber.endDate,
+        newEndDate 
+      }, subscriber);
     }
   }, [user, subscribers]);
 
