@@ -145,8 +145,14 @@ const Auth = () => {
     setMemberSearched(true);
 
     try {
-      // Clean phone number - remove all non-digits
-      const cleanPhone = memberPhone.trim().replace(/\D/g, '');
+      // تحويل الأرقام العربية إلى إنجليزية
+      const arabicToEnglish = (str: string) => {
+        const arabicNums = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        return str.replace(/[٠-٩]/g, (d) => String(arabicNums.indexOf(d)));
+      };
+      
+      // Clean phone number - convert Arabic to English and remove all non-digits
+      const cleanPhone = arabicToEnglish(memberPhone.trim()).replace(/\D/g, '');
       
       console.log('Searching for phone:', cleanPhone);
       
@@ -482,7 +488,7 @@ const Auth = () => {
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground mb-1">تاريخ البدء</p>
+                        <p className="text-sm text-muted-foreground mb-1">تاريخ الاشتراك</p>
                         <p className="font-bold">
                           {format(parseISO(memberResult.startDate), 'dd/MM/yyyy')}
                         </p>
