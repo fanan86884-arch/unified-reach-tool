@@ -13,7 +13,8 @@ import {
   ChevronDown,
   History,
   FileSpreadsheet,
-  User
+  User,
+  Phone
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +22,7 @@ import { useCloudSettings, SubscriptionPrices } from '@/hooks/useCloudSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { ExcelExportImport } from './ExcelExportImport';
 import { ActivityLogComponent } from './ActivityLog';
+import { ContactSettings } from './ContactSettings';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import {
   Collapsible,
@@ -218,6 +220,11 @@ export const Settings = () => {
         <div className="mt-4">
           <ExcelExportImport subscribers={allSubscribers} onImport={addSubscriber} />
         </div>
+      </SettingsSection>
+
+      {/* Contact Settings */}
+      <SettingsSection title="بيانات التواصل" icon={Phone}>
+        <ContactSettings />
       </SettingsSection>
 
       {/* Save Button */}

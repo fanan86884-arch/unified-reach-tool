@@ -396,9 +396,20 @@ export const useCloudSubscribers = () => {
     if (!user) return;
     
     const subscriber = subscribers.find(s => s.id === id);
-    if (!subscriber) return;
+    if (!subscriber || !subscriber.pausedUntil) return;
 
-    const status = calculateStatus(subscriber.endDate, subscriber.remainingAmount, false);
+    // حساب الأيام المتبقية من الإيقاف (أو التي مرت بعد الموعد)
+    const today = startOfDay(new Date());
+    const pauseEndDate = startOfDay(parseISO(subscriber.pausedUntil));
+    const daysRemaining = differenceInDays(pauseEndDate, today);
+    
+    // إذا الاستئناف قبل الموعد: نقلل تاريخ الانتهاء بالأيام المتبقية
+    // إذا الاستئناف بعد الموعد: نزيد تاريخ الانتهاء بالأيام الإضافية
+    const currentEndDate = new Date(subscriber.endDate);
+    currentEndDate.setDate(currentEndDate.getDate() - daysRemaining);
+    const newEndDate = currentEndDate.toISOString().split('T')[0];
+
+    const status = calculateStatus(newEndDate, subscriber.remainingAmount, false);
 
     const { error } = await supabase
       .from('subscribers')
@@ -406,13 +417,18 @@ export const useCloudSubscribers = () => {
         is_paused: false,
         paused_until: null,
         status,
+        end_date: newEndDate,
       })
       .eq('id', id);
 
     if (error) {
       console.error('Error resuming subscription:', error);
     } else {
-      await logActivity(user.id, id, subscriber.name, 'resume', undefined, subscriber);
+      await logActivity(user.id, id, subscriber.name, 'resume', {
+        oldEndDate: subscriber.endDate,
+        newEndDate,
+        daysAdjusted: -daysRemaining,
+      }, subscriber);
     }
   }, [user, subscribers]);
 

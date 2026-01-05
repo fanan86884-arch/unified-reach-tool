@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Subscriber } from '@/types/subscriber';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { addDays, addWeeks, addMonths, format } from 'date-fns';
+import { addDays, addWeeks, addMonths, format, differenceInDays, startOfDay, parseISO } from 'date-fns';
 
 interface PauseDialogProps {
   isOpen: boolean;
@@ -47,6 +47,26 @@ export const PauseDialog = ({ isOpen, onClose, subscriber, onPause }: PauseDialo
       default:
         return format(addWeeks(today, 1), 'yyyy-MM-dd');
     }
+  };
+
+  // حساب تاريخ الانتهاء الجديد بعد الإيقاف
+  const calculateNewEndDate = (): string => {
+    const pauseUntil = calculatePauseUntil();
+    const today = startOfDay(new Date());
+    const pauseEndDate = startOfDay(parseISO(pauseUntil));
+    const pauseDays = differenceInDays(pauseEndDate, today);
+    
+    const currentEndDate = new Date(subscriber.endDate);
+    currentEndDate.setDate(currentEndDate.getDate() + pauseDays);
+    return format(currentEndDate, 'dd/MM/yyyy');
+  };
+
+  // حساب عدد أيام الإيقاف
+  const getPauseDays = (): number => {
+    const pauseUntil = calculatePauseUntil();
+    const today = startOfDay(new Date());
+    const pauseEndDate = startOfDay(parseISO(pauseUntil));
+    return differenceInDays(pauseEndDate, today);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -94,9 +114,19 @@ export const PauseDialog = ({ isOpen, onClose, subscriber, onPause }: PauseDialo
             </div>
           )}
 
-          <div className="p-3 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">سيتم إيقاف الاشتراك حتى:</p>
-            <p className="font-bold text-lg">{calculatePauseUntil()}</p>
+          <div className="p-3 bg-muted rounded-lg space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm text-muted-foreground">سيتم إيقاف الاشتراك حتى:</span>
+              <span className="font-bold">{format(parseISO(calculatePauseUntil()), 'dd/MM/yyyy')}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-muted-foreground">عدد أيام الإيقاف:</span>
+              <span className="font-bold">{getPauseDays()} يوم</span>
+            </div>
+            <div className="flex justify-between border-t pt-2 mt-2">
+              <span className="text-sm text-muted-foreground">تاريخ الانتهاء الجديد:</span>
+              <span className="font-bold text-primary">{calculateNewEndDate()}</span>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4">

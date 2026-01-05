@@ -14,6 +14,7 @@ import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
+import { ContactUsSection } from '@/components/auth/ContactUsSection';
 
 const EMPLOYEE_PIN = '4807';
 
@@ -469,107 +470,115 @@ const Auth = () => {
                   <p className="text-muted-foreground">جاري البحث...</p>
                 </div>
               ) : memberResult ? (
-                <Card className="p-6 card-shadow animate-slide-up">
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center">
-                        <User className="w-6 h-6 text-primary-foreground" />
-                      </div>
-                      <div>
-                        <h2 className="font-bold text-lg">{memberResult.name}</h2>
-                        <p className="text-sm text-muted-foreground">{memberResult.phone}</p>
-                      </div>
-                    </div>
-                    <Badge className={cn('border', statusConfig[statusKey].className)}>
-                      {statusConfig[statusKey].label}
-                    </Badge>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground mb-1">تاريخ الاشتراك</p>
-                        <p className="font-bold">
-                          {format(parseISO(memberResult.startDate), 'dd/MM/yyyy')}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground mb-1">نوع الاشتراك</p>
-                        <p className="font-bold">
-                          {subscriptionTypeLabels[memberResult.subscriptionType] || memberResult.subscriptionType}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-muted rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Calendar className="w-4 h-4 text-primary" />
-                        <span className="text-sm text-muted-foreground">تاريخ الانتهاء</span>
-                      </div>
-                      <p className="font-bold text-lg">
-                        {format(parseISO(memberResult.endDate), 'dd MMMM yyyy', { locale: ar })}
-                      </p>
-                      <p
-                        className={cn(
-                          'text-sm font-medium mt-1',
-                          isExpired
-                            ? 'text-destructive'
-                            : daysRemaining <= 7
-                            ? 'text-warning'
-                            : 'text-success'
-                        )}
-                      >
-                        {isExpired ? 'الاشتراك منتهي' : `متبقي ${daysRemaining} يوم`}
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 bg-success/10 rounded-lg border border-success/20">
-                        <div className="flex items-center gap-2 mb-1">
-                          <CreditCard className="w-4 h-4 text-success" />
-                          <span className="text-sm text-muted-foreground">المدفوع</span>
+                <>
+                  <Card className="p-6 card-shadow animate-slide-up">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center">
+                          <User className="w-6 h-6 text-primary-foreground" />
                         </div>
-                        <p className="font-bold text-success">{memberResult.paidAmount} جنيه</p>
-                      </div>
-                      <div
-                        className={cn(
-                          'p-3 rounded-lg border',
-                          memberResult.remainingAmount > 0
-                            ? 'bg-destructive/10 border-destructive/20'
-                            : 'bg-success/10 border-success/20'
-                        )}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <CreditCard
-                            className={cn(
-                              'w-4 h-4',
-                              memberResult.remainingAmount > 0 ? 'text-destructive' : 'text-success'
-                            )}
-                          />
-                          <span className="text-sm text-muted-foreground">المتبقي</span>
+                        <div>
+                          <h2 className="font-bold text-lg">{memberResult.name}</h2>
+                          <p className="text-sm text-muted-foreground">{memberResult.phone}</p>
                         </div>
+                      </div>
+                      <Badge className={cn('border', statusConfig[statusKey].className)}>
+                        {statusConfig[statusKey].label}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-3 bg-muted rounded-lg">
+                          <p className="text-sm text-muted-foreground mb-1">تاريخ الاشتراك</p>
+                          <p className="font-bold">
+                            {format(parseISO(memberResult.startDate), 'dd/MM/yyyy')}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-muted rounded-lg">
+                          <p className="text-sm text-muted-foreground mb-1">نوع الاشتراك</p>
+                          <p className="font-bold">
+                            {subscriptionTypeLabels[memberResult.subscriptionType] || memberResult.subscriptionType}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-muted rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calendar className="w-4 h-4 text-primary" />
+                          <span className="text-sm text-muted-foreground">تاريخ الانتهاء</span>
+                        </div>
+                        <p className="font-bold text-lg">
+                          {format(parseISO(memberResult.endDate), 'dd MMMM yyyy', { locale: ar })}
+                        </p>
                         <p
                           className={cn(
-                            'font-bold',
-                            memberResult.remainingAmount > 0 ? 'text-destructive' : 'text-success'
+                            'text-sm font-medium mt-1',
+                            isExpired
+                              ? 'text-destructive'
+                              : daysRemaining <= 7
+                              ? 'text-warning'
+                              : 'text-success'
                           )}
                         >
-                          {memberResult.remainingAmount} جنيه
+                          {isExpired ? 'الاشتراك منتهي' : `متبقي ${daysRemaining} يوم`}
                         </p>
                       </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-3 bg-success/10 rounded-lg border border-success/20">
+                          <div className="flex items-center gap-2 mb-1">
+                            <CreditCard className="w-4 h-4 text-success" />
+                            <span className="text-sm text-muted-foreground">المدفوع</span>
+                          </div>
+                          <p className="font-bold text-success">{memberResult.paidAmount} جنيه</p>
+                        </div>
+                        <div
+                          className={cn(
+                            'p-3 rounded-lg border',
+                            memberResult.remainingAmount > 0
+                              ? 'bg-destructive/10 border-destructive/20'
+                              : 'bg-success/10 border-success/20'
+                          )}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <CreditCard
+                              className={cn(
+                                'w-4 h-4',
+                                memberResult.remainingAmount > 0 ? 'text-destructive' : 'text-success'
+                              )}
+                            />
+                            <span className="text-sm text-muted-foreground">المتبقي</span>
+                          </div>
+                          <p
+                            className={cn(
+                              'font-bold',
+                              memberResult.remainingAmount > 0 ? 'text-destructive' : 'text-success'
+                            )}
+                          >
+                            {memberResult.remainingAmount} جنيه
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </Card>
+                  </Card>
+
+                  <ContactUsSection />
+                </>
               ) : (
-                <Card className="p-8 text-center card-shadow">
-                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                    <User className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="font-bold text-lg mb-2">لم يتم العثور على اشتراك</h3>
-                  <p className="text-muted-foreground">
-                    تأكد من رقم الهاتف أو تواصل مع الإدارة
-                  </p>
-                </Card>
+                <>
+                  <Card className="p-8 text-center card-shadow">
+                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                      <User className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="font-bold text-lg mb-2">لم يتم العثور على اشتراك</h3>
+                    <p className="text-muted-foreground">
+                      تأكد من رقم الهاتف أو تواصل مع الإدارة
+                    </p>
+                  </Card>
+
+                  <ContactUsSection />
+                </>
               )}
             </div>
           )}
