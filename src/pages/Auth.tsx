@@ -146,59 +146,36 @@ const Auth = () => {
     setMemberSearched(true);
 
     try {
-      // تحويل الأرقام العربية إلى إنجليزية
-      const arabicToEnglish = (str: string) => {
-        const arabicNums = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-        return str.replace(/[٠-٩]/g, (d) => String(arabicNums.indexOf(d)));
-      };
-      
-      // Clean phone number - convert Arabic to English and remove all non-digits
-      const cleanPhone = arabicToEnglish(memberPhone.trim()).replace(/\D/g, '');
-      
-      console.log('Searching for phone:', cleanPhone);
-      
-      // Fetch all non-archived subscribers (using public RLS policy)
-      const { data, error } = await supabase
-        .from('subscribers')
-        .select('*')
-        .eq('is_archived', false);
+      // Use the secure edge function for member lookup
+      const { data, error } = await supabase.functions.invoke('member-lookup', {
+        body: { phone: memberPhone.trim() }
+      });
 
-      console.log('Query result:', { data, error });
+      console.log('Member lookup result:', { data, error });
 
       if (error) {
-        console.error('Query error:', error);
+        console.error('Member lookup error:', error);
         throw error;
       }
 
-      // Find matching phone number with flexible matching
-      const found = (data || []).find(row => {
-        const subPhone = (row.phone || '').replace(/\D/g, '');
-        // Check various matching patterns
-        const exactMatch = subPhone === cleanPhone;
-        const endsWithInput = subPhone.endsWith(cleanPhone) && cleanPhone.length >= 8;
-        const inputEndsWith = cleanPhone.endsWith(subPhone) && subPhone.length >= 8;
-        return exactMatch || endsWithInput || inputEndsWith;
-      });
-
-      console.log('Found subscriber:', found);
-
-      if (found) {
+      if (data?.found && data.subscriber) {
+        const sub = data.subscriber;
         const subscriber: Subscriber = {
-          id: found.id,
-          name: found.name,
-          phone: found.phone,
-          subscriptionType: found.subscription_type as any,
-          startDate: found.start_date,
-          endDate: found.end_date,
-          paidAmount: found.paid_amount,
-          remainingAmount: found.remaining_amount,
-          captain: found.captain,
-          status: found.status as any,
-          isArchived: found.is_archived,
-          isPaused: found.is_paused,
-          pausedUntil: found.paused_until,
-          createdAt: found.created_at,
-          updatedAt: found.updated_at,
+          id: sub.id,
+          name: sub.name,
+          phone: sub.phone,
+          subscriptionType: sub.subscriptionType,
+          startDate: sub.startDate,
+          endDate: sub.endDate,
+          paidAmount: sub.paidAmount,
+          remainingAmount: sub.remainingAmount,
+          captain: '', // Not exposed for security
+          status: sub.status,
+          isArchived: false,
+          isPaused: sub.isPaused,
+          pausedUntil: sub.pausedUntil,
+          createdAt: '',
+          updatedAt: '',
         };
         setMemberResult(subscriber);
       } else {
