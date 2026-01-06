@@ -39,11 +39,15 @@ export const ContactSettings = () => {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
     try {
-      saveContactInfo(localInfo);
-      toast({ title: 'تم حفظ بيانات التواصل بنجاح' });
+      const success = await saveContactInfo(localInfo);
+      if (success) {
+        toast({ title: 'تم حفظ بيانات التواصل بنجاح' });
+      } else {
+        toast({ title: 'حدث خطأ أثناء الحفظ', variant: 'destructive' });
+      }
     } finally {
       setIsSaving(false);
     }
@@ -75,7 +79,7 @@ export const ContactSettings = () => {
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <Label className="text-base">أرقام الإدارة (واتساب)</Label>
+          <Label className="text-base">أرقامنا (واتساب)</Label>
           <Button type="button" variant="outline" size="sm" onClick={addCaptain}>
             <Plus className="w-4 h-4 ml-1" />
             إضافة

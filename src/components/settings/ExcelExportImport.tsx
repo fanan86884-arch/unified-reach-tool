@@ -10,7 +10,7 @@ import { format, parseISO } from 'date-fns';
 
 interface ExcelExportImportProps {
   subscribers: Subscriber[];
-  onImport: (data: SubscriberFormData) => Promise<Subscriber | null>;
+  onImport: (data: SubscriberFormData) => Promise<{ success: boolean; subscriber?: Subscriber; error?: string }>;
 }
 
 const subscriptionTypeMap: Record<string, Subscriber['subscriptionType']> = {
@@ -127,7 +127,7 @@ export const ExcelExportImport = ({ subscribers, onImport }: ExcelExportImportPr
 
               if (subscriberData.name && subscriberData.phone) {
                 const result = await onImport(subscriberData);
-                if (result) {
+                if (result.success) {
                   successCount++;
                 } else {
                   errorCount++;

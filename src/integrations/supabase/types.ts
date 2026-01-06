@@ -55,6 +55,33 @@ export type Database = {
           },
         ]
       }
+      contact_settings: {
+        Row: {
+          captains: Json | null
+          created_at: string
+          facebook_url: string | null
+          id: string
+          instagram_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          captains?: Json | null
+          created_at?: string
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          captains?: Json | null
+          created_at?: string
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           annual_price: number
