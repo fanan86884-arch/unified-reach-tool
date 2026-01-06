@@ -190,7 +190,7 @@ export const SubscriberForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await onSubmit(formData);
-    onClose();
+    // Don't close here - let the parent handle closing after validation
   };
 
   if (settingsLoading) {

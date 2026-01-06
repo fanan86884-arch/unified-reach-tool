@@ -174,8 +174,38 @@ export const useCloudSubscribers = () => {
     };
   }, [user, fetchSubscribers]);
 
-  const addSubscriber = useCallback(async (data: SubscriberFormData): Promise<Subscriber | null> => {
-    if (!user) return null;
+  const checkPhoneExists = useCallback(async (phone: string, excludeId?: string): Promise<boolean> => {
+    if (!user) return false;
+    
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    const { data, error } = await supabase
+      .from('subscribers')
+      .select('id, phone')
+      .eq('user_id', user.id)
+      .eq('is_archived', false);
+    
+    if (error || !data) return false;
+    
+    return data.some(sub => {
+      if (excludeId && sub.id === excludeId) return false;
+      const subPhone = sub.phone.replace(/\D/g, '');
+      return subPhone === cleanPhone || 
+             subPhone === '20' + cleanPhone ||
+             '20' + subPhone === cleanPhone ||
+             subPhone.endsWith(cleanPhone) ||
+             cleanPhone.endsWith(subPhone);
+    });
+  }, [user]);
+
+  const addSubscriber = useCallback(async (data: SubscriberFormData): Promise<{ success: boolean; subscriber?: Subscriber; error?: string }> => {
+    if (!user) return { success: false, error: 'غير مصرح' };
+
+    // Check if phone already exists
+    const phoneExists = await checkPhoneExists(data.phone);
+    if (phoneExists) {
+      return { success: false, error: 'رقم الهاتف مسجل بالفعل' };
+    }
 
     const status = calculateStatus(data.endDate, data.remainingAmount, false);
 
@@ -201,7 +231,7 @@ export const useCloudSubscribers = () => {
 
     if (error) {
       console.error('Error adding subscriber:', error);
-      return null;
+      return { success: false, error: 'حدث خطأ أثناء الإضافة' };
     }
 
     // Log activity
@@ -210,8 +240,8 @@ export const useCloudSubscribers = () => {
       paidAmount: data.paidAmount,
     });
 
-    return mapDbToSubscriber(newData);
-  }, [user]);
+    return { success: true, subscriber: mapDbToSubscriber(newData) };
+  }, [user, checkPhoneExists]);
 
   const updateSubscriber = useCallback(async (id: string, data: Partial<SubscriberFormData>) => {
     if (!user) return;

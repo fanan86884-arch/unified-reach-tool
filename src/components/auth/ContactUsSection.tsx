@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useContactSettings } from '@/hooks/useContactSettings';
 import { Phone, MessageCircle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Facebook icon component
 const FacebookIcon = ({ className }: { className?: string }) => (
@@ -18,7 +18,23 @@ const InstagramIcon = ({ className }: { className?: string }) => (
 );
 
 export const ContactUsSection = () => {
-  const { contactInfo, getWhatsAppLink } = useContactSettings();
+  const { contactInfo, loading, getWhatsAppLink, getCallLink } = useContactSettings();
+
+  if (loading) {
+    return (
+      <Card className="p-6 mt-6 card-shadow">
+        <h3 className="font-bold text-lg mb-4 text-center">تواصل معنا</h3>
+        <div className="space-y-4">
+          <div className="flex justify-center gap-4">
+            <Skeleton className="w-12 h-12 rounded-full" />
+            <Skeleton className="w-12 h-12 rounded-full" />
+          </div>
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6 mt-6 card-shadow">
@@ -52,26 +68,37 @@ export const ContactUsSection = () => {
         {/* Captain Contacts */}
         {contactInfo.captains.length > 0 && (
           <div className="space-y-3 pt-2">
-            <p className="text-sm text-muted-foreground text-center">أرقام الإدارة</p>
+            <p className="text-sm text-muted-foreground text-center">أرقامنا</p>
             {contactInfo.captains.map((captain, index) => (
-              <a
+              <div
                 key={index}
-                href={getWhatsAppLink(captain.phone)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
+                className="flex items-center justify-between p-3 bg-muted rounded-lg"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center">
-                    <MessageCircle className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
+                  <div className="flex flex-col">
                     <p className="font-medium">{captain.name}</p>
                     <p className="text-sm text-muted-foreground" dir="ltr">{captain.phone}</p>
                   </div>
                 </div>
-                <Phone className="w-5 h-5 text-muted-foreground" />
-              </a>
+                <div className="flex items-center gap-2">
+                  {/* WhatsApp Button */}
+                  <a
+                    href={getWhatsAppLink(captain.phone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center hover:opacity-80 transition-opacity"
+                  >
+                    <MessageCircle className="w-5 h-5 text-white" />
+                  </a>
+                  {/* Call Button */}
+                  <a
+                    href={getCallLink(captain.phone)}
+                    className="w-10 h-10 rounded-full bg-primary flex items-center justify-center hover:opacity-80 transition-opacity"
+                  >
+                    <Phone className="w-5 h-5 text-primary-foreground" />
+                  </a>
+                </div>
+              </div>
             ))}
           </div>
         )}

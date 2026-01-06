@@ -30,7 +30,7 @@ interface SubscribersListProps {
   setFilterCaptain: (captain: string) => void;
   filterDateRange: string;
   setFilterDateRange: (range: string) => void;
-  addSubscriber: (data: SubscriberFormData) => Promise<Subscriber | null> | Subscriber;
+  addSubscriber: (data: SubscriberFormData) => Promise<{ success: boolean; subscriber?: Subscriber; error?: string }> | { success: boolean; subscriber?: Subscriber; error?: string };
   updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => void | Promise<void>;
   deleteSubscriber: (id: string) => void | Promise<void>;
   archiveSubscriber: (id: string) => void | Promise<void>;
@@ -77,15 +77,21 @@ export const SubscribersList = ({
     // This will be handled by parent component
   }
 
-  const handleAddOrEdit = (data: SubscriberFormData) => {
+  const handleAddOrEdit = async (data: SubscriberFormData) => {
     if (editingSubscriber) {
-      updateSubscriber(editingSubscriber.id, data);
+      await updateSubscriber(editingSubscriber.id, data);
       toast({ title: 'تم تحديث بيانات المشترك بنجاح' });
     } else {
-      addSubscriber(data);
-      toast({ title: 'تم إضافة المشترك بنجاح' });
+      const result = await addSubscriber(data);
+      if (result.success) {
+        toast({ title: 'تم إضافة المشترك بنجاح' });
+      } else {
+        toast({ title: result.error || 'حدث خطأ أثناء الإضافة', variant: 'destructive' });
+        return; // Don't close the form on error
+      }
     }
     setEditingSubscriber(null);
+    setIsFormOpen(false);
   };
 
   const handleEdit = (subscriber: Subscriber) => {
