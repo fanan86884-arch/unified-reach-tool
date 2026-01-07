@@ -62,7 +62,10 @@ export type Database = {
           facebook_url: string | null
           id: string
           instagram_url: string | null
+          instapay_number: string | null
+          store_url: string | null
           updated_at: string
+          vodafone_cash_number: string | null
         }
         Insert: {
           captains?: Json | null
@@ -70,7 +73,10 @@ export type Database = {
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
+          instapay_number?: string | null
+          store_url?: string | null
           updated_at?: string
+          vodafone_cash_number?: string | null
         }
         Update: {
           captains?: Json | null
@@ -78,7 +84,10 @@ export type Database = {
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
+          instapay_number?: string | null
+          store_url?: string | null
           updated_at?: string
+          vodafone_cash_number?: string | null
         }
         Relationships: []
       }
@@ -169,6 +178,51 @@ export type Database = {
           subscription_type?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      subscription_requests: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          name: string
+          paid_amount: number
+          payment_method: string | null
+          phone: string
+          remaining_amount: number
+          start_date: string
+          status: string
+          subscription_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          name: string
+          paid_amount?: number
+          payment_method?: string | null
+          phone: string
+          remaining_amount?: number
+          start_date?: string
+          status?: string
+          subscription_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          name?: string
+          paid_amount?: number
+          payment_method?: string | null
+          phone?: string
+          remaining_amount?: number
+          start_date?: string
+          status?: string
+          subscription_type?: string
+          updated_at?: string
         }
         Relationships: []
       }

@@ -14,15 +14,18 @@ import {
   History,
   FileSpreadsheet,
   User,
-  Phone
+  Phone,
+  CreditCard
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useCloudSettings, SubscriptionPrices } from '@/hooks/useCloudSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { ExcelExportImport } from './ExcelExportImport';
 import { ActivityLogComponent } from './ActivityLog';
 import { ContactSettings } from './ContactSettings';
+import { PaymentSettings } from './PaymentSettings';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import {
   Collapsible,
@@ -107,7 +110,9 @@ export const Settings = () => {
   const { allSubscribers, addSubscriber } = useCloudSubscribers();
   const [localPrices, setLocalPrices] = useState<SubscriptionPrices>(prices);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLocalPrices(prices);
@@ -147,7 +152,19 @@ export const Settings = () => {
   };
 
   const handleSignOut = async () => {
-    await signOut();
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    try {
+      await signOut();
+      // Clear any local storage
+      localStorage.removeItem('whatsapp_templates');
+      // Force navigation to auth page and prevent back
+      navigate('/auth', { replace: true });
+      window.history.pushState(null, '', '/auth');
+    } catch (e) {
+      console.error('Sign out error:', e);
+      setIsSigningOut(false);
+    }
   };
 
   if (loading) {
@@ -227,6 +244,11 @@ export const Settings = () => {
         <ContactSettings />
       </SettingsSection>
 
+      {/* Payment Settings */}
+      <SettingsSection title="بيانات الدفع والمتجر" icon={CreditCard}>
+        <PaymentSettings />
+      </SettingsSection>
+
       {/* Save Button */}
       <Button onClick={handleSave} className="w-full" disabled={isSaving}>
         {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -240,8 +262,8 @@ export const Settings = () => {
             <p className="font-medium">البريد الإلكتروني</p>
             <p className="text-sm text-muted-foreground">{user?.email}</p>
           </div>
-          <Button variant="destructive" onClick={handleSignOut}>
-            <LogOut className="w-4 h-4" />
+          <Button variant="destructive" onClick={handleSignOut} disabled={isSigningOut}>
+            {isSigningOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
             تسجيل الخروج
           </Button>
         </div>
