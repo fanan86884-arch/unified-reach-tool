@@ -17,13 +17,17 @@ const InstagramIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export const ContactUsSection = () => {
+interface ContactUsSectionProps {
+  isEmbedded?: boolean;
+}
+
+export const ContactUsSection = ({ isEmbedded = false }: ContactUsSectionProps) => {
   const { contactInfo, loading, getWhatsAppLink, getCallLink } = useContactSettings();
 
   if (loading) {
     return (
-      <Card className="p-6 mt-6 card-shadow">
-        <h3 className="font-bold text-lg mb-4 text-center">تواصل معنا</h3>
+      <div className={isEmbedded ? "space-y-4 mt-4" : ""}>
+        {!isEmbedded && <h3 className="font-bold text-lg mb-4 text-center">تواصل معنا</h3>}
         <div className="space-y-4">
           <div className="flex justify-center gap-4">
             <Skeleton className="w-12 h-12 rounded-full" />
@@ -32,77 +36,82 @@ export const ContactUsSection = () => {
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
         </div>
-      </Card>
+      </div>
     );
+  }
+
+  const content = (
+    <div className={isEmbedded ? "space-y-4 mt-4" : "space-y-4"}>
+      {/* Social Media Links */}
+      <div className="flex justify-center gap-4">
+        {contactInfo.facebookUrl && (
+          <a
+            href={contactInfo.facebookUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center text-white hover:opacity-80 transition-opacity"
+          >
+            <FacebookIcon className="w-6 h-6" />
+          </a>
+        )}
+        {contactInfo.instagramUrl && (
+          <a
+            href={contactInfo.instagramUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center text-white hover:opacity-80 transition-opacity"
+          >
+            <InstagramIcon className="w-6 h-6" />
+          </a>
+        )}
+      </div>
+
+      {/* Captain Contacts */}
+      {contactInfo.captains.length > 0 && (
+        <div className="space-y-3 pt-2">
+          <p className="text-sm text-muted-foreground text-center">أرقامنا</p>
+          {contactInfo.captains.map((captain, index) => (
+            <div
+              key={index}
+              className="flex items-center justify-between p-3 bg-muted rounded-lg"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col">
+                  <p className="font-medium">{captain.name}</p>
+                  <p className="text-sm text-muted-foreground" dir="ltr">{captain.phone}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={getWhatsAppLink(captain.phone)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center hover:opacity-80 transition-opacity"
+                >
+                  <MessageCircle className="w-5 h-5 text-white" />
+                </a>
+                <a
+                  href={getCallLink(captain.phone)}
+                  className="w-10 h-10 rounded-full bg-primary flex items-center justify-center hover:opacity-80 transition-opacity"
+                >
+                  <Phone className="w-5 h-5 text-primary-foreground" />
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  if (isEmbedded) {
+    return content;
   }
 
   return (
     <Card className="p-6 mt-6 card-shadow">
       <h3 className="font-bold text-lg mb-4 text-center">تواصل معنا</h3>
-      
-      <div className="space-y-4">
-        {/* Social Media Links */}
-        <div className="flex justify-center gap-4">
-          {contactInfo.facebookUrl && (
-            <a
-              href={contactInfo.facebookUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center text-white hover:opacity-80 transition-opacity"
-            >
-              <FacebookIcon className="w-6 h-6" />
-            </a>
-          )}
-          {contactInfo.instagramUrl && (
-            <a
-              href={contactInfo.instagramUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center text-white hover:opacity-80 transition-opacity"
-            >
-              <InstagramIcon className="w-6 h-6" />
-            </a>
-          )}
-        </div>
-
-        {/* Captain Contacts */}
-        {contactInfo.captains.length > 0 && (
-          <div className="space-y-3 pt-2">
-            <p className="text-sm text-muted-foreground text-center">أرقامنا</p>
-            {contactInfo.captains.map((captain, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-3 bg-muted rounded-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col">
-                    <p className="font-medium">{captain.name}</p>
-                    <p className="text-sm text-muted-foreground" dir="ltr">{captain.phone}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {/* WhatsApp Button */}
-                  <a
-                    href={getWhatsAppLink(captain.phone)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center hover:opacity-80 transition-opacity"
-                  >
-                    <MessageCircle className="w-5 h-5 text-white" />
-                  </a>
-                  {/* Call Button */}
-                  <a
-                    href={getCallLink(captain.phone)}
-                    className="w-10 h-10 rounded-full bg-primary flex items-center justify-center hover:opacity-80 transition-opacity"
-                  >
-                    <Phone className="w-5 h-5 text-primary-foreground" />
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {content}
     </Card>
   );
 };

@@ -7,7 +7,11 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Mail, Lock, Loader2, Phone, User, Calendar, CreditCard, Briefcase, Users, ArrowRight, KeyRound } from 'lucide-react';
+import { 
+  Mail, Lock, Loader2, Phone, User, Calendar, CreditCard, 
+  Briefcase, Users, ArrowRight, KeyRound, ChevronDown, 
+  MessageCircle, ShoppingBag, ExternalLink 
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Subscriber } from '@/types/subscriber';
 import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
@@ -15,6 +19,13 @@ import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
 import { ContactUsSection } from '@/components/auth/ContactUsSection';
+import { MemberSubscriptionRequest } from '@/components/auth/MemberSubscriptionRequest';
+import { StoreLink } from '@/components/auth/StoreLink';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 const EMPLOYEE_PIN = '4807';
 
@@ -36,6 +47,45 @@ const subscriptionTypeLabels: Record<string, string> = {
 type UserType = 'selection' | 'employee' | 'member';
 type EmployeeStep = 'pin' | 'login';
 
+// Collapsible Section Component
+const CollapsibleSection = ({ 
+  title, 
+  icon: Icon, 
+  children, 
+  defaultOpen = false 
+}: { 
+  title: string; 
+  icon: React.ComponentType<{ className?: string }>; 
+  children: React.ReactNode; 
+  defaultOpen?: boolean;
+}) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Card className="card-shadow overflow-hidden">
+        <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Icon className="w-5 h-5 text-primary" />
+            </div>
+            <span className="font-bold">{title}</span>
+          </div>
+          <ChevronDown className={cn(
+            'w-5 h-5 text-muted-foreground transition-transform',
+            isOpen && 'rotate-180'
+          )} />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="p-4 pt-0 border-t">
+            {children}
+          </div>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  );
+};
+
 const Auth = () => {
   const [userType, setUserType] = useState<UserType>('selection');
   const [employeeStep, setEmployeeStep] = useState<EmployeeStep>('pin');
@@ -51,6 +101,7 @@ const Auth = () => {
   const [memberResult, setMemberResult] = useState<Subscriber | null>(null);
   const [memberSearched, setMemberSearched] = useState(false);
   const [isMemberSearching, setIsMemberSearching] = useState(false);
+  const [showSubscriptionRequest, setShowSubscriptionRequest] = useState(false);
   
   const { toast } = useToast();
   const { signIn, signUp, user, loading } = useAuth();
@@ -151,8 +202,6 @@ const Auth = () => {
         body: { phone: memberPhone.trim() }
       });
 
-      console.log('Member lookup result:', { data, error });
-
       if (error) {
         console.error('Member lookup error:', error);
         throw error;
@@ -169,7 +218,7 @@ const Auth = () => {
           endDate: sub.endDate,
           paidAmount: sub.paidAmount,
           remainingAmount: sub.remainingAmount,
-          captain: '', // Not exposed for security
+          captain: '',
           status: sub.status,
           isArchived: false,
           isPaused: sub.isPaused,
@@ -190,7 +239,9 @@ const Auth = () => {
   };
 
   const goBack = () => {
-    if (userType === 'employee' && employeeStep === 'login') {
+    if (showSubscriptionRequest) {
+      setShowSubscriptionRequest(false);
+    } else if (userType === 'employee' && employeeStep === 'login') {
       setEmployeeStep('pin');
       setPin('');
       setPinError('');
@@ -246,7 +297,7 @@ const Auth = () => {
       <div className="flex-1 flex items-start justify-center px-4 pb-8">
         <div className="w-full max-w-md">
           {/* Back Button */}
-          {userType !== 'selection' && (
+          {(userType !== 'selection' || showSubscriptionRequest) && (
             <Button
               variant="ghost"
               onClick={goBack}
@@ -402,45 +453,62 @@ const Auth = () => {
 
           {/* Member - Phone Entry */}
           {userType === 'member' && !memberSearched && (
-            <Card className="p-8 card-shadow">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-primary" />
+            <div className="space-y-4">
+              <Card className="p-8 card-shadow">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <Users className="w-8 h-8 text-primary" />
+                  </div>
+                  <h2 className="text-xl font-bold">استعلام عن الاشتراك</h2>
+                  <p className="text-sm text-muted-foreground mt-1">أدخل رقم هاتفك للاستعلام</p>
                 </div>
-                <h2 className="text-xl font-bold">استعلام عن الاشتراك</h2>
-                <p className="text-sm text-muted-foreground mt-1">أدخل رقم هاتفك للاستعلام</p>
-              </div>
 
-              <div className="space-y-4">
-                <div className="relative">
-                  <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    value={memberPhone}
-                    onChange={(e) => setMemberPhone(e.target.value)}
-                    placeholder="أدخل رقم الهاتف..."
-                    className="pr-10"
-                    dir="ltr"
-                    onKeyDown={(e) => e.key === 'Enter' && handleMemberSearch()}
-                  />
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      value={memberPhone}
+                      onChange={(e) => setMemberPhone(e.target.value)}
+                      placeholder="أدخل رقم الهاتف..."
+                      className="pr-10"
+                      dir="ltr"
+                      onKeyDown={(e) => e.key === 'Enter' && handleMemberSearch()}
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleMemberSearch} 
+                    className="w-full" 
+                    disabled={!memberPhone.trim() || isMemberSearching}
+                  >
+                    {isMemberSearching ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'بحث'
+                    )}
+                  </Button>
                 </div>
-                <Button 
-                  onClick={handleMemberSearch} 
-                  className="w-full" 
-                  disabled={!memberPhone.trim() || isMemberSearching}
-                >
-                  {isMemberSearching ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    'بحث'
-                  )}
-                </Button>
-              </div>
-            </Card>
+              </Card>
+
+              {/* Collapsible sections for non-searched members */}
+              <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
+                <ContactUsSection isEmbedded />
+              </CollapsibleSection>
+
+              <CollapsibleSection title="طلب اشتراك / تجديد" icon={CreditCard}>
+                <MemberSubscriptionRequest 
+                  existingSubscriber={null} 
+                  onClose={() => {}} 
+                />
+              </CollapsibleSection>
+
+              {/* 2B Store Link */}
+              <StoreLink />
+            </div>
           )}
 
           {/* Member - Subscription Result */}
           {userType === 'member' && memberSearched && (
-            <div className="animate-fade-in">
+            <div className="animate-fade-in space-y-4">
               {isMemberSearching ? (
                 <div className="text-center py-8">
                   <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
@@ -540,7 +608,20 @@ const Auth = () => {
                     </div>
                   </Card>
 
-                  <ContactUsSection />
+                  {/* Collapsible sections for existing members */}
+                  <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
+                    <ContactUsSection isEmbedded />
+                  </CollapsibleSection>
+
+                  <CollapsibleSection title="تجديد الاشتراك" icon={CreditCard}>
+                    <MemberSubscriptionRequest 
+                      existingSubscriber={memberResult} 
+                      onClose={() => setShowSubscriptionRequest(false)} 
+                    />
+                  </CollapsibleSection>
+
+                  {/* 2B Store Link */}
+                  <StoreLink />
                 </>
               ) : (
                 <>
@@ -550,11 +631,24 @@ const Auth = () => {
                     </div>
                     <h3 className="font-bold text-lg mb-2">لم يتم العثور على اشتراك</h3>
                     <p className="text-muted-foreground">
-                      تأكد من رقم الهاتف أو تواصل مع الإدارة
+                      تأكد من رقم الهاتف أو سجل اشتراك جديد
                     </p>
                   </Card>
 
-                  <ContactUsSection />
+                  {/* Collapsible sections for not found */}
+                  <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
+                    <ContactUsSection isEmbedded />
+                  </CollapsibleSection>
+
+                  <CollapsibleSection title="طلب اشتراك جديد" icon={CreditCard} defaultOpen>
+                    <MemberSubscriptionRequest 
+                      existingSubscriber={null} 
+                      onClose={() => {}} 
+                    />
+                  </CollapsibleSection>
+
+                  {/* 2B Store Link */}
+                  <StoreLink />
                 </>
               )}
             </div>
