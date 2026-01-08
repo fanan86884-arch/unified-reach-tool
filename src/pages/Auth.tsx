@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { 
   Mail, Lock, Loader2, Phone, User, Calendar, CreditCard, 
   Briefcase, Users, ArrowRight, KeyRound, ChevronDown, 
-  MessageCircle, ShoppingBag, ExternalLink 
+  MessageCircle, ShoppingBag, ExternalLink, FileText 
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Subscriber } from '@/types/subscriber';
@@ -21,6 +21,7 @@ import logo from '@/assets/logo.png';
 import { ContactUsSection } from '@/components/auth/ContactUsSection';
 import { MemberSubscriptionRequest } from '@/components/auth/MemberSubscriptionRequest';
 import { StoreLink } from '@/components/auth/StoreLink';
+import { MemberRequestsHistory } from '@/components/auth/MemberRequestsHistory';
 import {
   Collapsible,
   CollapsibleContent,
@@ -609,6 +610,10 @@ const Auth = () => {
                   </Card>
 
                   {/* Collapsible sections for existing members */}
+                  <CollapsibleSection title="طلباتي السابقة" icon={FileText}>
+                    <MemberRequestsHistory phone={memberResult.phone} />
+                  </CollapsibleSection>
+
                   <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
                     <ContactUsSection isEmbedded />
                   </CollapsibleSection>
@@ -636,6 +641,10 @@ const Auth = () => {
                   </Card>
 
                   {/* Collapsible sections for not found */}
+                  <CollapsibleSection title="طلباتي السابقة" icon={FileText}>
+                    <MemberRequestsHistory phone={memberPhone} />
+                  </CollapsibleSection>
+
                   <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
                     <ContactUsSection isEmbedded />
                   </CollapsibleSection>
