@@ -48,10 +48,15 @@ const Index = () => {
     setIsAddFormOpen(true);
   };
 
-  const handleAddSubmit = (data: SubscriberFormData) => {
-    addSubscriber(data);
-    toast({ title: 'تم إضافة المشترك بنجاح' });
-    setIsAddFormOpen(false);
+  const handleAddSubmit = async (data: SubscriberFormData) => {
+    const result = await addSubscriber(data);
+    if (result.success) {
+      toast({ title: 'تم إضافة المشترك بنجاح' });
+      setIsAddFormOpen(false);
+      return;
+    }
+
+    toast({ title: result.error || 'حدث خطأ أثناء الإضافة', variant: 'destructive' });
   };
 
   // Pull-to-refresh handlers

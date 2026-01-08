@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
+import { buildCallLink, buildWhatsAppLink } from '@/lib/phone';
 export interface ContactInfo {
   facebookUrl: string;
   instagramUrl: string;
@@ -120,15 +120,11 @@ export const useContactSettings = () => {
   }, []);
 
   const getWhatsAppLink = useCallback((phone: string): string => {
-    const cleanPhone = phone.replace(/\D/g, '');
-    const formattedPhone = cleanPhone.startsWith('20') ? cleanPhone : `20${cleanPhone}`;
-    return `https://wa.me/${formattedPhone}`;
+    return buildWhatsAppLink(phone);
   }, []);
 
   const getCallLink = useCallback((phone: string): string => {
-    const cleanPhone = phone.replace(/\D/g, '');
-    const formattedPhone = cleanPhone.startsWith('20') ? cleanPhone : `20${cleanPhone}`;
-    return `tel:+${formattedPhone}`;
+    return buildCallLink(phone);
   }, []);
 
   return {

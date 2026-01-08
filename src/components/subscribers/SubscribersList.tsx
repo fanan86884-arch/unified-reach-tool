@@ -31,7 +31,7 @@ interface SubscribersListProps {
   filterDateRange: string;
   setFilterDateRange: (range: string) => void;
   addSubscriber: (data: SubscriberFormData) => Promise<{ success: boolean; subscriber?: Subscriber; error?: string }> | { success: boolean; subscriber?: Subscriber; error?: string };
-  updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => void | Promise<void>;
+  updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => Promise<{ success: boolean; error?: string }>;
   deleteSubscriber: (id: string) => void | Promise<void>;
   archiveSubscriber: (id: string) => void | Promise<void>;
   renewSubscription: (id: string, newEndDate: string, paidAmount: number) => void | Promise<void>;
@@ -79,7 +79,11 @@ export const SubscribersList = ({
 
   const handleAddOrEdit = async (data: SubscriberFormData) => {
     if (editingSubscriber) {
-      await updateSubscriber(editingSubscriber.id, data);
+      const result = await updateSubscriber(editingSubscriber.id, data);
+      if (!result.success) {
+        toast({ title: result.error || 'حدث خطأ أثناء التعديل', variant: 'destructive' });
+        return;
+      }
       toast({ title: 'تم تحديث بيانات المشترك بنجاح' });
     } else {
       const result = await addSubscriber(data);

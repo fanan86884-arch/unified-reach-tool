@@ -11,7 +11,7 @@ export interface SubscriptionPrices {
 }
 
 const defaultPrices: SubscriptionPrices = {
-  monthly: 200,
+  monthly: 250,
   quarterly: 500,
   'semi-annual': 900,
   annual: 1500,

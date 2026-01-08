@@ -155,12 +155,16 @@ export const Settings = () => {
     if (isSigningOut) return;
     setIsSigningOut(true);
     try {
-      await signOut();
-      // Clear any local storage
-      localStorage.removeItem('whatsapp_templates');
-      // Force navigation to auth page and prevent back
+      const { error } = await signOut();
+      if (error) throw error;
+
+      // Clear all local/session state (templates, deleted notifications, queues, etc.)
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Hard redirect to prevent back navigation
       navigate('/auth', { replace: true });
-      window.history.pushState(null, '', '/auth');
+      window.location.replace('/auth');
     } catch (e) {
       console.error('Sign out error:', e);
       setIsSigningOut(false);

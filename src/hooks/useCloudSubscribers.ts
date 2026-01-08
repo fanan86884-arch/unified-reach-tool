@@ -3,7 +3,7 @@ import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subs
 import { supabase } from '@/integrations/supabase/client';
 import { differenceInDays, parseISO, startOfDay } from 'date-fns';
 import { useAuth } from './useAuth';
-
+import { normalizeEgyptPhoneDigits } from '@/lib/phone';
 // Activity logging helper
 const logActivity = async (
   userId: string,
@@ -176,33 +176,33 @@ export const useCloudSubscribers = () => {
 
   const checkPhoneExists = useCallback(async (phone: string, excludeId?: string): Promise<boolean> => {
     if (!user) return false;
-    
-    const cleanPhone = phone.replace(/\D/g, '');
-    
+
+    const normalized = normalizeEgyptPhoneDigits(phone);
+    if (!normalized) return false;
+
     const { data, error } = await supabase
       .from('subscribers')
       .select('id, phone')
-      .eq('user_id', user.id)
-      .eq('is_archived', false);
-    
+      .eq('user_id', user.id);
+
     if (error || !data) return false;
-    
+
     return data.some(sub => {
       if (excludeId && sub.id === excludeId) return false;
-      const subPhone = sub.phone.replace(/\D/g, '');
-      return subPhone === cleanPhone || 
-             subPhone === '20' + cleanPhone ||
-             '20' + subPhone === cleanPhone ||
-             subPhone.endsWith(cleanPhone) ||
-             cleanPhone.endsWith(subPhone);
+      return normalizeEgyptPhoneDigits(sub.phone) === normalized;
     });
   }, [user]);
 
   const addSubscriber = useCallback(async (data: SubscriberFormData): Promise<{ success: boolean; subscriber?: Subscriber; error?: string }> => {
     if (!user) return { success: false, error: 'غير مصرح' };
 
-    // Check if phone already exists
-    const phoneExists = await checkPhoneExists(data.phone);
+    const normalizedPhone = normalizeEgyptPhoneDigits(data.phone);
+    if (!normalizedPhone) {
+      return { success: false, error: 'رقم الهاتف غير صحيح' };
+    }
+
+    // Check if phone already exists (including archived)
+    const phoneExists = await checkPhoneExists(normalizedPhone);
     if (phoneExists) {
       return { success: false, error: 'رقم الهاتف مسجل بالفعل' };
     }
@@ -214,7 +214,7 @@ export const useCloudSubscribers = () => {
       .insert({
         user_id: user.id,
         name: data.name,
-        phone: data.phone,
+        phone: normalizedPhone,
         subscription_type: data.subscriptionType,
         start_date: data.startDate,
         end_date: data.endDate,
@@ -243,14 +243,29 @@ export const useCloudSubscribers = () => {
     return { success: true, subscriber: mapDbToSubscriber(newData) };
   }, [user, checkPhoneExists]);
 
-  const updateSubscriber = useCallback(async (id: string, data: Partial<SubscriberFormData>) => {
-    if (!user) return;
-    
+  const updateSubscriber = useCallback(async (id: string, data: Partial<SubscriberFormData>): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: 'غير مصرح' };
+
     const subscriber = subscribers.find(s => s.id === id);
     const updateData: any = {};
-    
+
     if (data.name !== undefined) updateData.name = data.name;
-    if (data.phone !== undefined) updateData.phone = data.phone;
+
+    if (data.phone !== undefined) {
+      const normalizedPhone = normalizeEgyptPhoneDigits(data.phone);
+      if (!normalizedPhone) {
+        return { success: false, error: 'رقم الهاتف غير صحيح' };
+      }
+
+      // منع تكرار الرقم عند التعديل
+      const exists = await checkPhoneExists(normalizedPhone, id);
+      if (exists) {
+        return { success: false, error: 'رقم الهاتف مسجل بالفعل' };
+      }
+
+      updateData.phone = normalizedPhone;
+    }
+
     if (data.subscriptionType !== undefined) updateData.subscription_type = data.subscriptionType;
     if (data.startDate !== undefined) updateData.start_date = data.startDate;
     if (data.endDate !== undefined) updateData.end_date = data.endDate;
@@ -276,11 +291,16 @@ export const useCloudSubscribers = () => {
 
     if (error) {
       console.error('Error updating subscriber:', error);
-    } else if (subscriber) {
+      return { success: false, error: 'حدث خطأ أثناء التعديل' };
+    }
+
+    if (subscriber) {
       // Log activity with previous data
       await logActivity(user.id, id, subscriber.name, 'update', data, subscriber);
     }
-  }, [user, subscribers]);
+
+    return { success: true };
+  }, [user, subscribers, checkPhoneExists]);
 
   const deleteSubscriber = useCallback(async (id: string) => {
     if (!user) return;

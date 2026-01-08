@@ -7,7 +7,8 @@ import { ar } from 'date-fns/locale';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
+import { useAuth } from '@/hooks/useAuth';
+import { normalizeEgyptPhoneDigits } from '@/lib/phone';
 interface SubscriptionRequest {
   id: string;
   name: string;
@@ -90,6 +91,7 @@ export const Notifications = ({ stats }: NotificationsProps) => {
   const [deletedIds, setDeletedIds] = useState<Set<string>>(() => loadDeletedIds());
   const [subscriptionRequests, setSubscriptionRequests] = useState<SubscriptionRequest[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
   const today = startOfDay(new Date());
 
   // Fetch subscription requests
@@ -215,15 +217,92 @@ export const Notifications = ({ stats }: NotificationsProps) => {
     success: 'text-success',
   };
 
+  const computeSubscriberStatus = (endDateStr: string, isPaused: boolean): string => {
+    if (isPaused) return 'paused';
+    const todayStart = startOfDay(new Date());
+    const end = startOfDay(parseISO(endDateStr));
+    const daysRemaining = differenceInDays(end, todayStart);
+    if (daysRemaining < 0) return 'expired';
+    if (daysRemaining <= 7) return 'expiring';
+    return 'active';
+  };
+
   const handleApproveRequest = async (request: SubscriptionRequest) => {
+    if (!user) {
+      toast({ title: 'غير مصرح', description: 'يرجى تسجيل الدخول كموظف', variant: 'destructive' });
+      return;
+    }
+
     try {
+      const normalizedPhone = normalizeEgyptPhoneDigits(request.phone);
+      if (!normalizedPhone) {
+        toast({ title: 'خطأ', description: 'رقم الهاتف غير صحيح', variant: 'destructive' });
+        return;
+      }
+
+      // Check if subscriber already exists (same phone) -> update it, otherwise insert new
+      const { data: existingSubs, error: existingError } = await supabase
+        .from('subscribers')
+        .select('id, phone')
+        .eq('user_id', user.id);
+
+      if (existingError) throw existingError;
+
+      const existing = (existingSubs || []).find(s => normalizeEgyptPhoneDigits(s.phone) === normalizedPhone);
+
+      const status = computeSubscriberStatus(request.end_date, false);
+
+      if (existing?.id) {
+        const { error: updateError } = await supabase
+          .from('subscribers')
+          .update({
+            name: request.name,
+            phone: normalizedPhone,
+            subscription_type: request.subscription_type,
+            start_date: request.start_date,
+            end_date: request.end_date,
+            paid_amount: request.paid_amount,
+            remaining_amount: request.remaining_amount,
+            status,
+            is_archived: false,
+            is_paused: false,
+            paused_until: null,
+          })
+          .eq('id', existing.id);
+
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('subscribers')
+          .insert({
+            user_id: user.id,
+            name: request.name,
+            phone: normalizedPhone,
+            subscription_type: request.subscription_type,
+            start_date: request.start_date,
+            end_date: request.end_date,
+            paid_amount: request.paid_amount,
+            remaining_amount: request.remaining_amount,
+            status,
+            // captain has a DB default, but set it explicitly for clarity
+            captain: 'كابتن خالد',
+            is_archived: false,
+            is_paused: false,
+            paused_until: null,
+          });
+
+        if (insertError) throw insertError;
+      }
+
       // Update request status
-      await supabase
+      const { error: reqError } = await supabase
         .from('subscription_requests')
         .update({ status: 'approved' })
         .eq('id', request.id);
 
-      toast({ title: 'تم قبول الطلب بنجاح' });
+      if (reqError) throw reqError;
+
+      toast({ title: 'تم قبول الطلب وإضافته لقائمة المشتركين' });
     } catch (e) {
       console.error('Error approving request:', e);
       toast({ title: 'خطأ', description: 'حدث خطأ أثناء قبول الطلب', variant: 'destructive' });
