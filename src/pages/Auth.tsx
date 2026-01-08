@@ -102,6 +102,7 @@ const Auth = () => {
   const [memberResult, setMemberResult] = useState<Subscriber | null>(null);
   const [memberSearched, setMemberSearched] = useState(false);
   const [isMemberSearching, setIsMemberSearching] = useState(false);
+  const [memberMode, setMemberMode] = useState<'new' | 'existing'>('existing');
   const [showSubscriptionRequest, setShowSubscriptionRequest] = useState(false);
   
   const { toast } = useToast();
@@ -452,63 +453,97 @@ const Auth = () => {
             </Card>
           )}
 
-          {/* Member - Phone Entry */}
+          {/* Member - New/Existing Selection (before search) */}
           {userType === 'member' && !memberSearched && (
             <div className="space-y-4">
-              <Card className="p-8 card-shadow">
-                <div className="text-center mb-6">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <Users className="w-8 h-8 text-primary" />
-                  </div>
-                  <h2 className="text-xl font-bold">استعلام عن الاشتراك</h2>
-                  <p className="text-sm text-muted-foreground mt-1">أدخل رقم هاتفك للاستعلام</p>
-                </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant={memberMode === 'new' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setMemberMode('new');
+                    setMemberSearched(false);
+                    setMemberResult(null);
+                    setMemberPhone('');
+                  }}
+                >
+                  عضو جديد
+                </Button>
+                <Button
+                  type="button"
+                  variant={memberMode === 'existing' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setMemberMode('existing');
+                    setMemberSearched(false);
+                    setMemberResult(null);
+                    setMemberPhone('');
+                  }}
+                >
+                  عضو موجود بالفعل
+                </Button>
+              </div>
 
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      value={memberPhone}
-                      onChange={(e) => setMemberPhone(e.target.value)}
-                      placeholder="أدخل رقم الهاتف..."
-                      className="pr-10"
-                      dir="ltr"
-                      onKeyDown={(e) => e.key === 'Enter' && handleMemberSearch()}
-                    />
-                  </div>
-                  <Button 
-                    onClick={handleMemberSearch} 
-                    className="w-full" 
-                    disabled={!memberPhone.trim() || isMemberSearching}
-                  >
-                    {isMemberSearching ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      'بحث'
-                    )}
-                  </Button>
-                </div>
-              </Card>
+              {memberMode === 'existing' ? (
+                <>
+                  <Card className="p-8 card-shadow">
+                    <div className="text-center mb-6">
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                        <Users className="w-8 h-8 text-primary" />
+                      </div>
+                      <h2 className="text-xl font-bold">استعلام عن الاشتراك</h2>
+                      <p className="text-sm text-muted-foreground mt-1">أدخل رقم هاتفك للاستعلام</p>
+                    </div>
 
-              {/* Collapsible sections for non-searched members */}
-              <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
-                <ContactUsSection isEmbedded />
-              </CollapsibleSection>
+                    <div className="space-y-4">
+                      <div className="relative">
+                        <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          value={memberPhone}
+                          onChange={(e) => setMemberPhone(e.target.value)}
+                          placeholder="أدخل رقم الهاتف..."
+                          className="pr-10"
+                          dir="ltr"
+                          onKeyDown={(e) => e.key === 'Enter' && handleMemberSearch()}
+                        />
+                      </div>
+                      <Button
+                        onClick={handleMemberSearch}
+                        className="w-full"
+                        disabled={!memberPhone.trim() || isMemberSearching}
+                      >
+                        {isMemberSearching ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          'بحث'
+                        )}
+                      </Button>
+                    </div>
+                  </Card>
 
-              <CollapsibleSection title="طلب اشتراك / تجديد" icon={CreditCard}>
-                <MemberSubscriptionRequest 
-                  existingSubscriber={null} 
-                  onClose={() => {}} 
-                />
-              </CollapsibleSection>
+                  <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
+                    <ContactUsSection isEmbedded />
+                  </CollapsibleSection>
 
-              {/* 2B Store Link */}
-              <StoreLink />
+                  <StoreLink />
+                </>
+              ) : (
+                <>
+                  <CollapsibleSection title="تسجيل اشتراك جديد" icon={CreditCard} defaultOpen>
+                    <MemberSubscriptionRequest existingSubscriber={null} onClose={() => {}} />
+                  </CollapsibleSection>
+
+                  <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
+                    <ContactUsSection isEmbedded />
+                  </CollapsibleSection>
+
+                  <StoreLink />
+                </>
+              )}
             </div>
           )}
 
-          {/* Member - Subscription Result */}
-          {userType === 'member' && memberSearched && (
+          {/* Member - Subscription Result (existing members only) */}
+          {userType === 'member' && memberMode === 'existing' && memberSearched && (
             <div className="animate-fade-in space-y-4">
               {isMemberSearching ? (
                 <div className="text-center py-8">

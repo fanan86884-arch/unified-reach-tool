@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useContactSettings } from '@/hooks/useContactSettings';
+import { buildWhatsAppLink, normalizeEgyptPhoneDigits } from '@/lib/phone';
 import { 
   Loader2, 
   User, 
@@ -14,10 +15,8 @@ import {
   CreditCard,
   CheckCircle,
   Copy,
-  ExternalLink
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
-import { cn } from '@/lib/utils';
 import { Subscriber } from '@/types/subscriber';
 
 interface MemberSubscriptionRequestProps {
@@ -39,15 +38,6 @@ const subscriptionLabels: Record<string, string> = {
   annual: 'سنوي (365 يوم)',
 };
 
-// Convert Arabic numerals to English
-const convertArabicToEnglish = (str: string): string => {
-  const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-  let result = str;
-  arabicNumerals.forEach((arabic, index) => {
-    result = result.replace(new RegExp(arabic, 'g'), index.toString());
-  });
-  return result;
-};
 
 export const MemberSubscriptionRequest = ({ 
   existingSubscriber, 
@@ -59,7 +49,7 @@ export const MemberSubscriptionRequest = ({
   const [step, setStep] = useState<'form' | 'payment' | 'confirmation'>('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [prices, setPrices] = useState({
-    monthly: 200,
+    monthly: 250,
     quarterly: 500,
     'semi-annual': 900,
     annual: 1500,
@@ -152,11 +142,19 @@ export const MemberSubscriptionRequest = ({
 
     // Check for duplicate phone
     if (!existingSubscriber) {
-      const cleanPhone = convertArabicToEnglish(formData.phone.trim()).replace(/\D/g, '');
-      
+      const normalizedPhone = normalizeEgyptPhoneDigits(formData.phone.trim());
+      if (!normalizedPhone) {
+        toast({
+          title: 'خطأ',
+          description: 'رقم الهاتف غير صحيح',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       try {
         const { data } = await supabase.functions.invoke('member-lookup', {
-          body: { phone: cleanPhone }
+          body: { phone: normalizedPhone }
         });
 
         if (data?.found) {
@@ -184,12 +182,24 @@ export const MemberSubscriptionRequest = ({
     setIsSubmitting(true);
     
     try {
+      const requestName = (existingSubscriber?.name || formData.name).trim();
+      const requestPhone = normalizeEgyptPhoneDigits(existingSubscriber?.phone || formData.phone);
+
+      if (!requestName || !requestPhone) {
+        toast({
+          title: 'خطأ',
+          description: 'يرجى التأكد من الاسم ورقم الهاتف',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       // Insert subscription request
       const { error } = await supabase
         .from('subscription_requests')
         .insert({
-          name: existingSubscriber?.name || formData.name,
-          phone: existingSubscriber?.phone || formData.phone,
+          name: requestName,
+          phone: requestPhone,
           subscription_type: formData.subscriptionType,
           start_date: formData.startDate,
           end_date: formData.endDate,
@@ -203,19 +213,22 @@ export const MemberSubscriptionRequest = ({
 
       // Open WhatsApp to Captain Mohamed
       const captain = contactInfo.captains.find(c => c.name.includes('محمد'));
-      const phone = captain?.phone || contactInfo.captains[0]?.phone || '';
-      
+      const captainPhone = captain?.phone || contactInfo.captains[0]?.phone || '';
+      const waLink = buildWhatsAppLink(captainPhone);
+
       const message = encodeURIComponent(
         `مرحباً، لقد قمت بالتحويل لطلب ${existingSubscriber ? 'تجديد' : 'اشتراك'} جديد.\n` +
-        `الاسم: ${existingSubscriber?.name || formData.name}\n` +
-        `الهاتف: ${existingSubscriber?.phone || formData.phone}\n` +
+        `الاسم: ${requestName}\n` +
+        `الهاتف: ${requestPhone}\n` +
         `نوع الاشتراك: ${subscriptionLabels[formData.subscriptionType]}\n` +
         `المبلغ المدفوع: ${formData.paidAmount} جنيه\n` +
         `طريقة الدفع: ${formData.paymentMethod}\n\n` +
         `سأقوم بإرسال صورة التحويل الآن.`
       );
-      
-      window.open(`${getWhatsAppLink(phone)}?text=${message}`, '_blank');
+
+      if (waLink) {
+        window.open(`${waLink}?text=${message}`, '_blank', 'noopener,noreferrer');
+      }
 
       toast({
         title: 'تم إرسال الطلب بنجاح',

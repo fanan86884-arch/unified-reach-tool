@@ -103,9 +103,8 @@ export const SubscriberForm = ({
   const defaultCaptain = captains[0] || 'كابتن خالد';
   
   const [formData, setFormData] = useState<SubscriberFormData>(() => 
-    getInitialFormData(editingSubscriber, 200, defaultCaptain)
+    getInitialFormData(editingSubscriber, 250, defaultCaptain)
   );
-  
   const [displayStartDate, setDisplayStartDate] = useState('');
   const [displayEndDate, setDisplayEndDate] = useState('');
   const isInitialized = useRef(false);
