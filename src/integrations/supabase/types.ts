@@ -91,6 +91,63 @@ export type Database = {
         }
         Relationships: []
       }
+      diet_requests: {
+        Row: {
+          activity_level: string
+          admin_response: string | null
+          age: number
+          created_at: string
+          gender: string
+          goal: string
+          height: number
+          id: string
+          meals_count: number
+          name: string
+          phone: string
+          sleep_time: string
+          status: string
+          updated_at: string
+          wake_time: string
+          weight: number
+        }
+        Insert: {
+          activity_level: string
+          admin_response?: string | null
+          age: number
+          created_at?: string
+          gender: string
+          goal: string
+          height: number
+          id?: string
+          meals_count: number
+          name: string
+          phone: string
+          sleep_time: string
+          status?: string
+          updated_at?: string
+          wake_time: string
+          weight: number
+        }
+        Update: {
+          activity_level?: string
+          admin_response?: string | null
+          age?: number
+          created_at?: string
+          gender?: string
+          goal?: string
+          height?: number
+          id?: string
+          meals_count?: number
+          name?: string
+          phone?: string
+          sleep_time?: string
+          status?: string
+          updated_at?: string
+          wake_time?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           annual_price: number

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useContactSettings } from '@/hooks/useContactSettings';
-import { buildWhatsAppLink, normalizeEgyptPhoneDigits } from '@/lib/phone';
+import { buildWhatsAppLink, normalizeEgyptPhoneDigits, toEnglishDigits } from '@/lib/phone';
 import { 
   Loader2, 
   User, 
@@ -16,7 +16,7 @@ import {
   CheckCircle,
   Copy,
 } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { format, addDays, differenceInHours, parseISO } from 'date-fns';
 import { Subscriber } from '@/types/subscriber';
 
 interface MemberSubscriptionRequestProps {
@@ -140,18 +140,46 @@ export const MemberSubscriptionRequest = ({
       return;
     }
 
-    // Check for duplicate phone
-    if (!existingSubscriber) {
-      const normalizedPhone = normalizeEgyptPhoneDigits(formData.phone.trim());
-      if (!normalizedPhone) {
-        toast({
-          title: 'خطأ',
-          description: 'رقم الهاتف غير صحيح',
-          variant: 'destructive',
-        });
-        return;
-      }
+    const phoneToCheck = existingSubscriber?.phone || formData.phone.trim();
+    const normalizedPhone = normalizeEgyptPhoneDigits(phoneToCheck);
+    
+    if (!normalizedPhone) {
+      toast({
+        title: 'خطأ',
+        description: 'رقم الهاتف غير صحيح',
+        variant: 'destructive',
+      });
+      return;
+    }
 
+    // Check for duplicate request within 24 hours
+    try {
+      const { data: recentRequests } = await supabase
+        .from('subscription_requests')
+        .select('created_at')
+        .or(`phone.eq.${normalizedPhone},phone.ilike.%${normalizedPhone.slice(-10)}`)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (recentRequests && recentRequests.length > 0) {
+        const lastRequest = parseISO(recentRequests[0].created_at);
+        const hoursSince = differenceInHours(new Date(), lastRequest);
+        if (hoursSince < 24) {
+          toast({
+            title: 'طلب موجود',
+            description: 'لديك طلب قيد الانتظار بالفعل. يرجى الانتظار 24 ساعة قبل إرسال طلب جديد.',
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Error checking recent requests:', e);
+    }
+
+    // Check for duplicate phone (only for new subscribers)
+    if (!existingSubscriber) {
       try {
         const { data } = await supabase.functions.invoke('member-lookup', {
           body: { phone: normalizedPhone }

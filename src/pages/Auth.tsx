@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { 
   Mail, Lock, Loader2, Phone, User, Calendar, CreditCard, 
   Briefcase, Users, ArrowRight, KeyRound, ChevronDown, 
-  MessageCircle, ShoppingBag, ExternalLink, FileText 
+  MessageCircle, ShoppingBag, ExternalLink, Salad 
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Subscriber } from '@/types/subscriber';
@@ -21,7 +21,8 @@ import logo from '@/assets/logo.png';
 import { ContactUsSection } from '@/components/auth/ContactUsSection';
 import { MemberSubscriptionRequest } from '@/components/auth/MemberSubscriptionRequest';
 import { StoreLink } from '@/components/auth/StoreLink';
-import { MemberRequestsHistory } from '@/components/auth/MemberRequestsHistory';
+import { DietRequestForm } from '@/components/auth/DietRequestForm';
+import { DietRequestsHistory } from '@/components/auth/DietRequestsHistory';
 import {
   Collapsible,
   CollapsibleContent,
@@ -644,20 +645,28 @@ const Auth = () => {
                     </div>
                   </Card>
 
-                  {/* Collapsible sections for existing members */}
-                  <CollapsibleSection title="طلباتي السابقة" icon={FileText}>
-                    <MemberRequestsHistory phone={memberResult.phone} />
+                  {/* Show renewal only if expired */}
+                  {isExpired && (
+                    <CollapsibleSection title="تجديد الاشتراك" icon={CreditCard} defaultOpen>
+                      <MemberSubscriptionRequest 
+                        existingSubscriber={memberResult} 
+                        onClose={() => setShowSubscriptionRequest(false)} 
+                      />
+                    </CollapsibleSection>
+                  )}
+
+                  {/* Diet request section */}
+                  <CollapsibleSection title="طلب نظام غذائي" icon={Salad}>
+                    <DietRequestForm phone={memberResult.phone} name={memberResult.name} />
+                  </CollapsibleSection>
+
+                  {/* Diet requests history */}
+                  <CollapsibleSection title="طلباتي السابقة" icon={Salad}>
+                    <DietRequestsHistory phone={memberResult.phone} />
                   </CollapsibleSection>
 
                   <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
                     <ContactUsSection isEmbedded />
-                  </CollapsibleSection>
-
-                  <CollapsibleSection title="تجديد الاشتراك" icon={CreditCard}>
-                    <MemberSubscriptionRequest 
-                      existingSubscriber={memberResult} 
-                      onClose={() => setShowSubscriptionRequest(false)} 
-                    />
                   </CollapsibleSection>
 
                   {/* 2B Store Link */}
@@ -675,20 +684,21 @@ const Auth = () => {
                     </p>
                   </Card>
 
-                  {/* Collapsible sections for not found */}
-                  <CollapsibleSection title="طلباتي السابقة" icon={FileText}>
-                    <MemberRequestsHistory phone={memberPhone} />
-                  </CollapsibleSection>
-
-                  <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
-                    <ContactUsSection isEmbedded />
-                  </CollapsibleSection>
-
+                  {/* Show subscription request for not found members */}
                   <CollapsibleSection title="طلب اشتراك جديد" icon={CreditCard} defaultOpen>
                     <MemberSubscriptionRequest 
                       existingSubscriber={null} 
                       onClose={() => {}} 
                     />
+                  </CollapsibleSection>
+
+                  {/* Diet requests history */}
+                  <CollapsibleSection title="طلباتي السابقة" icon={Salad}>
+                    <DietRequestsHistory phone={memberPhone} />
+                  </CollapsibleSection>
+
+                  <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
+                    <ContactUsSection isEmbedded />
                   </CollapsibleSection>
 
                   {/* 2B Store Link */}
