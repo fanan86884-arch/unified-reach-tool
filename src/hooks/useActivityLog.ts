@@ -146,15 +146,22 @@ export const useActivityLog = () => {
   const clearLogs = useCallback(async () => {
     if (!user) return;
 
-    const { error } = await supabase
-      .from('activity_log')
-      .delete()
-      .eq('user_id', user.id);
+    try {
+      const { error } = await supabase
+        .from('activity_log')
+        .delete()
+        .eq('user_id', user.id);
 
-    if (error) {
-      console.error('Error clearing logs:', error);
-    } else {
+      if (error) {
+        console.error('Error clearing logs:', error);
+        return false;
+      }
+      
       setLogs([]);
+      return true;
+    } catch (err) {
+      console.error('Error:', err);
+      return false;
     }
   }, [user]);
 

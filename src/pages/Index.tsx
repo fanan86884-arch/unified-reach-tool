@@ -1,14 +1,13 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { SubscribersList } from '@/components/subscribers/SubscribersList';
 import { Statistics } from '@/components/statistics/Statistics';
 import { Archive } from '@/components/archive/Archive';
-import { Notifications } from '@/components/notifications/Notifications';
 import { Settings } from '@/components/settings/Settings';
 import { SubscriberForm } from '@/components/subscribers/SubscriberForm';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { SubscriberFormData } from '@/types/subscriber';
 import { useToast } from '@/hooks/use-toast';
 
@@ -129,8 +128,6 @@ const Index = () => {
             deleteSubscriber={deleteSubscriber}
           />
         );
-      case 'notifications':
-        return <Notifications stats={stats} />;
       case 'settings':
         return <Settings />;
       default:
@@ -142,7 +139,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header stats={stats} />
       
       <main 
         ref={mainRef}
