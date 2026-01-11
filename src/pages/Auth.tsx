@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { 
   Mail, Lock, Loader2, Phone, User, Calendar, CreditCard, 
   Briefcase, Users, ArrowRight, KeyRound, ChevronDown, 
-  MessageCircle, ShoppingBag, ExternalLink, Salad 
+  MessageCircle, ShoppingBag, ExternalLink, Salad, Dumbbell 
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Subscriber } from '@/types/subscriber';
@@ -23,6 +23,8 @@ import { MemberSubscriptionRequest } from '@/components/auth/MemberSubscriptionR
 import { StoreLink } from '@/components/auth/StoreLink';
 import { DietRequestForm } from '@/components/auth/DietRequestForm';
 import { DietRequestsHistory } from '@/components/auth/DietRequestsHistory';
+import { WorkoutRequestForm } from '@/components/auth/WorkoutRequestForm';
+import { WorkoutRequestsHistory } from '@/components/auth/WorkoutRequestsHistory';
 import {
   Collapsible,
   CollapsibleContent,
@@ -660,9 +662,18 @@ const Auth = () => {
                     <DietRequestForm phone={memberResult.phone} name={memberResult.name} />
                   </CollapsibleSection>
 
-                  {/* Diet requests history */}
-                  <CollapsibleSection title="طلباتي السابقة" icon={Salad}>
+                  {/* Workout request section */}
+                  <CollapsibleSection title="طلب نظام تمرين" icon={Dumbbell}>
+                    <WorkoutRequestForm phone={memberResult.phone} name={memberResult.name} />
+                  </CollapsibleSection>
+
+                  {/* Requests history */}
+                  <CollapsibleSection title="طلباتي السابقة (غذائي)" icon={Salad}>
                     <DietRequestsHistory phone={memberResult.phone} />
+                  </CollapsibleSection>
+
+                  <CollapsibleSection title="طلباتي السابقة (تمرين)" icon={Dumbbell}>
+                    <WorkoutRequestsHistory phone={memberResult.phone} />
                   </CollapsibleSection>
 
                   <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>

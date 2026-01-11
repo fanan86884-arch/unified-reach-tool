@@ -4,14 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Bell, Clock, XCircle, DollarSign, Trash2, UserPlus, CheckCircle, X, Salad, Filter, Send } from 'lucide-react';
+import { Bell, Clock, XCircle, DollarSign, Trash2, UserPlus, CheckCircle, X, Salad, Filter, Send, Dumbbell } from 'lucide-react';
 import { differenceInDays, parseISO, startOfDay, isToday, isYesterday, formatDistanceToNow, differenceInHours } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { normalizeEgyptPhoneDigits } from '@/lib/phone';
+import { normalizeEgyptPhoneDigits, buildWhatsAppLink } from '@/lib/phone';
 import { useContactSettings } from '@/hooks/useContactSettings';
 
 interface SubscriptionRequest {
@@ -46,6 +46,21 @@ interface DietRequest {
   created_at: string;
 }
 
+interface WorkoutRequest {
+  id: string;
+  name: string;
+  phone: string;
+  weight: number;
+  goal: string;
+  training_level: string;
+  training_location: string;
+  training_days: number;
+  session_duration: number;
+  status: string;
+  admin_response: string | null;
+  created_at: string;
+}
+
 interface NotificationsProps {
   stats: {
     expiring: Subscriber[];
@@ -54,18 +69,19 @@ interface NotificationsProps {
   };
 }
 
-type NotificationType = 'expiring' | 'expired' | 'pending' | 'request' | 'diet';
-type FilterType = 'all' | 'requests' | 'diet' | 'subscriptions';
+type NotificationType = 'expiring' | 'expired' | 'pending' | 'request' | 'diet' | 'workout';
+type FilterType = 'all' | 'requests' | 'diet' | 'workout' | 'subscriptions';
 
 interface Notification {
   type: NotificationType;
   subscriber?: Subscriber;
   request?: SubscriptionRequest;
   dietRequest?: DietRequest;
+  workoutRequest?: WorkoutRequest;
   message: string;
   subMessage: string;
   icon: React.ComponentType<{ className?: string }>;
-  variant: 'warning' | 'destructive' | 'accent' | 'success' | 'info';
+  variant: 'warning' | 'destructive' | 'accent' | 'success' | 'info' | 'workout';
   priority: number;
   timestamp: string;
   id: string;
@@ -114,6 +130,9 @@ const goalLabels: Record<string, string> = {
   weight_loss: 'خسارة وزن',
   maintain: 'ثبات الوزن',
   muscle_gain: 'زيادة كتلة عضلية',
+  strength: 'زيادة القوة',
+  fitness: 'لياقة عامة',
+  flexibility: 'مرونة',
 };
 
 const activityLabels: Record<string, string> = {
@@ -127,13 +146,27 @@ const genderLabels: Record<string, string> = {
   female: 'أنثى',
 };
 
+const trainingLevelLabels: Record<string, string> = {
+  beginner: 'مبتدئ',
+  intermediate: 'متوسط',
+  advanced: 'متقدم',
+};
+
+const trainingLocationLabels: Record<string, string> = {
+  gym: 'الجيم',
+  home: 'المنزل',
+  outdoor: 'في الخارج',
+};
+
 export const Notifications = ({ stats }: NotificationsProps) => {
   const [deletedIds, setDeletedIds] = useState<Set<string>>(() => loadDeletedIds());
   const [subscriptionRequests, setSubscriptionRequests] = useState<SubscriptionRequest[]>([]);
   const [dietRequests, setDietRequests] = useState<DietRequest[]>([]);
+  const [workoutRequests, setWorkoutRequests] = useState<WorkoutRequest[]>([]);
   const [filter, setFilter] = useState<FilterType>('all');
   const [selectedCaptain, setSelectedCaptain] = useState<Record<string, string>>({});
   const [dietResponses, setDietResponses] = useState<Record<string, string>>({});
+  const [workoutResponses, setWorkoutResponses] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const { user } = useAuth();
   const { contactInfo } = useContactSettings();
@@ -194,6 +227,34 @@ export const Notifications = ({ stats }: NotificationsProps) => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // Fetch workout requests
+  useEffect(() => {
+    const fetchWorkoutRequests = async () => {
+      const { data } = await supabase
+        .from('workout_requests')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      
+      if (data) {
+        setWorkoutRequests(data);
+      }
+    };
+
+    fetchWorkoutRequests();
+
+    const channel = supabase
+      .channel('workout_requests_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'workout_requests' }, () => {
+        fetchWorkoutRequests();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
   
   const notifications: Notification[] = [
     // Subscription requests - highest priority
@@ -219,6 +280,18 @@ export const Notifications = ({ stats }: NotificationsProps) => {
       priority: 0.5,
       timestamp: req.created_at,
       id: `diet-${req.id}`,
+    })),
+    // Workout requests - high priority
+    ...workoutRequests.map((req) => ({
+      type: 'workout' as const,
+      workoutRequest: req,
+      message: `طلب نظام تمرين جديد`,
+      subMessage: `${req.name} - ${goalLabels[req.goal] || req.goal}`,
+      icon: Dumbbell,
+      variant: 'workout' as const,
+      priority: 0.6,
+      timestamp: req.created_at,
+      id: `workout-${req.id}`,
     })),
     // Expired subscriptions - high priority
     ...stats.expired.map((sub) => {
@@ -289,6 +362,8 @@ export const Notifications = ({ stats }: NotificationsProps) => {
         return notif.type === 'request';
       case 'diet':
         return notif.type === 'diet';
+      case 'workout':
+        return notif.type === 'workout';
       case 'subscriptions':
         return ['expired', 'expiring', 'pending'].includes(notif.type);
       default:
@@ -296,20 +371,22 @@ export const Notifications = ({ stats }: NotificationsProps) => {
     }
   });
 
-  const variantStyles = {
+  const variantStyles: Record<string, string> = {
     warning: 'border-warning/30 bg-warning/5',
     destructive: 'border-destructive/30 bg-destructive/5',
     accent: 'border-accent/30 bg-accent/5',
     success: 'border-success/30 bg-success/5',
     info: 'border-primary/30 bg-primary/5',
+    workout: 'border-orange-500/30 bg-orange-500/5',
   };
 
-  const iconStyles = {
+  const iconStyles: Record<string, string> = {
     warning: 'text-warning',
     destructive: 'text-destructive',
     accent: 'text-accent',
     success: 'text-success',
     info: 'text-primary',
+    workout: 'text-orange-500',
   };
 
   const computeSubscriberStatus = (endDateStr: string, isPaused: boolean): string => {
@@ -487,6 +564,55 @@ export const Notifications = ({ stats }: NotificationsProps) => {
     }
   };
 
+  const handleRespondWorkout = async (workoutRequest: WorkoutRequest) => {
+    const response = workoutResponses[workoutRequest.id];
+    if (!response?.trim()) {
+      toast({ title: 'يرجى كتابة الرد', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      await supabase
+        .from('workout_requests')
+        .update({ 
+          status: 'responded',
+          admin_response: response.trim()
+        })
+        .eq('id', workoutRequest.id);
+
+      // Send to WhatsApp
+      const message = `مرحباً ${workoutRequest.name}! 🏋️‍♂️\n\nهذا هو نظام التمرين المخصص لك:\n\n${response.trim()}\n\n2B GYM - نحو جسم أفضل 💪`;
+      const whatsappLink = buildWhatsAppLink(workoutRequest.phone);
+      if (whatsappLink) {
+        window.open(`${whatsappLink}?text=${encodeURIComponent(message)}`, '_blank');
+      }
+
+      toast({ title: 'تم إرسال الرد بنجاح' });
+      setWorkoutResponses(prev => {
+        const copy = { ...prev };
+        delete copy[workoutRequest.id];
+        return copy;
+      });
+    } catch (e) {
+      console.error('Error responding to workout request:', e);
+      toast({ title: 'خطأ', variant: 'destructive' });
+    }
+  };
+
+  const handleRejectWorkout = async (workoutRequest: WorkoutRequest) => {
+    try {
+      await supabase
+        .from('workout_requests')
+        .update({ status: 'rejected' })
+        .eq('id', workoutRequest.id);
+
+      toast({ title: 'تم رفض الطلب' });
+    } catch (e) {
+      console.error('Error rejecting workout request:', e);
+      toast({ title: 'خطأ', variant: 'destructive' });
+    }
+  };
+
   // Group notifications by date
   const groupedByDate = filteredNotifications.reduce((groups, notif) => {
     const date = parseISO(notif.timestamp);
@@ -508,7 +634,7 @@ export const Notifications = ({ stats }: NotificationsProps) => {
   }, {} as Record<string, Notification[]>);
 
   const handleClearAll = () => {
-    const nonRequestNotifs = sortedNotifications.filter(n => n.type !== 'request' && n.type !== 'diet');
+    const nonRequestNotifs = sortedNotifications.filter(n => n.type !== 'request' && n.type !== 'diet' && n.type !== 'workout');
     const allIds = new Set([...deletedIds, ...nonRequestNotifs.map(n => n.id)]);
     setDeletedIds(allIds);
     saveDeletedIds(allIds);
@@ -518,6 +644,7 @@ export const Notifications = ({ stats }: NotificationsProps) => {
     all: 'الكل',
     requests: 'طلبات الاشتراك',
     diet: 'طلبات النظام الغذائي',
+    workout: 'طلبات التمرين',
     subscriptions: 'الاشتراكات',
   };
 
@@ -559,6 +686,7 @@ export const Notifications = ({ stats }: NotificationsProps) => {
             <SelectItem value="all">الكل</SelectItem>
             <SelectItem value="requests">طلبات الاشتراك</SelectItem>
             <SelectItem value="diet">طلبات النظام الغذائي</SelectItem>
+            <SelectItem value="workout">طلبات التمرين</SelectItem>
             <SelectItem value="subscriptions">الاشتراكات</SelectItem>
           </SelectContent>
         </Select>

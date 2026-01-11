@@ -283,6 +283,54 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_requests: {
+        Row: {
+          admin_response: string | null
+          created_at: string
+          goal: string
+          id: string
+          name: string
+          phone: string
+          session_duration: number
+          status: string
+          training_days: number
+          training_level: string
+          training_location: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          admin_response?: string | null
+          created_at?: string
+          goal: string
+          id?: string
+          name: string
+          phone: string
+          session_duration: number
+          status?: string
+          training_days: number
+          training_level: string
+          training_location: string
+          updated_at?: string
+          weight: number
+        }
+        Update: {
+          admin_response?: string | null
+          created_at?: string
+          goal?: string
+          id?: string
+          name?: string
+          phone?: string
+          session_duration?: number
+          status?: string
+          training_days?: number
+          training_level?: string
+          training_location?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
