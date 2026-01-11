@@ -1,16 +1,26 @@
-import { Users, Archive, BarChart3, Settings, UserPlus } from 'lucide-react';
+import { Users, Archive, BarChart3, Settings, UserPlus, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface BottomNavProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   onAddSubscriber?: () => void;
+  onOpenAssistant?: () => void;
+  notificationCount?: number;
 }
 
-export const BottomNav = ({ activeTab, onTabChange, onAddSubscriber }: BottomNavProps) => {
+export const BottomNav = ({ 
+  activeTab, 
+  onTabChange, 
+  onAddSubscriber, 
+  onOpenAssistant,
+  notificationCount = 0 
+}: BottomNavProps) => {
   const tabs = [
     { id: 'subscribers', label: 'المشتركين', icon: Users },
     { id: 'statistics', label: 'الإحصائيات', icon: BarChart3 },
+    { id: 'notifications', label: 'الإشعارات', icon: Bell, isNotification: true },
     { id: 'archive', label: 'الأرشيف', icon: Archive },
     { id: 'settings', label: 'الإعدادات', icon: Settings },
   ];
@@ -27,7 +37,9 @@ export const BottomNav = ({ activeTab, onTabChange, onAddSubscriber }: BottomNav
           const label = isSubscribersTabActive ? 'التسجيل' : tab.label;
           
           const handleClick = () => {
-            if (isSubscribersTabActive && onAddSubscriber) {
+            if (tab.isNotification && onOpenAssistant) {
+              onOpenAssistant();
+            } else if (isSubscribersTabActive && onAddSubscriber) {
               onAddSubscriber();
             } else {
               onTabChange(tab.id);
@@ -39,18 +51,28 @@ export const BottomNav = ({ activeTab, onTabChange, onAddSubscriber }: BottomNav
               key={tab.id}
               onClick={handleClick}
               className={cn(
-                'flex flex-col items-center justify-center flex-1 h-full transition-all duration-200',
+                'flex flex-col items-center justify-center flex-1 h-full transition-all duration-200 relative',
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <Icon
-                className={cn(
-                  'w-5 h-5 mb-1 transition-transform duration-200',
-                  isActive && 'scale-110'
+              <div className="relative">
+                <Icon
+                  className={cn(
+                    'w-5 h-5 mb-1 transition-transform duration-200',
+                    isActive && 'scale-110'
+                  )}
+                />
+                {tab.isNotification && notificationCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-3 h-4 min-w-4 flex items-center justify-center text-[10px] p-0 px-1"
+                  >
+                    {notificationCount > 99 ? '99+' : notificationCount}
+                  </Badge>
                 )}
-              />
+              </div>
               <span className="text-xs font-medium">{label}</span>
               {isActive && (
                 <div className="absolute bottom-0 w-12 h-0.5 bg-primary rounded-t-full" />

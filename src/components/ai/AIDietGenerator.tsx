@@ -126,7 +126,7 @@ export const AIDietGenerator = () => {
         })
         .eq('id', selectedRequest.id);
 
-      // Open WhatsApp with the diet plan
+      // Build message for WhatsApp
       const message = `مرحباً ${selectedRequest.name}! 🏋️‍♂️
 
 هذا هو نظامك الغذائي المخصص:
@@ -135,8 +135,11 @@ ${generatedDiet}
 
 2B GYM - نحو جسم أفضل 💪`;
 
-      const whatsappUrl = `${buildWhatsAppLink(selectedRequest.phone)}?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, '_blank');
+      // Build WhatsApp link and open it
+      const whatsappLink = buildWhatsAppLink(selectedRequest.phone);
+      if (whatsappLink) {
+        window.open(`${whatsappLink}?text=${encodeURIComponent(message)}`, '_blank');
+      }
 
       toast({ title: 'تم إرسال النظام بنجاح' });
       

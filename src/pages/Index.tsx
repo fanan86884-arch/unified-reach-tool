@@ -6,6 +6,7 @@ import { Statistics } from '@/components/statistics/Statistics';
 import { Archive } from '@/components/archive/Archive';
 import { Settings } from '@/components/settings/Settings';
 import { SubscriberForm } from '@/components/subscribers/SubscriberForm';
+import { AIAssistant, useNotificationCount } from '@/components/ai/AIAssistant';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import { Loader2 } from 'lucide-react';
 import { SubscriberFormData } from '@/types/subscriber';
@@ -14,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 const Index = () => {
   const [activeTab, setActiveTab] = useState('subscribers');
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullStartY, setPullStartY] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
@@ -43,8 +45,14 @@ const Index = () => {
     refetch,
   } = useCloudSubscribers();
 
+  const notificationCount = useNotificationCount(stats);
+
   const handleAddSubscriber = () => {
     setIsAddFormOpen(true);
+  };
+
+  const handleOpenAssistant = () => {
+    setIsAssistantOpen(true);
   };
 
   const handleAddSubmit = async (data: SubscriberFormData) => {
@@ -139,11 +147,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header stats={stats} />
+      <Header />
       
       <main 
         ref={mainRef}
-        className="container px-4 py-6"
+        className="container px-4 py-6 pb-20"
       >
         {renderContent()}
       </main>
@@ -151,6 +159,15 @@ const Index = () => {
         activeTab={activeTab} 
         onTabChange={setActiveTab} 
         onAddSubscriber={handleAddSubscriber}
+        onOpenAssistant={handleOpenAssistant}
+        notificationCount={notificationCount}
+      />
+      
+      {/* AI Assistant */}
+      <AIAssistant 
+        stats={stats} 
+        open={isAssistantOpen} 
+        onOpenChange={setIsAssistantOpen} 
       />
       
       {/* Add subscriber form triggered from bottom nav */}
