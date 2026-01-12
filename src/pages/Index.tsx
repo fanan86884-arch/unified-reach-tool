@@ -6,9 +6,7 @@ import { Statistics } from '@/components/statistics/Statistics';
 import { Archive } from '@/components/archive/Archive';
 import { Settings } from '@/components/settings/Settings';
 import { SubscriberForm } from '@/components/subscribers/SubscriberForm';
-import { Notifications } from '@/components/notifications/Notifications';
 import { AIFloatingButton } from '@/components/ai/AIFloatingButton';
-import { useNotificationCount } from '@/components/ai/AIAssistant';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import { Loader2 } from 'lucide-react';
 import { SubscriberFormData } from '@/types/subscriber';
@@ -45,8 +43,6 @@ const Index = () => {
     resumeSubscription,
     refetch,
   } = useCloudSubscribers();
-
-  const notificationCount = useNotificationCount(stats);
 
   const handleAddSubscriber = () => {
     setIsAddFormOpen(true);
@@ -135,8 +131,6 @@ const Index = () => {
         );
       case 'settings':
         return <Settings />;
-      case 'notifications':
-        return <Notifications stats={stats} />;
       default:
         return null;
     }
@@ -158,7 +152,6 @@ const Index = () => {
         activeTab={activeTab} 
         onTabChange={setActiveTab} 
         onAddSubscriber={handleAddSubscriber}
-        notificationCount={notificationCount}
       />
       
       {/* AI Floating Button */}
