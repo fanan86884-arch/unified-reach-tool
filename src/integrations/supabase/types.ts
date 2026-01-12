@@ -91,6 +91,85 @@ export type Database = {
         }
         Relationships: []
       }
+      diet_plan_messages: {
+        Row: {
+          content: string
+          created_at: string
+          diet_plan_id: string
+          id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          diet_plan_id: string
+          id?: string
+          role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          diet_plan_id?: string
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diet_plan_messages_diet_plan_id_fkey"
+            columns: ["diet_plan_id"]
+            isOneToOne: false
+            referencedRelation: "diet_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diet_plans: {
+        Row: {
+          client_data: Json
+          client_name: string
+          client_phone: string
+          created_at: string
+          diet_request_id: string | null
+          id: string
+          plan_content: string
+          status: string
+          target_calories: number | null
+          updated_at: string
+        }
+        Insert: {
+          client_data: Json
+          client_name: string
+          client_phone: string
+          created_at?: string
+          diet_request_id?: string | null
+          id?: string
+          plan_content: string
+          status?: string
+          target_calories?: number | null
+          updated_at?: string
+        }
+        Update: {
+          client_data?: Json
+          client_name?: string
+          client_phone?: string
+          created_at?: string
+          diet_request_id?: string | null
+          id?: string
+          plan_content?: string
+          status?: string
+          target_calories?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diet_plans_diet_request_id_fkey"
+            columns: ["diet_request_id"]
+            isOneToOne: false
+            referencedRelation: "diet_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diet_requests: {
         Row: {
           activity_level: string
@@ -282,6 +361,82 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      workout_plan_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          workout_plan_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          workout_plan_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          workout_plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_plan_messages_workout_plan_id_fkey"
+            columns: ["workout_plan_id"]
+            isOneToOne: false
+            referencedRelation: "workout_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_plans: {
+        Row: {
+          client_data: Json
+          client_name: string
+          client_phone: string
+          created_at: string
+          id: string
+          plan_content: string
+          status: string
+          updated_at: string
+          workout_request_id: string | null
+        }
+        Insert: {
+          client_data: Json
+          client_name: string
+          client_phone: string
+          created_at?: string
+          id?: string
+          plan_content: string
+          status?: string
+          updated_at?: string
+          workout_request_id?: string | null
+        }
+        Update: {
+          client_data?: Json
+          client_name?: string
+          client_phone?: string
+          created_at?: string
+          id?: string
+          plan_content?: string
+          status?: string
+          updated_at?: string
+          workout_request_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_plans_workout_request_id_fkey"
+            columns: ["workout_request_id"]
+            isOneToOne: false
+            referencedRelation: "workout_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workout_requests: {
         Row: {
