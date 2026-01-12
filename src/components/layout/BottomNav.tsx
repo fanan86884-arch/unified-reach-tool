@@ -6,7 +6,6 @@ interface BottomNavProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   onAddSubscriber?: () => void;
-  onOpenAssistant?: () => void;
   notificationCount?: number;
 }
 
@@ -14,13 +13,12 @@ export const BottomNav = ({
   activeTab, 
   onTabChange, 
   onAddSubscriber, 
-  onOpenAssistant,
   notificationCount = 0 
 }: BottomNavProps) => {
   const tabs = [
     { id: 'subscribers', label: 'المشتركين', icon: Users },
     { id: 'statistics', label: 'الإحصائيات', icon: BarChart3 },
-    { id: 'notifications', label: 'الإشعارات', icon: Bell, isNotification: true },
+    { id: 'notifications', label: 'الإشعارات', icon: Bell, showBadge: true },
     { id: 'archive', label: 'الأرشيف', icon: Archive },
     { id: 'settings', label: 'الإعدادات', icon: Settings },
   ];
@@ -37,9 +35,7 @@ export const BottomNav = ({
           const label = isSubscribersTabActive ? 'التسجيل' : tab.label;
           
           const handleClick = () => {
-            if (tab.isNotification && onOpenAssistant) {
-              onOpenAssistant();
-            } else if (isSubscribersTabActive && onAddSubscriber) {
+            if (isSubscribersTabActive && onAddSubscriber) {
               onAddSubscriber();
             } else {
               onTabChange(tab.id);
@@ -64,7 +60,7 @@ export const BottomNav = ({
                     isActive && 'scale-110'
                   )}
                 />
-                {tab.isNotification && notificationCount > 0 && (
+                {tab.showBadge && notificationCount > 0 && (
                   <Badge 
                     variant="destructive" 
                     className="absolute -top-2 -right-3 h-4 min-w-4 flex items-center justify-center text-[10px] p-0 px-1"
