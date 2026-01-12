@@ -12,16 +12,15 @@ export const AIFloatingButton = () => {
       <button
         onClick={() => setIsOpen(true)}
         className={cn(
-          "fixed bottom-20 left-4 z-40 w-14 h-14 rounded-full",
+          "fixed bottom-20 left-4 z-40 w-10 h-10 rounded-full",
           "bg-gradient-to-br from-primary to-primary/80",
           "flex items-center justify-center",
-          "shadow-lg shadow-primary/30",
-          "hover:scale-110 active:scale-95",
-          "transition-all duration-300",
-          "animate-pulse hover:animate-none"
+          "shadow-md shadow-primary/20",
+          "hover:scale-105 active:scale-95",
+          "transition-all duration-300"
         )}
       >
-        <Sparkles className="w-6 h-6 text-primary-foreground" />
+        <Sparkles className="w-4 h-4 text-primary-foreground" />
       </button>
 
       {/* AI Chat Interface */}
