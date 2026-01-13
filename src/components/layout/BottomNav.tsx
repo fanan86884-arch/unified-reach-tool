@@ -1,21 +1,23 @@
-import { Users, Archive, BarChart3, Settings, UserPlus } from 'lucide-react';
+import { Users, Bell, BarChart3, Settings, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BottomNavProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   onAddSubscriber?: () => void;
+  notificationCount?: number;
 }
 
 export const BottomNav = ({ 
   activeTab, 
   onTabChange, 
-  onAddSubscriber
+  onAddSubscriber,
+  notificationCount = 0
 }: BottomNavProps) => {
   const tabs = [
     { id: 'subscribers', label: 'المشتركين', icon: Users },
     { id: 'statistics', label: 'الإحصائيات', icon: BarChart3 },
-    { id: 'archive', label: 'الأرشيف', icon: Archive },
+    { id: 'notifications', label: 'الإشعارات', icon: Bell, showBadge: true },
     { id: 'settings', label: 'الإعدادات', icon: Settings },
   ];
 
@@ -49,12 +51,19 @@ export const BottomNav = ({
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <Icon
-                className={cn(
-                  'w-5 h-5 mb-1 transition-transform duration-200',
-                  isActive && 'scale-110'
+              <div className="relative">
+                <Icon
+                  className={cn(
+                    'w-5 h-5 mb-1 transition-transform duration-200',
+                    isActive && 'scale-110'
+                  )}
+                />
+                {tab.showBadge && notificationCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </span>
                 )}
-              />
+              </div>
               <span className="text-xs font-medium">{label}</span>
               {isActive && (
                 <div className="absolute bottom-0 w-12 h-0.5 bg-primary rounded-t-full" />
