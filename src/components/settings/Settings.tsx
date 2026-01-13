@@ -28,6 +28,7 @@ import { ActivityLogComponent } from './ActivityLog';
 import { ContactSettings } from './ContactSettings';
 import { PaymentSettings } from './PaymentSettings';
 import { AITrainingSettings } from './AITrainingSettings';
+import { AITrainingChat } from './AITrainingChat';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import {
   Collapsible,
@@ -256,9 +257,15 @@ export const Settings = () => {
       </SettingsSection>
 
       {/* AI Training Settings */}
-      <SettingsSection title="تدريب الذكاء الاصطناعي" icon={Brain}>
-        <div className="mt-4">
-          <AITrainingSettings />
+      <SettingsSection title="تدريب الذكاء الاصطناعي" icon={Brain} defaultOpen>
+        <div className="mt-4 space-y-6">
+          <AITrainingChat />
+          <div className="border-t pt-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              أو أضف أمثلة يدوياً من هنا:
+            </p>
+            <AITrainingSettings />
+          </div>
         </div>
       </SettingsSection>
 

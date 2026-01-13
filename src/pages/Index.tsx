@@ -1,9 +1,9 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { SubscribersList } from '@/components/subscribers/SubscribersList';
 import { Statistics } from '@/components/statistics/Statistics';
-import { Archive } from '@/components/archive/Archive';
+import { Notifications } from '@/components/notifications/Notifications';
 import { Settings } from '@/components/settings/Settings';
 import { SubscriberForm } from '@/components/subscribers/SubscriberForm';
 import { AIFloatingButton } from '@/components/ai/AIFloatingButton';
@@ -121,20 +121,19 @@ const Index = () => {
         );
       case 'statistics':
         return <Statistics stats={stats} />;
-      case 'archive':
-        return (
-          <Archive
-            archivedSubscribers={archivedSubscribers}
-            restoreSubscriber={restoreSubscriber}
-            deleteSubscriber={deleteSubscriber}
-          />
-        );
+      case 'notifications':
+        return <Notifications stats={stats} />;
       case 'settings':
         return <Settings />;
       default:
         return null;
     }
   };
+
+  // Calculate notification count
+  const notificationCount = useMemo(() => {
+    return stats.expired.length + stats.expiring.length + stats.pending.length;
+  }, [stats]);
 
   const captains = ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
 
@@ -152,6 +151,7 @@ const Index = () => {
         activeTab={activeTab} 
         onTabChange={setActiveTab} 
         onAddSubscriber={handleAddSubscriber}
+        notificationCount={notificationCount}
       />
       
       {/* AI Floating Button */}
