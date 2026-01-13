@@ -15,7 +15,8 @@ import {
   FileSpreadsheet,
   User,
   Phone,
-  CreditCard
+  CreditCard,
+  Brain
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -26,6 +27,7 @@ import { ExcelExportImport } from './ExcelExportImport';
 import { ActivityLogComponent } from './ActivityLog';
 import { ContactSettings } from './ContactSettings';
 import { PaymentSettings } from './PaymentSettings';
+import { AITrainingSettings } from './AITrainingSettings';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import {
   Collapsible,
@@ -251,6 +253,13 @@ export const Settings = () => {
       {/* Payment Settings */}
       <SettingsSection title="بيانات الدفع والمتجر" icon={CreditCard}>
         <PaymentSettings />
+      </SettingsSection>
+
+      {/* AI Training Settings */}
+      <SettingsSection title="تدريب الذكاء الاصطناعي" icon={Brain}>
+        <div className="mt-4">
+          <AITrainingSettings />
+        </div>
       </SettingsSection>
 
       {/* Save Button */}

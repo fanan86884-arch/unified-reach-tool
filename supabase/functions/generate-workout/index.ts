@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,6 +36,30 @@ const locationLabels: Record<string, string> = {
   outdoor: 'في الخارج',
 };
 
+async function getTrainingExamples(supabaseUrl: string, supabaseKey: string): Promise<string> {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { data, error } = await supabase
+      .from('ai_training_examples')
+      .select('title, plan_content')
+      .eq('type', 'workout')
+      .eq('is_active', true)
+      .limit(3);
+
+    if (error || !data || data.length === 0) return '';
+
+    let examples = '\n\n📚 أمثلة من برامج تمرين سابقة للاسترشاد بها:\n';
+    data.forEach((example: { title: string; plan_content: string }, i: number) => {
+      examples += `\n--- مثال ${i + 1}: ${example.title} ---\n${example.plan_content.slice(0, 1500)}...\n`;
+    });
+    
+    return examples;
+  } catch (e) {
+    console.error('Error fetching training examples:', e);
+    return '';
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -44,11 +69,18 @@ serve(async (req) => {
     const { workoutRequest }: { workoutRequest: WorkoutRequestData } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // Fetch training examples
+    const trainingExamples = await getTrainingExamples(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
     const systemPrompt = `أنت مدرب لياقة بدنية محترف. مهمتك إنشاء برنامج تمرين أسبوعي مفصل ومخصص للعميل.
+${trainingExamples}
 
 قواعد مهمة:
 1. اكتب بالعربية فقط
@@ -57,7 +89,8 @@ serve(async (req) => {
 4. وزع التمارين على الأيام المطلوبة
 5. اذكر عدد المجموعات والتكرارات لكل تمرين
 6. أضف فترات الراحة المناسبة
-7. اختم بنصائح للإحماء والتبريد`;
+7. اختم بنصائح للإحماء والتبريد
+8. استخدم نفس الأسلوب والتنسيق الموجود في الأمثلة السابقة إذا وُجدت`;
 
     const userPrompt = `أنشئ برنامج تمرين أسبوعي مفصل للعميل التالي:
 

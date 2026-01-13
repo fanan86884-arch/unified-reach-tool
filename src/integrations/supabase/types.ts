@@ -55,6 +55,39 @@ export type Database = {
           },
         ]
       }
+      ai_training_examples: {
+        Row: {
+          client_data: Json
+          created_at: string
+          id: string
+          is_active: boolean
+          plan_content: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          client_data: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          plan_content: string
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          client_data?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          plan_content?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contact_settings: {
         Row: {
           captains: Json | null
