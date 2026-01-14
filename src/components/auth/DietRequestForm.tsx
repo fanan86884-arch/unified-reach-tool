@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Salad, CheckCircle } from 'lucide-react';
 import { toEnglishDigits } from '@/lib/phone';
+import { sendPushNotificationToStaff } from '@/utils/sendPushNotification';
 
 interface DietRequestFormProps {
   phone: string;
@@ -65,6 +65,14 @@ export const DietRequestForm = ({ phone, name: initialName }: DietRequestFormPro
       });
 
       if (error) throw error;
+
+      // Send push notification to staff
+      await sendPushNotificationToStaff({
+        title: 'طلب نظام غذائي جديد',
+        body: `${formData.name} - ${formData.goal === 'weight_loss' ? 'خسارة وزن' : formData.goal === 'muscle_gain' ? 'زيادة عضلات' : 'ثبات وزن'}`,
+        type: 'diet',
+        data: { url: '/' }
+      });
 
       setIsSubmitted(true);
       toast({ title: 'تم إرسال طلب النظام الغذائي بنجاح' });

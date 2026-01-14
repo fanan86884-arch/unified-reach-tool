@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Dumbbell, CheckCircle } from 'lucide-react';
+import { sendPushNotificationToStaff } from '@/utils/sendPushNotification';
 
 interface WorkoutRequestFormProps {
   phone: string;
@@ -46,6 +47,22 @@ export const WorkoutRequestForm = ({ phone, name }: WorkoutRequestFormProps) => 
       });
 
       if (error) throw error;
+
+      // Send push notification to staff
+      const goalLabels: Record<string, string> = {
+        weight_loss: 'خسارة وزن',
+        muscle_gain: 'بناء عضلات',
+        strength: 'زيادة القوة',
+        fitness: 'لياقة عامة',
+        flexibility: 'مرونة'
+      };
+      
+      await sendPushNotificationToStaff({
+        title: 'طلب برنامج تمرين جديد',
+        body: `${name} - ${goalLabels[goal] || goal}`,
+        type: 'workout',
+        data: { url: '/' }
+      });
 
       setIsSubmitted(true);
       toast({ title: 'تم إرسال طلبك بنجاح' });
