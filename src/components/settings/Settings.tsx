@@ -16,7 +16,8 @@ import {
   User,
   Phone,
   CreditCard,
-  Brain
+  Brain,
+  Bell
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -29,6 +30,7 @@ import { ContactSettings } from './ContactSettings';
 import { PaymentSettings } from './PaymentSettings';
 import { AITrainingSettings } from './AITrainingSettings';
 import { AITrainingChat } from './AITrainingChat';
+import { PushNotificationSettings } from './PushNotificationSettings';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import {
   Collapsible,
@@ -254,6 +256,13 @@ export const Settings = () => {
       {/* Payment Settings */}
       <SettingsSection title="بيانات الدفع والمتجر" icon={CreditCard}>
         <PaymentSettings />
+      </SettingsSection>
+
+      {/* Push Notifications */}
+      <SettingsSection title="إشعارات Push" icon={Bell}>
+        <div className="mt-4">
+          <PushNotificationSettings />
+        </div>
       </SettingsSection>
 
       {/* AI Training Settings */}

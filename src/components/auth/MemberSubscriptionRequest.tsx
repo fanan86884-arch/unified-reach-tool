@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useContactSettings } from '@/hooks/useContactSettings';
 import { buildWhatsAppLink, normalizeEgyptPhoneDigits, toEnglishDigits } from '@/lib/phone';
+import { sendPushNotificationToStaff } from '@/utils/sendPushNotification';
 import { 
   Loader2, 
   User, 
@@ -238,6 +239,14 @@ export const MemberSubscriptionRequest = ({
         });
 
       if (error) throw error;
+
+      // Send push notification to staff
+      await sendPushNotificationToStaff({
+        title: existingSubscriber ? 'طلب تجديد اشتراك' : 'طلب اشتراك جديد',
+        body: `${requestName} - ${subscriptionLabels[formData.subscriptionType]} - ${formData.paidAmount} جنيه`,
+        type: 'subscription',
+        data: { url: '/' }
+      });
 
       // Open WhatsApp to Captain Mohamed
       const captain = contactInfo.captains.find(c => c.name.includes('محمد'));
