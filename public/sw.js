@@ -38,19 +38,32 @@ self.addEventListener('push', (event) => {
     icon: data.icon || '/src/assets/logo.png',
     badge: data.badge || '/src/assets/logo.png',
     tag: data.tag || 'notification',
-    vibrate: [200, 100, 200],
+    vibrate: [300, 100, 300, 100, 300], // Custom vibration pattern
     data: data.data || {},
     dir: 'rtl',
     lang: 'ar',
     requireInteraction: true,
+    silent: false, // Allow sound
     actions: [
       { action: 'open', title: 'فتح' },
       { action: 'close', title: 'إغلاق' }
     ]
   };
 
+  // Play notification sound by posting message to clients
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    Promise.all([
+      self.registration.showNotification(data.title, options),
+      // Notify all clients to play sound
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        clientList.forEach((client) => {
+          client.postMessage({
+            type: 'PLAY_NOTIFICATION_SOUND',
+            data: data
+          });
+        });
+      })
+    ])
   );
 });
 

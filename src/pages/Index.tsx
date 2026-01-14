@@ -59,6 +59,11 @@ const Index = () => {
     toast({ title: result.error || 'حدث خطأ أثناء الإضافة', variant: 'destructive' });
   };
 
+  // Calculate notification count - MUST be before any conditional returns
+  const notificationCount = useMemo(() => {
+    return stats.expired.length + stats.expiring.length + stats.pending.length;
+  }, [stats]);
+
   // Pull-to-refresh handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (mainRef.current && mainRef.current.scrollTop === 0) {
@@ -129,11 +134,6 @@ const Index = () => {
         return null;
     }
   };
-
-  // Calculate notification count
-  const notificationCount = useMemo(() => {
-    return stats.expired.length + stats.expiring.length + stats.pending.length;
-  }, [stats]);
 
   const captains = ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
 
