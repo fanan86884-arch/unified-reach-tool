@@ -1,4 +1,4 @@
-import { Users, Bell, BarChart3, Settings, UserPlus } from 'lucide-react';
+import { Users, Bell, BarChart3, Settings, UserPlus, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BottomNavProps {
@@ -17,6 +17,7 @@ export const BottomNav = ({
   const tabs = [
     { id: 'subscribers', label: 'المشتركين', icon: Users },
     { id: 'statistics', label: 'الإحصائيات', icon: BarChart3 },
+    { id: 'archive', label: 'الأرشيف', icon: Archive },
     { id: 'notifications', label: 'الإشعارات', icon: Bell, showBadge: true },
     { id: 'settings', label: 'الإعدادات', icon: Settings },
   ];

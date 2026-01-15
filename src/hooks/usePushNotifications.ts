@@ -20,18 +20,55 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
+// Detect iOS
+function isIOS(): boolean {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+// Check if running as PWA (standalone mode)
+function isPWA(): boolean {
+  return window.matchMedia('(display-mode: standalone)').matches || 
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+}
+
+// Check if Safari
+function isSafari(): boolean {
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+}
+
 export function usePushNotifications() {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [iosInfo, setIosInfo] = useState<{ isIOS: boolean; isPWA: boolean; isSafari: boolean }>({
+    isIOS: false,
+    isPWA: false,
+    isSafari: false,
+  });
 
   useEffect(() => {
-    // Check if push notifications are supported
-    const supported = 'serviceWorker' in navigator && 'PushManager' in window;
-    setIsSupported(supported);
+    // Detect iOS/Safari environment
+    const iosCheck = isIOS();
+    const pwaCheck = isPWA();
+    const safariCheck = isSafari();
+    
+    setIosInfo({
+      isIOS: iosCheck,
+      isPWA: pwaCheck,
+      isSafari: safariCheck,
+    });
 
-    if (supported) {
+    // Push is supported if:
+    // - Browser supports it AND
+    // - Not iOS Safari in browser (only works as PWA on iOS)
+    const browserSupports = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    const iosLimitation = iosCheck && safariCheck && !pwaCheck;
+    
+    setIsSupported(browserSupports && !iosLimitation);
+
+    if (browserSupports && !iosLimitation) {
       setPermission(Notification.permission);
       checkSubscription();
     }
@@ -190,6 +227,7 @@ export function usePushNotifications() {
     isSubscribed,
     isLoading,
     permission,
+    iosInfo,
     subscribe,
     unsubscribe
   };

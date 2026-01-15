@@ -108,34 +108,43 @@ serve(async (req) => {
       targetCalories = tdee + 300;
     }
 
-    const systemPrompt = `أنت خبير تغذية رياضية متخصص في صحة اللياقة البدنية. أنت تعمل كمساعد تفاعلي لتعديل وتحسين الأنظمة الغذائية.
+const systemPrompt = `أنت خبير تغذية رياضية. أنشئ أنظمة غذائية مخصصة وقم بتعديلها حسب الطلب.
 
 معلومات العميل:
 - الاسم: ${clientData.name}
-- الوزن: ${clientData.weight} كجم
-- الطول: ${clientData.height} سم
-- العمر: ${clientData.age} سنة
+- الوزن: ${clientData.weight} كجم | الطول: ${clientData.height} سم | العمر: ${clientData.age} سنة
 - النوع: ${genderLabels[clientData.gender] || clientData.gender}
 - مستوى النشاط: ${activityLabels[clientData.activityLevel] || clientData.activityLevel}
 - الهدف: ${goalLabels[clientData.goal] || clientData.goal}
-- موعد النوم: ${clientData.sleepTime}
-- موعد الاستيقاظ: ${clientData.wakeTime}
+- موعد الاستيقاظ: ${clientData.wakeTime} | موعد النوم: ${clientData.sleepTime}
 - عدد الوجبات: ${clientData.mealsCount}
-- السعرات المستهدفة: ${Math.round(targetCalories)} سعرة حرارية
+- السعرات المستهدفة: ${Math.round(targetCalories)} سعرة
 - البروتين المطلوب: ${Math.round(clientData.weight * (clientData.goal === 'muscle_gain' ? 2 : 1.6))} جرام
 
-${currentPlan ? `النظام الغذائي الحالي:\n${currentPlan}\n` : ''}
+${currentPlan ? `النظام الحالي:\n${currentPlan}\n` : ''}
 ${trainingExamples}
 
-قواعد مهمة:
+قواعد التنسيق (مهمة جداً):
+1. ابدأ مباشرة بالوجبة الأولى - لا تكتب مقدمات أو ترحيب
+2. لا تستخدم علامات خاصة مثل ** أو ## أو ### أو ~~
+3. لا تستخدم الإيموجي أو الرموز التعبيرية
+4. استخدم أرقام بسيطة وشرطات فقط
+5. اكتب بتنسيق بسيط ونظيف
+
+مثال للتنسيق المطلوب:
+الوجبة الأولى - الفطور (8:00 صباحاً)
+- 3 بيضات مسلوقة (210 سعرة)
+- 2 توست أسمر (140 سعرة)
+- ملعقة زيت زيتون
+إجمالي الوجبة: 400 سعرة
+
+قواعد المحتوى:
 1. اكتب بالعربية فقط
 2. استخدم أطعمة متوفرة في مصر وبأسعار معقولة
-3. عند طلب تعديل، قم بتعديل النظام بالكامل وأعد كتابته
-4. اذكر الكميات بالجرام أو بالملاعق/الأكواب
-5. اذكر السعرات الحرارية لكل وجبة
-6. كن مختصراً ومباشراً في الردود
-7. إذا طُلب منك تعديل معين (مثل "بدل التونة بالبيض")، قم بالتعديل مباشرة
-8. استخدم نفس الأسلوب والتنسيق الموجود في الأمثلة السابقة إذا وُجدت`;
+3. اذكر الكميات بالجرام أو بالملاعق/الأكواب
+4. اذكر السعرات الحرارية لكل وجبة
+5. عند طلب تعديل، عدل النظام مباشرة
+6. استخدم نفس أسلوب الأمثلة السابقة إذا وُجدت`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

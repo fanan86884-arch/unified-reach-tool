@@ -8,12 +8,11 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   Sparkles, Send, Loader2, User, Salad, Dumbbell, 
-  Check, Copy, MessageSquare, History, X, Phone, ArrowRight
+  Check, Copy, MessageSquare, History, X, Phone
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { buildWhatsAppLink } from '@/lib/phone';
-import { PopularDietsList, type PopularDiet } from './PopularDietsList';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -87,8 +86,6 @@ export const AIChatInterface = ({ open, onOpenChange }: AIChatInterfaceProps) =>
   const [isLoading, setIsLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState('');
   const [copied, setCopied] = useState(false);
-  const [showDietSelection, setShowDietSelection] = useState(false);
-  const [selectedDietType, setSelectedDietType] = useState<PopularDiet | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -119,21 +116,10 @@ export const AIChatInterface = ({ open, onOpenChange }: AIChatInterfaceProps) =>
     setRequestType('diet');
     setMessages([]);
     setCurrentPlan('');
-    setSelectedDietType(null);
-    // Show diet type selection first
-    setShowDietSelection(true);
-  };
-
-  const handleDietTypeSelected = async (diet: PopularDiet) => {
-    setSelectedDietType(diet);
-    setShowDietSelection(false);
     
-    if (!selectedRequest) return;
-    
-    // Send initial message with diet type
-    const initialMessage = `أنشئ نظام غذائي من نوع "${diet.name}" لـ ${selectedRequest.name}. 
-التوزيع المطلوب: بروتين ${diet.macros.protein}، كربوهيدرات ${diet.macros.carbs}، دهون ${diet.macros.fat}`;
-    await sendMessage(initialMessage, selectedRequest as DietRequest);
+    // Auto-generate diet based on client data
+    const initialMessage = `أنشئ نظام غذائي مخصص لـ ${request.name} بناءً على بياناته`;
+    await sendMessage(initialMessage, request);
   };
 
   const handleSelectWorkoutRequest = async (request: WorkoutRequest) => {
@@ -371,15 +357,9 @@ ${currentPlan}
   };
 
   const handleBack = () => {
-    if (showDietSelection) {
-      setShowDietSelection(false);
-      setSelectedRequest(null);
-    } else {
-      setSelectedRequest(null);
-      setMessages([]);
-      setCurrentPlan('');
-      setSelectedDietType(null);
-    }
+    setSelectedRequest(null);
+    setMessages([]);
+    setCurrentPlan('');
   };
 
   const renderRequestsList = () => (
@@ -604,29 +584,10 @@ ${currentPlan}
     </div>
   );
 
-  const renderDietTypeSelection = () => (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-border flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={handleBack}>
-          <ArrowRight className="w-4 h-4" />
-        </Button>
-        <div className="flex-1">
-          <p className="font-medium">{selectedRequest?.name}</p>
-          <p className="text-sm text-muted-foreground">اختر نوع النظام الغذائي</p>
-        </div>
-      </div>
-      <ScrollArea className="flex-1 p-4">
-        <PopularDietsList onSelectDiet={handleDietTypeSelected} />
-      </ScrollArea>
-    </div>
-  );
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="w-full sm:max-w-lg p-0 flex flex-col h-full">
-        {showDietSelection ? (
-          renderDietTypeSelection()
-        ) : selectedRequest ? (
+        {selectedRequest ? (
           renderChatInterface()
         ) : (
           <>
