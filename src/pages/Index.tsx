@@ -5,6 +5,7 @@ import { SubscribersList } from '@/components/subscribers/SubscribersList';
 import { Statistics } from '@/components/statistics/Statistics';
 import { Notifications } from '@/components/notifications/Notifications';
 import { Settings } from '@/components/settings/Settings';
+import { Archive } from '@/components/archive/Archive';
 import { SubscriberForm } from '@/components/subscribers/SubscriberForm';
 import { AIFloatingButton } from '@/components/ai/AIFloatingButton';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
@@ -126,6 +127,14 @@ const Index = () => {
         );
       case 'statistics':
         return <Statistics stats={stats} />;
+      case 'archive':
+        return (
+          <Archive
+            archivedSubscribers={archivedSubscribers}
+            restoreSubscriber={restoreSubscriber}
+            deleteSubscriber={deleteSubscriber}
+          />
+        );
       case 'notifications':
         return <Notifications stats={stats} />;
       case 'settings':

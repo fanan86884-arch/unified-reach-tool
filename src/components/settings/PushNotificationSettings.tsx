@@ -1,6 +1,7 @@
-import { Bell, BellOff, Loader2, AlertCircle } from 'lucide-react';
+import { Bell, BellOff, Loader2, AlertCircle, Smartphone, Share } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 export const PushNotificationSettings = () => {
@@ -9,9 +10,40 @@ export const PushNotificationSettings = () => {
     isSubscribed, 
     isLoading, 
     permission,
+    iosInfo,
     subscribe, 
     unsubscribe 
   } = usePushNotifications();
+
+  // iOS not in PWA mode - show instructions
+  if (iosInfo.isIOS && !iosInfo.isPWA) {
+    return (
+      <div className="space-y-4">
+        <Alert className="border-primary/50 bg-primary/5">
+          <Smartphone className="h-4 w-4 text-primary" />
+          <AlertDescription className="text-right">
+            <p className="font-medium mb-2">لتفعيل الإشعارات على الآيفون:</p>
+            <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+              <li>اضغط على زر المشاركة <Share className="inline w-4 h-4 mx-1" /></li>
+              <li>اختر "إضافة إلى الشاشة الرئيسية"</li>
+              <li>افتح التطبيق من الشاشة الرئيسية</li>
+              <li>فعّل الإشعارات من الإعدادات</li>
+            </ol>
+          </AlertDescription>
+        </Alert>
+        
+        <Card className="p-4 bg-muted/30">
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <BellOff className="w-5 h-5" />
+            <div>
+              <p className="font-medium">الإشعارات غير مدعومة في Safari</p>
+              <p className="text-sm">أضف التطبيق للشاشة الرئيسية لتفعيلها</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   if (!isSupported) {
     return (
