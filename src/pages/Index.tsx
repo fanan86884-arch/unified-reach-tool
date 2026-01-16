@@ -8,6 +8,7 @@ import { Settings } from '@/components/settings/Settings';
 import { Archive } from '@/components/archive/Archive';
 import { SubscriberForm } from '@/components/subscribers/SubscriberForm';
 import { AIFloatingButton } from '@/components/ai/AIFloatingButton';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import { Loader2 } from 'lucide-react';
 import { SubscriberFormData } from '@/types/subscriber';
@@ -79,6 +80,8 @@ const Index = () => {
       const distance = currentY - pullStartY;
       if (distance > 0) {
         setPullDistance(Math.min(distance, 150));
+        // Prevent default scroll when pulling
+        e.preventDefault();
       }
     }
   }, [pullStartY]);
@@ -156,9 +159,19 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header onOpenActivityLog={handleOpenActivityLog} />
       
+      {/* Pull to Refresh indicator */}
+      <PullToRefresh pullDistance={pullDistance} isRefreshing={isRefreshing} />
+      
       <main 
         ref={mainRef}
-        className="container px-4 py-6 pb-24"
+        className="container px-4 py-6 pb-24 overflow-y-auto"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          transform: pullDistance > 0 ? `translateY(${pullDistance * 0.3}px)` : 'none',
+          transition: pullDistance === 0 ? 'transform 0.2s ease-out' : 'none',
+        }}
       >
         {renderContent()}
       </main>
