@@ -83,10 +83,18 @@ interface SettingsSectionProps {
   icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  forceOpen?: boolean;
 }
 
-const SettingsSection = ({ title, icon: Icon, children, defaultOpen = false }: SettingsSectionProps) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+const SettingsSection = ({ title, icon: Icon, children, defaultOpen = false, forceOpen = false }: SettingsSectionProps) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen || forceOpen);
+
+  // Handle forceOpen changes
+  useEffect(() => {
+    if (forceOpen) {
+      setIsOpen(true);
+    }
+  }, [forceOpen]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -108,7 +116,12 @@ const SettingsSection = ({ title, icon: Icon, children, defaultOpen = false }: S
   );
 };
 
-export const Settings = () => {
+interface SettingsProps {
+  openActivityLog?: boolean;
+  onActivityLogOpened?: () => void;
+}
+
+export const Settings = ({ openActivityLog = false, onActivityLogOpened }: SettingsProps) => {
   const [templates, setTemplates] = useState(defaultTemplates);
   const { prices, loading, savePrices } = useCloudSettings();
   const { signOut, user } = useAuth();
@@ -134,6 +147,13 @@ export const Settings = () => {
       setTemplates(merged);
     }
   }, []);
+
+  // Notify parent that activity log was opened
+  useEffect(() => {
+    if (openActivityLog && onActivityLogOpened) {
+      onActivityLogOpened();
+    }
+  }, [openActivityLog, onActivityLogOpened]);
 
   const handleTemplateChange = (id: string, content: string) => {
     setTemplates((prev) =>
@@ -192,7 +212,7 @@ export const Settings = () => {
       </h2>
 
       {/* Activity Log - First */}
-      <SettingsSection title="سجل التغييرات" icon={History} defaultOpen>
+      <SettingsSection title="سجل التغييرات" icon={History} defaultOpen forceOpen={openActivityLog}>
         <div className="mt-4">
           <ActivityLogComponent />
         </div>
