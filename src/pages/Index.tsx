@@ -19,6 +19,7 @@ const Index = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullStartY, setPullStartY] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
+  const [openActivityLog, setOpenActivityLog] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const {
@@ -138,21 +139,26 @@ const Index = () => {
       case 'notifications':
         return <Notifications stats={stats} />;
       case 'settings':
-        return <Settings />;
+        return <Settings openActivityLog={openActivityLog} onActivityLogOpened={() => setOpenActivityLog(false)} />;
       default:
         return null;
     }
+  };
+
+  const handleOpenActivityLog = () => {
+    setOpenActivityLog(true);
+    setActiveTab('settings');
   };
 
   const captains = ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header onOpenActivityLog={handleOpenActivityLog} />
       
       <main 
         ref={mainRef}
-        className="container px-4 py-6 pb-20"
+        className="container px-4 py-6 pb-24"
       >
         {renderContent()}
       </main>

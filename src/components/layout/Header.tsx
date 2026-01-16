@@ -1,9 +1,13 @@
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import logo from '@/assets/logo.png';
 
-export const Header = () => {
+interface HeaderProps {
+  onOpenActivityLog?: () => void;
+}
+
+export const Header = ({ onOpenActivityLog }: HeaderProps) => {
   const [isDark, setIsDark] = useState(() => {
     // الوضع الليلي هو الافتراضي
     const saved = localStorage.getItem('theme');
@@ -36,6 +40,16 @@ export const Header = () => {
           <img src={logo} alt="2B GYM Logo" className="w-9 h-9 object-contain" />
           <h1 className="text-lg font-bold text-foreground">2B GYM</h1>
         </div>
+        {onOpenActivityLog && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onOpenActivityLog}
+            className="rounded-full absolute right-4"
+          >
+            <History className="w-5 h-5" />
+          </Button>
+        )}
       </div>
     </header>
   );

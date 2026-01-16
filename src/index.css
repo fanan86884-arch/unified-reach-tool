@@ -130,6 +130,11 @@
   button {
     -webkit-tap-highlight-color: transparent;
   }
+
+  /* Safe area padding for iPhone notch/home indicator */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
 }
 
 @layer utilities {
