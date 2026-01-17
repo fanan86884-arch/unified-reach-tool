@@ -16,6 +16,11 @@ interface WorkoutRequestData {
   sessionDuration: number;
 }
 
+interface Message {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
 const goalLabels: Record<string, string> = {
   weight_loss: 'خسارة الوزن',
   muscle_gain: 'زيادة الكتلة العضلية',
@@ -66,7 +71,11 @@ serve(async (req) => {
   }
 
   try {
-    const { workoutRequest }: { workoutRequest: WorkoutRequestData } = await req.json();
+    const { workoutRequest, messages, currentPlan }: { 
+      workoutRequest: WorkoutRequestData;
+      messages?: Message[];
+      currentPlan?: string;
+    } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -79,8 +88,19 @@ serve(async (req) => {
     // Fetch training examples
     const trainingExamples = await getTrainingExamples(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-const systemPrompt = `أنت مدرب لياقة بدنية. أنشئ برنامج تمرين أسبوعي مخصص للعميل.
+    const systemPrompt = `أنت مدرب لياقة بدنية محترف. أنشئ برنامج تمرين أسبوعي مخصص للعميل.
 ${trainingExamples}
+
+بيانات العميل:
+- الاسم: ${workoutRequest.name}
+- الوزن: ${workoutRequest.weight} كجم
+- الهدف: ${goalLabels[workoutRequest.goal] || workoutRequest.goal}
+- مستوى التدريب: ${levelLabels[workoutRequest.trainingLevel] || workoutRequest.trainingLevel}
+- مكان التمرين: ${locationLabels[workoutRequest.trainingLocation] || workoutRequest.trainingLocation}
+- عدد أيام التمرين: ${workoutRequest.trainingDays} أيام أسبوعياً
+- مدة الحصة: ${workoutRequest.sessionDuration} دقيقة
+
+${currentPlan ? `البرنامج الحالي الذي يطلب تعديله:\n${currentPlan}\n` : ''}
 
 قواعد التنسيق (مهمة جداً):
 1. ابدأ مباشرة باليوم الأول - لا تكتب مقدمات أو ترحيب
@@ -102,24 +122,30 @@ ${trainingExamples}
 4. وزع التمارين على الأيام المطلوبة
 5. اذكر عدد المجموعات والتكرارات
 6. أضف فترات الراحة المناسبة
-7. استخدم نفس أسلوب الأمثلة السابقة إذا وُجدت`;
+7. استجب لطلبات التعديل من المستخدم إذا وجدت`;
 
-    const userPrompt = `أنشئ برنامج تمرين أسبوعي مفصل للعميل التالي:
+    // Build messages array
+    const apiMessages: Message[] = [
+      { role: "system", content: systemPrompt },
+    ];
 
-الاسم: ${workoutRequest.name}
-الوزن: ${workoutRequest.weight} كجم
-الهدف: ${goalLabels[workoutRequest.goal] || workoutRequest.goal}
-مستوى التدريب: ${levelLabels[workoutRequest.trainingLevel] || workoutRequest.trainingLevel}
-مكان التمرين: ${locationLabels[workoutRequest.trainingLocation] || workoutRequest.trainingLocation}
-عدد أيام التمرين: ${workoutRequest.trainingDays} أيام أسبوعياً
-مدة الحصة: ${workoutRequest.sessionDuration} دقيقة
-
-أرجو تقديم:
+    if (messages && messages.length > 0) {
+      // Add conversation history
+      messages.forEach(msg => {
+        apiMessages.push({ role: msg.role as 'user' | 'assistant', content: msg.content });
+      });
+    } else {
+      // Initial request
+      apiMessages.push({
+        role: "user",
+        content: `أنشئ برنامج تمرين أسبوعي مفصل يتضمن:
 1. جدول التمارين لكل يوم
 2. تفاصيل كل تمرين (المجموعات × التكرارات)
 3. فترات الراحة بين المجموعات
 4. نصائح للإحماء والتبريد
-5. نصائح إضافية للنجاح`;
+5. نصائح إضافية للنجاح`
+      });
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -129,10 +155,7 @@ ${trainingExamples}
       },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
+        messages: apiMessages,
       }),
     });
 

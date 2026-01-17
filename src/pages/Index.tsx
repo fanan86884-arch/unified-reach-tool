@@ -10,10 +10,13 @@ import { SubscriberForm } from '@/components/subscribers/SubscriberForm';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { ActivityLogSheet } from '@/components/settings/ActivityLogSheet';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { Loader2 } from 'lucide-react';
 import { SubscriberFormData } from '@/types/subscriber';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+
+const READ_NOTIFICATIONS_KEY = 'notifications_last_read';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('subscribers');
@@ -22,8 +25,17 @@ const Index = () => {
   const [pullStartY, setPullStartY] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
+  const [lastReadTimestamp, setLastReadTimestamp] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(READ_NOTIFICATIONS_KEY);
+      return stored ? parseInt(stored, 10) : 0;
+    } catch {
+      return 0;
+    }
+  });
   const mainRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { isOnline, saveSubscribersOffline, loadSubscribersOffline } = useOfflineStorage();
   const {
     subscribers,
     archivedSubscribers,
@@ -48,10 +60,33 @@ const Index = () => {
     refetch,
   } = useCloudSubscribers();
 
-  // Calculate notification count - MUST be before any conditional returns
+  // Save subscribers to offline storage when online
+  useEffect(() => {
+    if (isOnline && subscribers.length > 0) {
+      saveSubscribersOffline(subscribers);
+    }
+  }, [isOnline, subscribers, saveSubscribersOffline]);
+
+  // Calculate unread notification count - MUST be before any conditional returns
   const notificationCount = useMemo(() => {
-    return stats.expired.length + stats.expiring.length + stats.pending.length;
-  }, [stats]);
+    const allNotifications = [...stats.expired, ...stats.expiring, ...stats.pending];
+    // Count notifications created after lastReadTimestamp
+    const unreadCount = allNotifications.filter(n => {
+      const createdAt = n.createdAt || n.updatedAt;
+      if (!createdAt) return true; // Count as unread if no timestamp
+      return new Date(createdAt).getTime() > lastReadTimestamp;
+    }).length;
+    return unreadCount;
+  }, [stats, lastReadTimestamp]);
+
+  // Mark notifications as read when viewing notifications tab
+  useEffect(() => {
+    if (activeTab === 'notifications') {
+      const now = Date.now();
+      setLastReadTimestamp(now);
+      localStorage.setItem(READ_NOTIFICATIONS_KEY, now.toString());
+    }
+  }, [activeTab]);
 
   // Pull-to-refresh handlers - ALL hooks must be before conditional returns
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
