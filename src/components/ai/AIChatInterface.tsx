@@ -128,30 +128,41 @@ export const AIChatInterface = ({ open, onOpenChange }: AIChatInterfaceProps) =>
     setMessages([]);
     setCurrentPlan('');
     
-    // Generate workout plan
+    // Generate workout plan with AI
+    const initialMessage = `أنشئ برنامج تمرين أسبوعي مخصص لـ ${request.name} بناءً على بياناته`;
+    await sendWorkoutMessage(initialMessage, request);
+  };
+
+  const sendWorkoutMessage = async (messageText: string, request?: WorkoutRequest) => {
+    const targetRequest = request || (selectedRequest as WorkoutRequest);
+    if (!targetRequest) return;
+
+    const userMessage: Message = { role: 'user', content: messageText };
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
     setIsLoading(true);
+
     try {
       const { data, error } = await supabase.functions.invoke('generate-workout', {
         body: {
           workoutRequest: {
-            name: request.name,
-            weight: request.weight,
-            goal: request.goal,
-            trainingLevel: request.training_level,
-            trainingLocation: request.training_location,
-            trainingDays: request.training_days,
-            sessionDuration: request.session_duration,
-          }
+            name: targetRequest.name,
+            weight: targetRequest.weight,
+            goal: targetRequest.goal,
+            trainingLevel: targetRequest.training_level,
+            trainingLocation: targetRequest.training_location,
+            trainingDays: targetRequest.training_days,
+            sessionDuration: targetRequest.session_duration,
+          },
+          messages: [...messages, userMessage],
+          currentPlan,
         }
       });
 
       if (error) throw error;
       
       setCurrentPlan(data.workoutPlan);
-      setMessages([
-        { role: 'user', content: `أنشئ برنامج تمرين أسبوعي لـ ${request.name}` },
-        { role: 'assistant', content: data.workoutPlan }
-      ]);
+      setMessages(prev => [...prev, { role: 'assistant', content: data.workoutPlan }]);
     } catch (err) {
       console.error('Error generating workout:', err);
       toast({ title: 'خطأ في إنشاء البرنامج', variant: 'destructive' });
@@ -257,7 +268,11 @@ export const AIChatInterface = ({ open, onOpenChange }: AIChatInterfaceProps) =>
 
   const handleSendMessage = () => {
     if (!inputMessage.trim() || isLoading) return;
-    sendMessage(inputMessage);
+    if (requestType === 'diet') {
+      sendMessage(inputMessage);
+    } else {
+      sendWorkoutMessage(inputMessage);
+    }
   };
 
   const handleApproveAndSave = async () => {
@@ -562,37 +577,56 @@ ${currentPlan}
       )}
 
       {/* Input */}
-      {requestType === 'diet' && (
-        <div className="p-4 border-t border-border">
-          <div className="flex gap-2">
-            <Input
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="اكتب تعديلاتك... (مثال: بدل التونة بالبيض)"
-              className="flex-1"
-              dir="rtl"
-              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              disabled={isLoading}
-            />
-            <Button onClick={handleSendMessage} disabled={isLoading || !inputMessage.trim()}>
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
-          <div className="flex gap-2 mt-2 flex-wrap">
-            {['اختصر الوجبات', 'زود الكارب', 'بدل اللحم بالفراخ', 'شيل الألبان'].map((suggestion) => (
-              <Button
-                key={suggestion}
-                variant="outline"
-                size="sm"
-                className="text-xs"
-                onClick={() => setInputMessage(suggestion)}
-              >
-                {suggestion}
-              </Button>
-            ))}
-          </div>
+      {/* Chat input for both diet and workout */}
+      <div className="p-4 border-t border-border">
+        <div className="flex gap-2">
+          <Input
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            placeholder={requestType === 'diet' 
+              ? "اكتب تعديلاتك... (مثال: بدل التونة بالبيض)" 
+              : "اكتب تعديلاتك... (مثال: زود تمارين الصدر)"}
+            className="flex-1"
+            dir="rtl"
+            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+            disabled={isLoading}
+          />
+          <Button onClick={handleSendMessage} disabled={isLoading || !inputMessage.trim()}>
+            <Send className="w-4 h-4" />
+          </Button>
         </div>
-      )}
+        <div className="flex gap-2 mt-2 flex-wrap">
+          {requestType === 'diet' ? (
+            <>
+              {['اختصر الوجبات', 'زود الكارب', 'بدل اللحم بالفراخ', 'شيل الألبان'].map((suggestion) => (
+                <Button
+                  key={suggestion}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => setInputMessage(suggestion)}
+                >
+                  {suggestion}
+                </Button>
+              ))}
+            </>
+          ) : (
+            <>
+              {['زود تمارين الصدر', 'قلل أيام الكارديو', 'ضيف سوبر سيت', 'بدل السكوات'].map((suggestion) => (
+                <Button
+                  key={suggestion}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => setInputMessage(suggestion)}
+                >
+                  {suggestion}
+                </Button>
+              ))}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 
