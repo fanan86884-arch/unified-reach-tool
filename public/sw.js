@@ -1,12 +1,60 @@
 // Service Worker for Push Notifications and Caching
-const CACHE_NAME = '2b-gym-cache-v1';
+const CACHE_NAME = '2b-gym-cache-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/logo-icon.png',
-  '/favicon.ico'
+  '/favicon.ico',
+  '/install'
 ];
+
+// Offline fallback page content
+const OFFLINE_PAGE = `
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>2B GYM - Offline</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #1a1b20; 
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+    .container { max-width: 320px; }
+    .icon { font-size: 64px; margin-bottom: 20px; }
+    h1 { font-size: 24px; margin-bottom: 10px; color: #f5c518; }
+    p { color: #888; margin-bottom: 20px; }
+    button {
+      background: #f5c518;
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📶</div>
+    <h1>لا يوجد اتصال</h1>
+    <p>تحقق من اتصالك بالإنترنت وحاول مرة أخرى</p>
+    <button onclick="location.reload()">إعادة المحاولة</button>
+  </div>
+</body>
+</html>
+`;
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
@@ -69,7 +117,13 @@ self.addEventListener('fetch', (event) => {
           }
           // Return offline fallback for navigation requests
           if (event.request.mode === 'navigate') {
-            return caches.match('/');
+            return caches.match('/').then((cached) => {
+              if (cached) return cached;
+              // Return inline offline page if nothing cached
+              return new Response(OFFLINE_PAGE, {
+                headers: { 'Content-Type': 'text/html; charset=utf-8' }
+              });
+            });
           }
           return new Response('Offline', { status: 503 });
         });

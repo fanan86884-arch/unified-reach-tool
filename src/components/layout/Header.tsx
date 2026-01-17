@@ -1,18 +1,21 @@
 import { Moon, Sun, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
 
 interface HeaderProps {
   onOpenActivityLog?: () => void;
+  isRefreshing?: boolean;
 }
 
-export const Header = ({ onOpenActivityLog }: HeaderProps) => {
+export const Header = ({ onOpenActivityLog, isRefreshing = false }: HeaderProps) => {
   const [isDark, setIsDark] = useState(() => {
-    // الوضع الليلي هو الافتراضي
     const saved = localStorage.getItem('theme');
     return saved ? saved === 'dark' : true;
   });
+  const isOnline = useOnlineStatus();
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -47,7 +50,13 @@ export const Header = ({ onOpenActivityLog }: HeaderProps) => {
             onClick={onOpenActivityLog}
             className="rounded-full absolute right-4"
           >
-            <History className="w-5 h-5" />
+            <History 
+              className={cn(
+                "w-5 h-5 transition-all",
+                isRefreshing && "animate-spin",
+                isOnline ? "text-green-500" : "text-destructive"
+              )} 
+            />
           </Button>
         )}
       </div>
