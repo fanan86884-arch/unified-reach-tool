@@ -48,27 +48,12 @@ const Index = () => {
     refetch,
   } = useCloudSubscribers();
 
-  const handleAddSubscriber = () => {
-    setIsAddFormOpen(true);
-  };
-
-  const handleAddSubmit = async (data: SubscriberFormData) => {
-    const result = await addSubscriber(data);
-    if (result.success) {
-      toast({ title: 'تم إضافة المشترك بنجاح' });
-      setIsAddFormOpen(false);
-      return;
-    }
-
-    toast({ title: result.error || 'حدث خطأ أثناء الإضافة', variant: 'destructive' });
-  };
-
   // Calculate notification count - MUST be before any conditional returns
   const notificationCount = useMemo(() => {
     return stats.expired.length + stats.expiring.length + stats.pending.length;
   }, [stats]);
 
-  // Pull-to-refresh handlers
+  // Pull-to-refresh handlers - ALL hooks must be before conditional returns
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (mainRef.current && mainRef.current.scrollTop === 0) {
       setPullStartY(e.touches[0].clientY);
@@ -81,7 +66,6 @@ const Index = () => {
       const distance = currentY - pullStartY;
       if (distance > 0) {
         setPullDistance(Math.min(distance, 150));
-        // Prevent default scroll when pulling
         e.preventDefault();
       }
     }
@@ -97,6 +81,50 @@ const Index = () => {
     setPullDistance(0);
   }, [pullDistance, refetch]);
 
+  // Real-time subscriptions for live updates - MUST be before conditional returns
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'subscribers' }, () => {
+        refetch();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'subscription_requests' }, () => {
+        refetch();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'diet_requests' }, () => {
+        refetch();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'workout_requests' }, () => {
+        refetch();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetch]);
+
+  const handleAddSubscriber = useCallback(() => {
+    setIsAddFormOpen(true);
+  }, []);
+
+  const handleAddSubmit = useCallback(async (data: SubscriberFormData) => {
+    const result = await addSubscriber(data);
+    if (result.success) {
+      toast({ title: 'تم إضافة المشترك بنجاح' });
+      setIsAddFormOpen(false);
+      return;
+    }
+    toast({ title: result.error || 'حدث خطأ أثناء الإضافة', variant: 'destructive' });
+  }, [addSubscriber, toast]);
+
+  const handleOpenActivityLog = useCallback(() => {
+    setIsActivityLogOpen(true);
+  }, []);
+
+  const captains = useMemo(() => ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'], []);
+
+  // Loading state - AFTER all hooks
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -148,40 +176,10 @@ const Index = () => {
     }
   };
 
-  // Real-time subscriptions for live updates
-  useEffect(() => {
-    const channel = supabase
-      .channel('realtime-updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'subscribers' }, () => {
-        refetch();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'subscription_requests' }, () => {
-        refetch();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'diet_requests' }, () => {
-        refetch();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'workout_requests' }, () => {
-        refetch();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [refetch]);
-
-  const handleOpenActivityLog = () => {
-    setIsActivityLogOpen(true);
-  };
-
-  const captains = ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
-
   return (
     <div className="min-h-screen bg-background">
       <Header onOpenActivityLog={handleOpenActivityLog} isRefreshing={isRefreshing} />
       
-      {/* Pull to Refresh indicator */}
       <PullToRefresh pullDistance={pullDistance} isRefreshing={isRefreshing} />
       
       <main 
@@ -204,13 +202,11 @@ const Index = () => {
         notificationCount={notificationCount}
       />
       
-      {/* Activity Log Sheet */}
       <ActivityLogSheet 
         open={isActivityLogOpen} 
         onOpenChange={setIsActivityLogOpen} 
       />
       
-      {/* Add subscriber form triggered from bottom nav */}
       <SubscriberForm
         isOpen={isAddFormOpen}
         onClose={() => setIsAddFormOpen(false)}
