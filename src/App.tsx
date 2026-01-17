@@ -11,6 +11,7 @@ import { SplashScreen } from "@/components/SplashScreen";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import CustomerLookup from "./pages/CustomerLookup";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -83,8 +84,9 @@ const App = () => {
             <Sonner />
             <BrowserRouter>
               <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/lookup" element={<CustomerLookup />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/lookup" element={<CustomerLookup />} />
+              <Route path="/install" element={<Install />} />
                 <Route
                   path="/"
                   element={

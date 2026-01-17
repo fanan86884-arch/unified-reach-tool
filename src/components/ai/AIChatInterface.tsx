@@ -485,12 +485,24 @@ ${currentPlan}
   );
 
   const renderChatInterface = () => (
-    <div className="flex flex-col h-full">
+    <div 
+      className="flex flex-col h-full"
+      onTouchStart={(e) => {
+        const touch = e.touches[0];
+        (e.currentTarget as any).__startX = touch.clientX;
+      }}
+      onTouchEnd={(e) => {
+        const startX = (e.currentTarget as any).__startX;
+        const endX = e.changedTouches[0].clientX;
+        const diff = endX - startX;
+        // Swipe right to go back (for RTL this is swipe left visually)
+        if (diff > 100) {
+          handleBack();
+        }
+      }}
+    >
       {/* Header */}
       <div className="p-4 border-b border-border flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={handleBack}>
-          <X className="w-4 h-4" />
-        </Button>
         <div className="flex-1">
           <p className="font-medium">{selectedRequest?.name}</p>
           <p className="text-sm text-muted-foreground">

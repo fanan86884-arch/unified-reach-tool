@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { SubscribersList } from '@/components/subscribers/SubscribersList';
@@ -7,12 +7,13 @@ import { Notifications } from '@/components/notifications/Notifications';
 import { Settings } from '@/components/settings/Settings';
 import { Archive } from '@/components/archive/Archive';
 import { SubscriberForm } from '@/components/subscribers/SubscriberForm';
-import { AIFloatingButton } from '@/components/ai/AIFloatingButton';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { ActivityLogSheet } from '@/components/settings/ActivityLogSheet';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import { Loader2 } from 'lucide-react';
 import { SubscriberFormData } from '@/types/subscriber';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('subscribers');
@@ -20,7 +21,7 @@ const Index = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullStartY, setPullStartY] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
-  const [openActivityLog, setOpenActivityLog] = useState(false);
+  const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const {
@@ -91,11 +92,10 @@ const Index = () => {
       setIsRefreshing(true);
       await refetch();
       setIsRefreshing(false);
-      toast({ title: 'تم تحديث البيانات' });
     }
     setPullStartY(0);
     setPullDistance(0);
-  }, [pullDistance, refetch, toast]);
+  }, [pullDistance, refetch]);
 
   if (loading) {
     return (
@@ -142,22 +142,44 @@ const Index = () => {
       case 'notifications':
         return <Notifications stats={stats} />;
       case 'settings':
-        return <Settings openActivityLog={openActivityLog} onActivityLogOpened={() => setOpenActivityLog(false)} />;
+        return <Settings />;
       default:
         return null;
     }
   };
 
+  // Real-time subscriptions for live updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'subscribers' }, () => {
+        refetch();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'subscription_requests' }, () => {
+        refetch();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'diet_requests' }, () => {
+        refetch();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'workout_requests' }, () => {
+        refetch();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetch]);
+
   const handleOpenActivityLog = () => {
-    setOpenActivityLog(true);
-    setActiveTab('settings');
+    setIsActivityLogOpen(true);
   };
 
   const captains = ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onOpenActivityLog={handleOpenActivityLog} />
+      <Header onOpenActivityLog={handleOpenActivityLog} isRefreshing={isRefreshing} />
       
       {/* Pull to Refresh indicator */}
       <PullToRefresh pullDistance={pullDistance} isRefreshing={isRefreshing} />
@@ -182,8 +204,11 @@ const Index = () => {
         notificationCount={notificationCount}
       />
       
-      {/* AI Floating Button */}
-      <AIFloatingButton />
+      {/* Activity Log Sheet */}
+      <ActivityLogSheet 
+        open={isActivityLogOpen} 
+        onOpenChange={setIsActivityLogOpen} 
+      />
       
       {/* Add subscriber form triggered from bottom nav */}
       <SubscriberForm

@@ -11,7 +11,6 @@ import {
   LogOut, 
   Loader2,
   ChevronDown,
-  History,
   FileSpreadsheet,
   User,
   Phone,
@@ -25,7 +24,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useCloudSettings, SubscriptionPrices } from '@/hooks/useCloudSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { ExcelExportImport } from './ExcelExportImport';
-import { ActivityLogComponent } from './ActivityLog';
 import { ContactSettings } from './ContactSettings';
 import { PaymentSettings } from './PaymentSettings';
 import { AITrainingSettings } from './AITrainingSettings';
@@ -83,18 +81,10 @@ interface SettingsSectionProps {
   icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
   defaultOpen?: boolean;
-  forceOpen?: boolean;
 }
 
-const SettingsSection = ({ title, icon: Icon, children, defaultOpen = false, forceOpen = false }: SettingsSectionProps) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen || forceOpen);
-
-  // Handle forceOpen changes
-  useEffect(() => {
-    if (forceOpen) {
-      setIsOpen(true);
-    }
-  }, [forceOpen]);
+const SettingsSection = ({ title, icon: Icon, children, defaultOpen = false }: SettingsSectionProps) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -116,12 +106,7 @@ const SettingsSection = ({ title, icon: Icon, children, defaultOpen = false, for
   );
 };
 
-interface SettingsProps {
-  openActivityLog?: boolean;
-  onActivityLogOpened?: () => void;
-}
-
-export const Settings = ({ openActivityLog = false, onActivityLogOpened }: SettingsProps) => {
+export const Settings = () => {
   const [templates, setTemplates] = useState(defaultTemplates);
   const { prices, loading, savePrices } = useCloudSettings();
   const { signOut, user } = useAuth();
@@ -147,13 +132,6 @@ export const Settings = ({ openActivityLog = false, onActivityLogOpened }: Setti
       setTemplates(merged);
     }
   }, []);
-
-  // Notify parent that activity log was opened
-  useEffect(() => {
-    if (openActivityLog && onActivityLogOpened) {
-      onActivityLogOpened();
-    }
-  }, [openActivityLog, onActivityLogOpened]);
 
   const handleTemplateChange = (id: string, content: string) => {
     setTemplates((prev) =>
@@ -183,11 +161,9 @@ export const Settings = ({ openActivityLog = false, onActivityLogOpened }: Setti
       const { error } = await signOut();
       if (error) throw error;
 
-      // Clear all local/session state (templates, deleted notifications, queues, etc.)
       localStorage.clear();
       sessionStorage.clear();
 
-      // Hard redirect to prevent back navigation
       navigate('/auth', { replace: true });
       window.location.replace('/auth');
     } catch (e) {
@@ -211,15 +187,8 @@ export const Settings = ({ openActivityLog = false, onActivityLogOpened }: Setti
         الإعدادات
       </h2>
 
-      {/* Activity Log - First */}
-      <SettingsSection title="سجل التغييرات" icon={History} defaultOpen forceOpen={openActivityLog}>
-        <div className="mt-4">
-          <ActivityLogComponent />
-        </div>
-      </SettingsSection>
-
       {/* Subscription Prices */}
-      <SettingsSection title="أسعار الاشتراكات" icon={DollarSign}>
+      <SettingsSection title="أسعار الاشتراكات" icon={DollarSign} defaultOpen>
         <div className="grid grid-cols-2 gap-4 mt-4">
           {(Object.keys(subscriptionLabels) as Array<keyof typeof subscriptionLabels>).map((type) => (
             <div key={type} className="space-y-2">
@@ -286,7 +255,7 @@ export const Settings = ({ openActivityLog = false, onActivityLogOpened }: Setti
       </SettingsSection>
 
       {/* AI Training Settings */}
-      <SettingsSection title="تدريب الذكاء الاصطناعي" icon={Brain} defaultOpen>
+      <SettingsSection title="تدريب الذكاء الاصطناعي" icon={Brain}>
         <div className="mt-4 space-y-6">
           <AITrainingChat />
           <div className="border-t pt-4">
