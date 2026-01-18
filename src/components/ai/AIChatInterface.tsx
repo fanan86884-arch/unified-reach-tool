@@ -615,22 +615,33 @@ ${currentPlan}
     </div>
   );
 
-  // Handle swipe to close the entire sheet
-  const handleSheetSwipe = (e: React.TouchEvent, isEnd: boolean) => {
-    if (!isEnd) {
-      const touch = e.touches[0];
-      (e.currentTarget as any).__sheetStartX = touch.clientX;
-    } else {
-      const startX = (e.currentTarget as any).__sheetStartX;
-      const endX = e.changedTouches[0].clientX;
-      const diff = endX - startX;
-      // Swipe right to close sheet (for RTL)
-      if (diff > 100) {
-        if (selectedRequest) {
-          handleBack();
-        } else {
-          onOpenChange(false);
-        }
+  // Handle swipe-back from RIGHT edge (RTL back gesture)
+  const SHEET_EDGE_PX = 28;
+  const SHEET_SWIPE_PX = 90;
+
+  const handleSheetTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    const width = window.innerWidth || 0;
+    const fromRightEdge = width > 0 && touch.clientX >= width - SHEET_EDGE_PX;
+
+    (e.currentTarget as any).__sheetSwipe = {
+      startX: touch.clientX,
+      enabled: fromRightEdge,
+    };
+  };
+
+  const handleSheetTouchEnd = (e: React.TouchEvent) => {
+    const state = (e.currentTarget as any).__sheetSwipe;
+    if (!state?.enabled) return;
+
+    const endX = e.changedTouches[0].clientX;
+    const diff = state.startX - endX; // swipe LEFT (from right edge)
+
+    if (diff > SHEET_SWIPE_PX) {
+      if (selectedRequest) {
+        handleBack();
+      } else {
+        onOpenChange(false);
       }
     }
   };
@@ -640,8 +651,8 @@ ${currentPlan}
       <SheetContent 
         side="left" 
         className="w-full sm:max-w-lg p-0 flex flex-col h-full"
-        onTouchStart={(e) => handleSheetSwipe(e, false)}
-        onTouchEnd={(e) => handleSheetSwipe(e, true)}
+        onTouchStart={handleSheetTouchStart}
+        onTouchEnd={handleSheetTouchEnd}
       >
         {selectedRequest ? (
           renderChatInterface()
