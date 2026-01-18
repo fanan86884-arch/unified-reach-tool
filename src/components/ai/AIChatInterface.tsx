@@ -500,22 +500,7 @@ ${currentPlan}
   );
 
   const renderChatInterface = () => (
-    <div 
-      className="flex flex-col h-full"
-      onTouchStart={(e) => {
-        const touch = e.touches[0];
-        (e.currentTarget as any).__startX = touch.clientX;
-      }}
-      onTouchEnd={(e) => {
-        const startX = (e.currentTarget as any).__startX;
-        const endX = e.changedTouches[0].clientX;
-        const diff = endX - startX;
-        // Swipe right to go back (for RTL this is swipe left visually)
-        if (diff > 100) {
-          handleBack();
-        }
-      }}
-    >
+    <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-border flex items-center gap-3">
         <div className="flex-1">
@@ -630,9 +615,34 @@ ${currentPlan}
     </div>
   );
 
+  // Handle swipe to close the entire sheet
+  const handleSheetSwipe = (e: React.TouchEvent, isEnd: boolean) => {
+    if (!isEnd) {
+      const touch = e.touches[0];
+      (e.currentTarget as any).__sheetStartX = touch.clientX;
+    } else {
+      const startX = (e.currentTarget as any).__sheetStartX;
+      const endX = e.changedTouches[0].clientX;
+      const diff = endX - startX;
+      // Swipe right to close sheet (for RTL)
+      if (diff > 100) {
+        if (selectedRequest) {
+          handleBack();
+        } else {
+          onOpenChange(false);
+        }
+      }
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-full sm:max-w-lg p-0 flex flex-col h-full">
+      <SheetContent 
+        side="left" 
+        className="w-full sm:max-w-lg p-0 flex flex-col h-full"
+        onTouchStart={(e) => handleSheetSwipe(e, false)}
+        onTouchEnd={(e) => handleSheetSwipe(e, true)}
+      >
         {selectedRequest ? (
           renderChatInterface()
         ) : (

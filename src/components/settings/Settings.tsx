@@ -188,7 +188,7 @@ export const Settings = () => {
       </h2>
 
       {/* Subscription Prices */}
-      <SettingsSection title="أسعار الاشتراكات" icon={DollarSign} defaultOpen>
+      <SettingsSection title="أسعار الاشتراكات" icon={DollarSign} defaultOpen={false}>
         <div className="grid grid-cols-2 gap-4 mt-4">
           {(Object.keys(subscriptionLabels) as Array<keyof typeof subscriptionLabels>).map((type) => (
             <div key={type} className="space-y-2">
