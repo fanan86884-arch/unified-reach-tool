@@ -132,6 +132,13 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Allow the app to force-activate new service worker versions
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // Fetch event - cache first for app assets, network first for API
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
