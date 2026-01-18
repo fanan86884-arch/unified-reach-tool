@@ -12,11 +12,12 @@ import { ActivityLogSheet } from '@/components/settings/ActivityLogSheet';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { Loader2 } from 'lucide-react';
-import { SubscriberFormData } from '@/types/subscriber';
+import { SubscriberFormData, Subscriber } from '@/types/subscriber';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 const READ_NOTIFICATIONS_KEY = 'notifications_last_read';
+const OFFLINE_SUBSCRIBERS_CACHE = 'offline_subscribers_cache';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('subscribers');
@@ -25,6 +26,7 @@ const Index = () => {
   const [pullStartY, setPullStartY] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
+  const [offlineSubscribers, setOfflineSubscribers] = useState<Subscriber[]>([]);
   const [lastReadTimestamp, setLastReadTimestamp] = useState<number>(() => {
     try {
       const stored = localStorage.getItem(READ_NOTIFICATIONS_KEY);
@@ -36,6 +38,18 @@ const Index = () => {
   const mainRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { isOnline, saveSubscribersOffline, loadSubscribersOffline } = useOfflineStorage();
+  
+  // Load offline cached subscribers on mount
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem(OFFLINE_SUBSCRIBERS_CACHE);
+      if (cached) {
+        setOfflineSubscribers(JSON.parse(cached));
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }, []);
   const {
     subscribers,
     archivedSubscribers,
@@ -60,12 +74,27 @@ const Index = () => {
     refetch,
   } = useCloudSubscribers();
 
-  // Save subscribers to offline storage when online
+  // Save subscribers to offline storage when online and we have data
   useEffect(() => {
-    if (isOnline && subscribers.length > 0) {
+    if (subscribers.length > 0) {
       saveSubscribersOffline(subscribers);
+      // Also save to localStorage for quick offline access
+      localStorage.setItem(OFFLINE_SUBSCRIBERS_CACHE, JSON.stringify(subscribers));
+      setOfflineSubscribers(subscribers);
     }
-  }, [isOnline, subscribers, saveSubscribersOffline]);
+  }, [subscribers, saveSubscribersOffline]);
+
+  // Use offline data when loading or offline
+  const displaySubscribers = useMemo(() => {
+    if (loading && offlineSubscribers.length > 0) {
+      return offlineSubscribers;
+    }
+    return subscribers.length > 0 ? subscribers : offlineSubscribers;
+  }, [loading, subscribers, offlineSubscribers]);
+
+  const displayArchivedSubscribers = useMemo(() => {
+    return archivedSubscribers.length > 0 ? archivedSubscribers : [];
+  }, [archivedSubscribers]);
 
   // Calculate unread notification count - MUST be before any conditional returns
   const notificationCount = useMemo(() => {
@@ -159,8 +188,10 @@ const Index = () => {
 
   const captains = useMemo(() => ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'], []);
 
-  // Loading state - AFTER all hooks
-  if (loading) {
+  // Show loading only if we have no cached data
+  const showLoading = loading && displaySubscribers.length === 0;
+
+  if (showLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -173,7 +204,7 @@ const Index = () => {
       case 'subscribers':
         return (
           <SubscribersList
-            subscribers={subscribers}
+            subscribers={displaySubscribers}
             stats={stats}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
@@ -197,7 +228,7 @@ const Index = () => {
       case 'archive':
         return (
           <Archive
-            archivedSubscribers={archivedSubscribers}
+            archivedSubscribers={displayArchivedSubscribers}
             restoreSubscriber={restoreSubscriber}
             deleteSubscriber={deleteSubscriber}
           />
