@@ -224,7 +224,7 @@ const Index = () => {
           />
         );
       case 'statistics':
-        return <Statistics stats={stats} />;
+        return <Statistics stats={stats} allSubscribers={displaySubscribers} />;
       case 'archive':
         return (
           <Archive

@@ -615,29 +615,36 @@ ${currentPlan}
     </div>
   );
 
-  // Handle swipe-back from RIGHT edge (RTL back gesture)
-  const SHEET_EDGE_PX = 28;
-  const SHEET_SWIPE_PX = 90;
+  // Handle swipe-back gesture: from RIGHT edge, swipe LEFT to go back (RTL language)
+  const SWIPE_EDGE_SIZE = 40; // px from right edge
+  const SWIPE_THRESHOLD = 80; // px swipe distance to trigger back
 
   const handleSheetTouchStart = (e: React.TouchEvent) => {
     const touch = e.touches[0];
-    const width = window.innerWidth || 0;
-    const fromRightEdge = width > 0 && touch.clientX >= width - SHEET_EDGE_PX;
-
-    (e.currentTarget as any).__sheetSwipe = {
+    const screenWidth = window.innerWidth;
+    // Check if touch started from right edge
+    const isFromRightEdge = touch.clientX >= screenWidth - SWIPE_EDGE_SIZE;
+    
+    (e.currentTarget as any).__swipeState = {
       startX: touch.clientX,
-      enabled: fromRightEdge,
+      startY: touch.clientY,
+      isFromEdge: isFromRightEdge,
     };
   };
 
   const handleSheetTouchEnd = (e: React.TouchEvent) => {
-    const state = (e.currentTarget as any).__sheetSwipe;
-    if (!state?.enabled) return;
-
+    const state = (e.currentTarget as any).__swipeState;
+    if (!state?.isFromEdge) return;
+    
     const endX = e.changedTouches[0].clientX;
-    const diff = state.startX - endX; // swipe LEFT (from right edge)
-
-    if (diff > SHEET_SWIPE_PX) {
+    const endY = e.changedTouches[0].clientY;
+    
+    // Calculate horizontal and vertical distance
+    const deltaX = state.startX - endX; // positive = swiped left
+    const deltaY = Math.abs(state.startY - endY);
+    
+    // Only trigger if horizontal swipe is dominant and exceeds threshold
+    if (deltaX > SWIPE_THRESHOLD && deltaX > deltaY) {
       if (selectedRequest) {
         handleBack();
       } else {

@@ -35,32 +35,40 @@ export const StatCard = ({ title, count, icon: Icon, variant, onSendAll, buttonL
   return (
     <Card
       className={cn(
-        'p-4 border card-shadow hover:card-shadow-hover transition-all duration-300 animate-slide-up',
+        'p-4 border-2 hover:scale-[1.02] transition-all duration-300 animate-slide-up overflow-hidden relative',
         variantStyles[variant]
       )}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div
-          className={cn(
-            'w-10 h-10 rounded-lg flex items-center justify-center',
-            iconBgStyles[variant]
-          )}
-        >
-          <Icon className="w-5 h-5 text-primary-foreground" />
+      {/* Decorative gradient blob */}
+      <div className={cn(
+        "absolute -top-8 -left-8 w-20 h-20 rounded-full blur-2xl opacity-30",
+        iconBgStyles[variant]
+      )} />
+      
+      <div className="relative">
+        <div className="flex items-start justify-between mb-3">
+          <div
+            className={cn(
+              'w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg',
+              iconBgStyles[variant]
+            )}
+          >
+            <Icon className="w-6 h-6 text-primary-foreground" />
+          </div>
+          <span className="text-4xl font-black">{count}</span>
         </div>
-        <span className="text-3xl font-bold">{count}</span>
+        <h3 className="font-bold text-sm mb-3">{title}</h3>
+        <Button
+          variant="whatsapp"
+          size="sm"
+          className="w-full rounded-xl font-bold"
+          onClick={onSendAll}
+          disabled={count === 0}
+        >
+          <MessageCircle className="w-4 h-4" />
+          {buttonLabel}
+        </Button>
       </div>
-      <h3 className="font-medium mb-3">{title}</h3>
-      <Button
-        variant="whatsapp"
-        size="sm"
-        className="w-full"
-        onClick={onSendAll}
-        disabled={count === 0}
-      >
-        <MessageCircle className="w-4 h-4" />
-        {buttonLabel}
-      </Button>
     </Card>
   );
 };

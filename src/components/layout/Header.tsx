@@ -32,42 +32,42 @@ export const Header = ({ onOpenActivityLog, isRefreshing = false }: HeaderProps)
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-lg border-b border-border">
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border/50">
         <div className="container flex items-center justify-center h-14 px-4 relative">
           <div className="flex items-center gap-1 absolute left-4">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsDark(!isDark)}
-              className="rounded-full w-8 h-8"
+              className="rounded-full w-10 h-10 bg-card/50 hover:bg-card"
             >
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsAIChatOpen(true)}
-              className="rounded-full w-8 h-8"
+              className="rounded-full w-10 h-10 bg-primary/10 hover:bg-primary/20"
             >
-              <Sparkles className="w-4 h-4 text-primary" />
+              <Sparkles className="w-5 h-5 text-primary" />
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <img src={logo} alt="2B GYM Logo" className="w-9 h-9 object-contain" />
-            <h1 className="text-lg font-bold text-foreground">2B GYM</h1>
+            <img src={logo} alt="2B GYM Logo" className="w-10 h-10 object-contain drop-shadow-lg" />
+            <h1 className="text-xl font-black tracking-tight text-foreground">2B GYM</h1>
           </div>
           {onOpenActivityLog && (
             <Button
               variant="ghost"
               size="icon"
               onClick={onOpenActivityLog}
-              className="rounded-full absolute right-4"
+              className="rounded-full absolute right-4 w-10 h-10 bg-card/50 hover:bg-card"
             >
               <History 
                 className={cn(
                   "w-5 h-5 transition-all",
                   isRefreshing && "animate-spin",
-                  isOnline ? "text-green-500" : "text-destructive"
+                  isOnline ? "text-success" : "text-destructive"
                 )} 
               />
             </Button>

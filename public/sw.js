@@ -1,22 +1,21 @@
 // Service Worker for Push Notifications and Caching
-const CACHE_NAME = '2b-gym-cache-v3';
+const CACHE_NAME = '2b-gym-cache-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/logo-icon.png',
-  '/favicon.ico',
-  '/install'
+  '/favicon.ico'
 ];
 
-// App shell HTML for offline - will load cached JS/CSS
+// App shell HTML for offline - enhanced with AMOLED black
 const APP_SHELL = `
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#1a1b20">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
   <title>2B GYM</title>
   <link rel="icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/logo-icon.png">
@@ -25,7 +24,7 @@ const APP_SHELL = `
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
       font-family: system-ui, -apple-system, sans-serif;
-      background: #1a1b20; 
+      background: #000; 
       color: #fff;
       min-height: 100vh;
       display: flex;
@@ -36,42 +35,47 @@ const APP_SHELL = `
       padding: 20px;
     }
     .container { max-width: 320px; }
-    .logo { width: 80px; height: 80px; margin-bottom: 20px; }
-    h1 { font-size: 28px; margin-bottom: 10px; color: #f5c518; }
-    p { color: #888; margin-bottom: 20px; line-height: 1.6; }
+    .logo { width: 100px; height: 100px; margin-bottom: 24px; filter: drop-shadow(0 0 20px rgba(245, 197, 24, 0.4)); }
+    h1 { font-size: 32px; font-weight: 900; margin-bottom: 12px; color: #f5c518; letter-spacing: -1px; }
+    p { color: #666; margin-bottom: 24px; line-height: 1.6; font-size: 14px; }
     .loading { 
       display: inline-block;
-      width: 40px; 
-      height: 40px; 
-      border: 3px solid #333;
+      width: 48px; 
+      height: 48px; 
+      border: 3px solid #1a1a1a;
       border-top-color: #f5c518;
       border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-top: 20px;
+      animation: spin 0.8s ease-in-out infinite;
+      margin-top: 24px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     .offline-badge {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(239, 68, 68, 0.2);
-      color: #ef4444;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 14px;
-      margin-bottom: 20px;
+      background: rgba(245, 197, 24, 0.1);
+      color: #f5c518;
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      border: 1px solid rgba(245, 197, 24, 0.2);
     }
     .retry-btn {
-      background: #f5c518;
+      background: linear-gradient(135deg, #f5c518 0%, #d4a816 100%);
       color: #000;
       border: none;
-      padding: 14px 28px;
-      border-radius: 12px;
-      font-weight: bold;
+      padding: 16px 32px;
+      border-radius: 20px;
+      font-weight: 700;
       font-size: 16px;
       cursor: pointer;
-      margin-top: 10px;
+      margin-top: 16px;
+      box-shadow: 0 4px 20px rgba(245, 197, 24, 0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
+    .retry-btn:active { transform: scale(0.98); }
   </style>
 </head>
 <body>
@@ -86,14 +90,11 @@ const APP_SHELL = `
     <button class="retry-btn" onclick="location.reload()">إعادة المحاولة</button>
   </div>
   <script>
-    // Check if we have cached app assets and redirect
+    // Try to load cached app
     if ('caches' in window) {
       caches.match('/').then(response => {
         if (response) {
-          // We have cached content, reload to show app
-          setTimeout(() => {
-            window.location.reload();
-          }, 1500);
+          setTimeout(() => window.location.reload(), 1000);
         }
       });
     }
@@ -102,23 +103,32 @@ const APP_SHELL = `
 </html>
 `;
 
-// Install event - cache static assets
+// Install event - cache static assets immediately
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installed - v3');
+  console.log('Service Worker installing - v4');
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
+    caches.open(CACHE_NAME).then(async (cache) => {
       console.log('Caching static assets');
-      return cache.addAll(STATIC_ASSETS);
+      // Cache static assets individually to handle failures gracefully
+      for (const asset of STATIC_ASSETS) {
+        try {
+          await cache.add(asset);
+        } catch (e) {
+          console.warn('Failed to cache:', asset);
+        }
+      }
     })
   );
+  // Activate immediately
   self.skipWaiting();
 });
 
-// Activate event - clean old caches
+// Activate event - clean old caches and take control immediately
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activated');
+  console.log('Service Worker activated - v4');
   event.waitUntil(
     Promise.all([
+      // Take control of all pages immediately
       clients.claim(),
       // Clean old caches
       caches.keys().then((cacheNames) => {
@@ -139,7 +149,7 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Fetch event - cache first for app assets, network first for API
+// Fetch event - stale-while-revalidate for app, network-first for API
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
@@ -147,66 +157,77 @@ self.addEventListener('fetch', (event) => {
   // Skip API requests (supabase) - these should use app's offline logic
   if (event.request.url.includes('supabase.co')) return;
 
-  // For navigation requests, try network first but have good fallback
+  // For navigation requests (HTML pages)
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Cache the page for offline use
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-          return response;
-        })
-        .catch(() => {
-          // Offline - try cache first, then app shell
-          return caches.match(event.request).then((response) => {
-            if (response) return response;
-            
-            // Try to return the index page from cache
-            return caches.match('/').then((indexResponse) => {
-              if (indexResponse) return indexResponse;
-              
-              // Last resort - return offline app shell
-              return new Response(APP_SHELL, {
-                headers: { 'Content-Type': 'text/html; charset=utf-8' }
-              });
+      (async () => {
+        // Try cache first for instant load
+        const cachedResponse = await caches.match(event.request);
+        
+        // Fetch in background to update cache
+        const fetchPromise = fetch(event.request).then((response) => {
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
             });
-          });
-        })
+          }
+          return response;
+        }).catch(() => null);
+
+        // Return cached version immediately if available
+        if (cachedResponse) {
+          // Still try to update in background
+          fetchPromise.catch(() => {});
+          return cachedResponse;
+        }
+
+        // No cache - wait for network
+        const networkResponse = await fetchPromise;
+        if (networkResponse) return networkResponse;
+
+        // Try to return the index page from cache
+        const indexResponse = await caches.match('/');
+        if (indexResponse) return indexResponse;
+        
+        // Last resort - return offline app shell
+        return new Response(APP_SHELL, {
+          headers: { 'Content-Type': 'text/html; charset=utf-8' }
+        });
+      })()
     );
     return;
   }
 
-  // For other assets (JS, CSS, images) - cache first, network fallback
+  // For other assets (JS, CSS, images) - stale-while-revalidate
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Return cache and update in background
-        fetch(event.request).then((networkResponse) => {
-          if (networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, networkResponse);
-            });
-          }
-        }).catch(() => {});
-        return cachedResponse;
-      }
+    (async () => {
+      const cachedResponse = await caches.match(event.request);
       
-      // No cache - try network
-      return fetch(event.request).then((response) => {
-        if (response.status === 200) {
+      // Start fetch in background
+      const fetchPromise = fetch(event.request).then((response) => {
+        if (response.ok) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);
           });
         }
         return response;
-      }).catch(() => {
-        return new Response('Offline', { status: 503 });
-      });
-    })
+      }).catch(() => null);
+
+      // Return cached immediately if available
+      if (cachedResponse) {
+        fetchPromise.catch(() => {}); // Update in background
+        return cachedResponse;
+      }
+
+      // Wait for network
+      const networkResponse = await fetchPromise;
+      if (networkResponse) return networkResponse;
+
+      // Nothing available
+      return new Response('Offline', { status: 503 });
+    })()
   );
 });
 
