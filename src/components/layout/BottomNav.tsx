@@ -23,8 +23,8 @@ export const BottomNav = ({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border card-shadow z-50 pb-safe">
-      <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border/50 z-50 pb-safe">
+      <div className="flex justify-around items-center h-16 max-w-lg mx-auto px-2">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const isSubscribersTabActive = tab.id === 'subscribers' && activeTab === 'subscribers';
@@ -46,29 +46,32 @@ export const BottomNav = ({
               key={tab.id}
               onClick={handleClick}
               className={cn(
-                'flex flex-col items-center justify-center flex-1 h-full transition-all duration-200 relative',
+                'flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative rounded-2xl mx-0.5',
                 isActive
                   ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover:text-foreground active:scale-95'
               )}
             >
-              <div className="relative">
+              <div className={cn(
+                "relative p-2 rounded-2xl transition-all duration-300",
+                isActive && "bg-primary/15"
+              )}>
                 <Icon
                   className={cn(
-                    'w-5 h-5 mb-1 transition-transform duration-200',
+                    'w-6 h-6 transition-all duration-300',
                     isActive && 'scale-110'
                   )}
                 />
                 {tab.showBadge && notificationCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {notificationCount > 9 ? '9+' : notificationCount}
+                  <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                    {notificationCount > 99 ? '99+' : notificationCount}
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium">{label}</span>
-              {isActive && (
-                <div className="absolute bottom-0 w-12 h-0.5 bg-primary rounded-t-full" />
-              )}
+              <span className={cn(
+                "text-[10px] font-medium mt-0.5 transition-all",
+                isActive && "font-bold"
+              )}>{label}</span>
             </button>
           );
         })}

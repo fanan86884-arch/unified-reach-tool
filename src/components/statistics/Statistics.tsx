@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Subscriber } from '@/types/subscriber';
 import { StatCard } from './StatCard';
+import { MonthlyRevenue } from './MonthlyRevenue';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart3, Users, Clock, AlertTriangle, XCircle, MessageCircle, Pause } from 'lucide-react';
@@ -18,6 +19,7 @@ interface StatisticsProps {
     byCaptain: Record<string, Subscriber[]>;
     captains: string[];
   };
+  allSubscribers?: Subscriber[];
 }
 
 const WHATSAPP_QUEUE_PREFIX = 'whatsapp_queue_';
@@ -71,7 +73,7 @@ const replaceVariables = (template: string, subscriber: Subscriber): string => {
     .replace(/{المدة_المحددة}/g, formatPauseDuration(subscriber));
 };
 
-export const Statistics = ({ stats }: StatisticsProps) => {
+export const Statistics = ({ stats, allSubscribers = [] }: StatisticsProps) => {
   const { toast } = useToast();
   const [queues, setQueues] = useState<Record<string, number>>({});
 
@@ -159,6 +161,9 @@ export const Statistics = ({ stats }: StatisticsProps) => {
         <BarChart3 className="w-5 h-5 text-primary" />
         الإحصائيات
       </h2>
+
+      {/* Monthly Revenue Section */}
+      <MonthlyRevenue allSubscribers={allSubscribers} />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard
