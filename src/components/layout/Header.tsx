@@ -5,6 +5,7 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
 import { AIChatInterface } from '@/components/ai/AIChatInterface';
+import { ConnectionStatus } from '@/components/layout/ConnectionStatus';
 
 interface HeaderProps {
   onOpenActivityLog?: () => void;
@@ -54,7 +55,10 @@ export const Header = ({ onOpenActivityLog, isRefreshing = false }: HeaderProps)
           </div>
           <div className="flex items-center gap-2">
             <img src={logo} alt="2B GYM Logo" className="w-10 h-10 object-contain drop-shadow-lg" />
-            <h1 className="text-xl font-black tracking-tight text-foreground">2B GYM</h1>
+            <div className="flex flex-col items-center">
+              <h1 className="text-xl font-black tracking-tight text-foreground leading-none">2B GYM</h1>
+              <ConnectionStatus className="mt-1" />
+            </div>
           </div>
           {onOpenActivityLog && (
             <Button
