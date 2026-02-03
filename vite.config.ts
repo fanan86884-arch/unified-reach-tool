@@ -17,7 +17,8 @@ export default defineConfig(({ mode }) => ({
       strategies: "injectManifest",
       srcDir: "src",
       filename: "sw.ts",
-      injectRegister: null, // we already register SW in src/main.tsx
+      registerType: "autoUpdate",
+      injectRegister: "auto",
       manifest: false, // keep using existing public/manifest.json
       injectManifest: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,json,txt,woff,woff2}"],
@@ -25,6 +26,7 @@ export default defineConfig(({ mode }) => ({
       includeAssets: ["favicon.ico", "logo-icon.png", "manifest.json", "offline.html"],
       devOptions: {
         enabled: true,
+        type: "module",
       },
     }),
     mode === "development" && componentTagger(),
