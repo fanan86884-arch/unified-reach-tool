@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       strategies: "injectManifest",
       srcDir: "src",
-      filename: "sw.js",
+      filename: "sw.ts",
       injectRegister: null, // we already register SW in src/main.tsx
       manifest: false, // keep using existing public/manifest.json
       injectManifest: {
