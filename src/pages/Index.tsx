@@ -17,7 +17,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 const READ_NOTIFICATIONS_KEY = 'notifications_last_read';
-const OFFLINE_SUBSCRIBERS_CACHE = 'offline_subscribers_cache';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('subscribers');
@@ -41,15 +40,15 @@ const Index = () => {
   
   // Load offline cached subscribers on mount
   useEffect(() => {
-    try {
-      const cached = localStorage.getItem(OFFLINE_SUBSCRIBERS_CACHE);
-      if (cached) {
-        setOfflineSubscribers(JSON.parse(cached));
-      }
-    } catch {
-      // Ignore parse errors
-    }
-  }, []);
+    let cancelled = false;
+    (async () => {
+      const cached = await loadSubscribersOffline();
+      if (!cancelled) setOfflineSubscribers(cached);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loadSubscribersOffline]);
   const {
     subscribers,
     archivedSubscribers,
@@ -77,9 +76,7 @@ const Index = () => {
   // Save subscribers to offline storage when online and we have data
   useEffect(() => {
     if (subscribers.length > 0) {
-      saveSubscribersOffline(subscribers);
-      // Also save to localStorage for quick offline access
-      localStorage.setItem(OFFLINE_SUBSCRIBERS_CACHE, JSON.stringify(subscribers));
+      void saveSubscribersOffline(subscribers);
       setOfflineSubscribers(subscribers);
     }
   }, [subscribers, saveSubscribersOffline]);

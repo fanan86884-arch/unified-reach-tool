@@ -4,6 +4,8 @@ export async function registerAppServiceWorker() {
   try {
     const registration = await navigator.serviceWorker.register("/sw.js", {
       scope: "/",
+      // Our service worker is built as an ES module (via Vite PWA).
+      type: "module",
     });
 
     await navigator.serviceWorker.ready;

@@ -1,95 +1,77 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Subscriber, SubscriberFormData } from '@/types/subscriber';
-import { useOnlineStatus } from './useOnlineStatus';
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-const OFFLINE_SUBSCRIBERS_KEY = 'offline_subscribers';
-const OFFLINE_PENDING_CHANGES_KEY = 'offline_pending_changes';
-
-interface PendingChange {
-  id: string;
-  type: 'add' | 'update' | 'delete';
-  data: any;
-  timestamp: number;
-}
+import type { Subscriber } from "@/types/subscriber";
+import { useOnlineStatus } from "./useOnlineStatus";
+import {
+  OFFLINE_STORE_EVENT,
+  getCachedSubscribers,
+  setCachedSubscribers,
+  getPendingChanges,
+  getLastSyncAt,
+  getSyncing,
+} from "@/lib/offlineStore";
 
 export const useOfflineStorage = () => {
   const isOnline = useOnlineStatus();
-  const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([]);
+  const [pendingChanges, setPendingChangesState] = useState(awaitingInit());
+  const [isSyncing, setIsSyncingState] = useState(false);
+  const [lastSyncAt, setLastSyncAtState] = useState<number | null>(null);
 
-  // Load pending changes from localStorage
+  function awaitingInit() {
+    return [] as Awaited<ReturnType<typeof getPendingChanges>>;
+  }
+
+  const refresh = useCallback(async () => {
+    try {
+      const [pending, syncing, last] = await Promise.all([
+        getPendingChanges(),
+        getSyncing(),
+        getLastSyncAt(),
+      ]);
+      setPendingChangesState(pending);
+      setIsSyncingState(syncing);
+      setLastSyncAtState(last);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    const handler = () => void refresh();
+    window.addEventListener(OFFLINE_STORE_EVENT, handler as any);
+    return () => window.removeEventListener(OFFLINE_STORE_EVENT, handler as any);
+  }, [refresh]);
+
+  const pendingCount = useMemo(() => pendingChanges.length, [pendingChanges.length]);
+
+  const saveSubscribersOffline = useCallback(async (subscribers: Subscriber[]) => {
     try {
-      const stored = localStorage.getItem(OFFLINE_PENDING_CHANGES_KEY);
-      if (stored) {
-        setPendingChanges(JSON.parse(stored));
-      }
+      await setCachedSubscribers(subscribers);
     } catch (e) {
-      console.error('Error loading pending changes:', e);
+      console.error("Error saving subscribers offline:", e);
     }
   }, []);
 
-  // Save subscribers to offline storage
-  const saveSubscribersOffline = useCallback((subscribers: Subscriber[]) => {
+  const loadSubscribersOffline = useCallback(async (): Promise<Subscriber[]> => {
     try {
-      localStorage.setItem(OFFLINE_SUBSCRIBERS_KEY, JSON.stringify(subscribers));
+      return await getCachedSubscribers();
     } catch (e) {
-      console.error('Error saving subscribers offline:', e);
+      console.error("Error loading offline subscribers:", e);
+      return [];
     }
-  }, []);
-
-  // Load subscribers from offline storage
-  const loadSubscribersOffline = useCallback((): Subscriber[] => {
-    try {
-      const stored = localStorage.getItem(OFFLINE_SUBSCRIBERS_KEY);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (e) {
-      console.error('Error loading offline subscribers:', e);
-    }
-    return [];
-  }, []);
-
-  // Queue a change for later sync
-  const queueChange = useCallback((type: 'add' | 'update' | 'delete', data: any) => {
-    const change: PendingChange = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      type,
-      data,
-      timestamp: Date.now(),
-    };
-
-    setPendingChanges((prev) => {
-      const updated = [...prev, change];
-      localStorage.setItem(OFFLINE_PENDING_CHANGES_KEY, JSON.stringify(updated));
-      return updated;
-    });
-
-    return change;
-  }, []);
-
-  // Clear pending changes after successful sync
-  const clearPendingChanges = useCallback(() => {
-    setPendingChanges([]);
-    localStorage.removeItem(OFFLINE_PENDING_CHANGES_KEY);
-  }, []);
-
-  // Remove a specific pending change
-  const removePendingChange = useCallback((changeId: string) => {
-    setPendingChanges((prev) => {
-      const updated = prev.filter((c) => c.id !== changeId);
-      localStorage.setItem(OFFLINE_PENDING_CHANGES_KEY, JSON.stringify(updated));
-      return updated;
-    });
   }, []);
 
   return {
     isOnline,
     pendingChanges,
+    pendingCount,
+    isSyncing,
+    lastSyncAt,
     saveSubscribersOffline,
     loadSubscribersOffline,
-    queueChange,
-    clearPendingChanges,
-    removePendingChange,
   };
 };
