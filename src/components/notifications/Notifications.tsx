@@ -8,7 +8,7 @@ import { Bell, Clock, XCircle, DollarSign, Trash2, UserPlus, CheckCircle, X, Sal
 import { differenceInDays, parseISO, startOfDay, isToday, isYesterday, formatDistanceToNow, differenceInHours } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.runtime';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { normalizeEgyptPhoneDigits, buildWhatsAppLink } from '@/lib/phone';

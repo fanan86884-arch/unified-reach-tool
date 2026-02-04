@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.runtime';
 import { format, parseISO } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Dumbbell, Clock, CheckCircle, XCircle } from 'lucide-react';

@@ -10,7 +10,7 @@ import {
   Sparkles, Send, Loader2, User, Salad, Dumbbell, 
   Check, Copy, MessageSquare, History, X, Phone
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.runtime';
 import { useToast } from '@/hooks/use-toast';
 import { buildWhatsAppLink } from '@/lib/phone';
 

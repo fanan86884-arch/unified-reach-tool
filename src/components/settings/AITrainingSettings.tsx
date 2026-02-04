@@ -9,7 +9,7 @@ import {
   Brain, Plus, Trash2, Salad, Dumbbell, 
   Save, X, FileText, Loader2 
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.runtime';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
