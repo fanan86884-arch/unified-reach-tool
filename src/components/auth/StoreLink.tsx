@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, ShoppingBag } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.runtime';
 
 export const StoreLink = () => {
   const [storeUrl, setStoreUrl] = useState('');

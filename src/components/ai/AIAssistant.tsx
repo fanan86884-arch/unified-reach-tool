@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Notifications } from '@/components/notifications/Notifications';
 import { AIDietGenerator } from './AIDietGenerator';
 import { Subscriber } from '@/types/subscriber';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.runtime';
 
 interface AIAssistantProps {
   stats: {

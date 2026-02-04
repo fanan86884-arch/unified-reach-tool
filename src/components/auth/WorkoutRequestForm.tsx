@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.runtime';
 import { Loader2, Dumbbell, CheckCircle } from 'lucide-react';
 import { sendPushNotificationToStaff } from '@/utils/sendPushNotification';
 

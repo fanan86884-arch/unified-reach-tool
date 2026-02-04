@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subscriber';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.runtime';
 import { differenceInDays, parseISO, startOfDay } from 'date-fns';
 import { useAuth } from './useAuth';
 import { normalizeEgyptPhoneDigits } from '@/lib/phone';

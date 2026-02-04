@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sparkles, Loader2, Send, Copy, Check, User, Salad, RefreshCw } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.runtime';
 import { useToast } from '@/hooks/use-toast';
 import { buildWhatsAppLink } from '@/lib/phone';
 

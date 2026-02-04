@@ -8,7 +8,7 @@ import {
   Brain, Send, Loader2, Salad, Dumbbell, 
   MessageSquare, Plus, Check, Sparkles
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.runtime';
 import { useToast } from '@/hooks/use-toast';
 
 interface Message {

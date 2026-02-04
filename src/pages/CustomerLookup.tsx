@@ -8,7 +8,7 @@ import { Search, Phone, User, Calendar, CreditCard, Dumbbell, PhoneCall } from '
 import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.runtime';
 
 const statusConfig = {
   active: { label: 'نشط', className: 'status-active' },

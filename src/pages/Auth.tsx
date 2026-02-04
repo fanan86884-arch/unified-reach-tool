@@ -12,7 +12,7 @@ import {
   Briefcase, Users, ArrowRight, KeyRound, ChevronDown, 
   MessageCircle, ShoppingBag, ExternalLink, Salad, Dumbbell 
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.runtime';
 import { Subscriber } from '@/types/subscriber';
 import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { ar } from 'date-fns/locale';

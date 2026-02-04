@@ -14,7 +14,7 @@ import { useOfflineStorage } from '@/hooks/useOfflineStorage';
 import { Loader2 } from 'lucide-react';
 import { SubscriberFormData, Subscriber } from '@/types/subscriber';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.runtime';
 
 const READ_NOTIFICATIONS_KEY = 'notifications_last_read';
 

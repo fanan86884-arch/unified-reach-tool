@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { SubscriptionType } from '@/types/subscriber';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client.runtime';
 import { useAuth } from './useAuth';
 
 export interface SubscriptionPrices {
