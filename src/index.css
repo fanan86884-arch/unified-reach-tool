@@ -4,6 +4,53 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Native App Feel - Prevent text selection on interactive elements */
+button,
+a,
+nav,
+header,
+.select-none,
+[role="button"],
+[role="tab"],
+[role="menuitem"],
+[role="option"] {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Allow text selection in input fields and textareas */
+input,
+textarea,
+[contenteditable="true"],
+.allow-select {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Prevent pull-to-refresh on mobile */
+html {
+  overscroll-behavior-y: contain;
+}
+
+/* Smooth scrolling for native feel */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* PWA safe areas */
+:root {
+  --sat: env(safe-area-inset-top);
+  --sar: env(safe-area-inset-right);
+  --sab: env(safe-area-inset-bottom);
+  --sal: env(safe-area-inset-left);
+}
+
 @layer base {
   :root {
     --background: 220 20% 97%;
