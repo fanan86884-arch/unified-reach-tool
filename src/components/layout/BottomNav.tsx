@@ -23,7 +23,7 @@ export const BottomNav = ({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border/50 z-50 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border/50 z-50 pb-safe select-none">
       <div className="flex justify-around items-center h-16 max-w-lg mx-auto px-2">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -46,7 +46,7 @@ export const BottomNav = ({
               key={tab.id}
               onClick={handleClick}
               className={cn(
-                'flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative rounded-2xl mx-0.5',
+                'flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative rounded-2xl mx-0.5 select-none',
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground active:scale-95'
