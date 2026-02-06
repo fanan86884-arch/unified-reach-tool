@@ -49,6 +49,42 @@ self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
+  // Background sync trigger
+  if (event.data && event.data.type === "SYNC_DATA") {
+    event.waitUntil(
+      self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+        clientList.forEach((client) => {
+          client.postMessage({ type: "TRIGGER_SYNC" });
+        });
+      })
+    );
+  }
+});
+
+// Periodic background sync for data updates
+self.addEventListener("periodicsync", (event: any) => {
+  if (event.tag === "sync-subscribers") {
+    event.waitUntil(
+      self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+        clientList.forEach((client) => {
+          client.postMessage({ type: "TRIGGER_SYNC" });
+        });
+      })
+    );
+  }
+});
+
+// Sync event for offline data
+self.addEventListener("sync", (event: any) => {
+  if (event.tag === "sync-offline-data") {
+    event.waitUntil(
+      self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+        clientList.forEach((client) => {
+          client.postMessage({ type: "TRIGGER_SYNC" });
+        });
+      })
+    );
+  }
 });
 
 // Push notification handler

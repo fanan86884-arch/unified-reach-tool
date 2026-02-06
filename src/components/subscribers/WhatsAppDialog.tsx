@@ -82,11 +82,22 @@ const getTemplates = (): WhatsAppTemplate[] => {
     const saved = localStorage.getItem('whatsapp_templates');
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Merge with defaults to ensure all templates exist
-      return defaultTemplates.map(defaultT => {
-        const found = parsed.find((t: WhatsAppTemplate) => t.id === defaultT.id);
-        return found || defaultT;
-      });
+      // استخدام القوالب المحفوظة كما هي بدون دمج مع الافتراضية
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // التأكد من وجود جميع القوالب المطلوبة
+        const templateIds = ['subscription', 'reminder', 'expiry', 'expired', 'paused'];
+        const hasAllTemplates = templateIds.every(id => 
+          parsed.some((t: WhatsAppTemplate) => t.id === id)
+        );
+        if (hasAllTemplates) {
+          return parsed;
+        }
+        // إذا كانت بعض القوالب ناقصة، أضفها من الافتراضية
+        return templateIds.map(id => {
+          const found = parsed.find((t: WhatsAppTemplate) => t.id === id);
+          return found || defaultTemplates.find(d => d.id === id)!;
+        });
+      }
     }
   } catch (e) {
     console.error('Error loading templates:', e);

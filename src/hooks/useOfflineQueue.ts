@@ -92,6 +92,28 @@ export const useOfflineQueue = () => {
     return () => window.removeEventListener(OFFLINE_STORE_EVENT, handler);
   }, [isOnline, user, processQueue]);
 
+  // Listen for SW sync messages
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "TRIGGER_SYNC" && isOnline && user) {
+        void processQueue();
+      }
+    };
+    navigator.serviceWorker?.addEventListener("message", handler);
+    return () => navigator.serviceWorker?.removeEventListener("message", handler);
+  }, [isOnline, user, processQueue]);
+
+  // Register background sync when going offline
+  useEffect(() => {
+    if (!isOnline && "serviceWorker" in navigator && "sync" in window) {
+      navigator.serviceWorker.ready.then((registration: any) => {
+        registration.sync?.register("sync-offline-data").catch(() => {
+          // Sync not supported
+        });
+      });
+    }
+  }, [isOnline]);
+
   const queueChange = useCallback(async (change: Omit<PendingSubscriberChange, "id" | "timestamp">) => {
     const fullChange: PendingSubscriberChange = {
       ...change,

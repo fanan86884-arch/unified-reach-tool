@@ -223,48 +223,99 @@ export const SubscriberCardCompact = ({
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button variant="whatsapp" size="sm" onClick={() => onWhatsApp(subscriber)}>
-              <MessageCircle className="w-4 h-4" />
-              واتساب
+          <div className="grid grid-cols-3 gap-2">
+            <Button 
+              variant="whatsapp" 
+              size="sm" 
+              className="h-12 flex-col gap-1 text-xs"
+              onClick={() => onWhatsApp(subscriber)}
+            >
+              <MessageCircle className="w-5 h-5" />
+              <span>واتساب</span>
             </Button>
             {!isArchived && (
               <>
-                <Button variant="outline" size="sm" onClick={() => onEdit(subscriber)}>
-                  <Edit className="w-4 h-4" />
-                  تعديل
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-12 flex-col gap-1 text-xs"
+                  onClick={() => onEdit(subscriber)}
+                >
+                  <Edit className="w-5 h-5" />
+                  <span>تعديل</span>
                 </Button>
-                <Button variant="success" size="sm" onClick={() => onRenew(subscriber)}>
-                  <RefreshCw className="w-4 h-4" />
-                  تجديد
+                <Button 
+                  variant="success" 
+                  size="sm" 
+                  className="h-12 flex-col gap-1 text-xs"
+                  onClick={() => onRenew(subscriber)}
+                >
+                  <RefreshCw className="w-5 h-5" />
+                  <span>تجديد</span>
                 </Button>
                 {subscriber.isPaused ? (
-                  <Button variant="secondary" size="sm" onClick={() => onResume(subscriber.id)}>
-                    <Play className="w-4 h-4" />
-                    استئناف
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    className="h-12 flex-col gap-1 text-xs"
+                    onClick={() => onResume(subscriber.id)}
+                  >
+                    <Play className="w-5 h-5" />
+                    <span>استئناف</span>
                   </Button>
                 ) : (
-                  <Button variant="warning" size="sm" onClick={() => onPause(subscriber)}>
-                    <Pause className="w-4 h-4" />
-                    إيقاف
+                  <Button 
+                    variant="warning" 
+                    size="sm" 
+                    className="h-12 flex-col gap-1 text-xs"
+                    onClick={() => onPause(subscriber)}
+                  >
+                    <Pause className="w-5 h-5" />
+                    <span>إيقاف</span>
                   </Button>
                 )}
-                <Button variant="secondary" size="sm" onClick={() => onArchive(subscriber.id)}>
-                  <Archive className="w-4 h-4" />
-                  أرشفة
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="h-12 flex-col gap-1 text-xs"
+                  onClick={() => onArchive(subscriber.id)}
+                >
+                  <Archive className="w-5 h-5" />
+                  <span>أرشفة</span>
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  className="h-12 flex-col gap-1 text-xs"
+                  onClick={() => onDelete(subscriber.id)}
+                >
+                  <Trash2 className="w-5 h-5" />
+                  <span>حذف</span>
                 </Button>
               </>
             )}
             {isArchived && onRestore && (
-              <Button variant="outline" size="sm" onClick={() => onRestore(subscriber.id)}>
-                <RotateCcw className="w-4 h-4" />
-                استعادة
-              </Button>
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-12 flex-col gap-1 text-xs"
+                  onClick={() => onRestore(subscriber.id)}
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  <span>استعادة</span>
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  className="h-12 flex-col gap-1 text-xs"
+                  onClick={() => onDelete(subscriber.id)}
+                >
+                  <Trash2 className="w-5 h-5" />
+                  <span>حذف</span>
+                </Button>
+              </>
             )}
-            <Button variant="destructive" size="sm" onClick={() => onDelete(subscriber.id)}>
-              <Trash2 className="w-4 h-4" />
-              حذف
-            </Button>
           </div>
         </div>
       )}
