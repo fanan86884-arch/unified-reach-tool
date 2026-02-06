@@ -107,7 +107,22 @@ const SettingsSection = ({ title, icon: Icon, children, defaultOpen = false }: S
 };
 
 export const Settings = () => {
-  const [templates, setTemplates] = useState(defaultTemplates);
+  const [templates, setTemplates] = useState(() => {
+    // تحميل القوالب المحفوظة مباشرة عند التهيئة
+    try {
+      const savedTemplates = localStorage.getItem('whatsapp_templates');
+      if (savedTemplates) {
+        const parsed = JSON.parse(savedTemplates);
+        // التحقق من أن القوالب محفوظة بشكل صحيح
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error('Error loading templates:', e);
+    }
+    return defaultTemplates;
+  });
   const { prices, loading, savePrices } = useCloudSettings();
   const { signOut, user } = useAuth();
   const { allSubscribers, addSubscriber } = useCloudSubscribers();
@@ -119,18 +134,6 @@ export const Settings = () => {
 
   useEffect(() => {
     setLocalPrices(prices);
-  }, [prices]);
-
-  useEffect(() => {
-    const savedTemplates = localStorage.getItem('whatsapp_templates');
-    if (savedTemplates) {
-      const parsed = JSON.parse(savedTemplates);
-      const merged = defaultTemplates.map(defaultT => {
-        const saved = parsed.find((t: any) => t.id === defaultT.id);
-        return saved || defaultT;
-      });
-      setTemplates(merged);
-    }
   }, []);
 
   const handleTemplateChange = (id: string, content: string) => {
