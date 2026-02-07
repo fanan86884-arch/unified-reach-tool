@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subscriber';
 import { supabase } from '@/integrations/supabase/client.runtime';
 import { differenceInDays, parseISO, startOfDay } from 'date-fns';
 import { useAuth } from './useAuth';
 import { normalizeEgyptPhoneDigits } from '@/lib/phone';
+import { useOnlineStatus } from './useOnlineStatus';
+import { addPendingChange, setCachedSubscribers, getCachedSubscribers } from '@/lib/offlineStore';
 // Activity logging helper
 const logActivity = async (
   userId: string,
@@ -69,12 +71,25 @@ const mapDbToSubscriber = (row: any): Subscriber => ({
 
 export const useCloudSubscribers = () => {
   const { user } = useAuth();
+  const isOnline = useOnlineStatus();
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<SubscriptionStatus | 'all'>('all');
   const [filterCaptain, setFilterCaptain] = useState<string>('all');
   const [filterDateRange, setFilterDateRange] = useState<string>('all');
+
+  // Load cached subscribers on mount
+  useEffect(() => {
+    const loadCached = async () => {
+      const cached = await getCachedSubscribers();
+      if (cached.length > 0) {
+        setSubscribers(cached);
+        setLoading(false);
+      }
+    };
+    loadCached();
+  }, []);
 
   // Auto-archive subscribers expired for 30+ days
   const autoArchiveExpired = useCallback(async (subscribersList: Subscriber[]) => {
@@ -201,17 +216,74 @@ export const useCloudSubscribers = () => {
       return { success: false, error: 'رقم الهاتف غير صحيح' };
     }
 
-    // Check if phone already exists (including archived)
-    const phoneExists = await checkPhoneExists(normalizedPhone);
-    if (phoneExists) {
-      return { success: false, error: 'رقم الهاتف مسجل بالفعل' };
+    // Check if phone already exists (including archived) - only if online
+    if (isOnline) {
+      const phoneExists = await checkPhoneExists(normalizedPhone);
+      if (phoneExists) {
+        return { success: false, error: 'رقم الهاتف مسجل بالفعل' };
+      }
     }
 
     const status = calculateStatus(data.endDate, data.remainingAmount, false);
+    const newId = crypto.randomUUID();
 
+    const newSubscriber: Subscriber = {
+      id: newId,
+      name: data.name,
+      phone: normalizedPhone,
+      subscriptionType: data.subscriptionType,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      paidAmount: data.paidAmount,
+      remainingAmount: data.remainingAmount,
+      captain: data.captain,
+      status,
+      isArchived: false,
+      isPaused: false,
+      pausedUntil: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Update local state immediately
+    setSubscribers(prev => {
+      const updated = [newSubscriber, ...prev];
+      void setCachedSubscribers(updated);
+      return updated;
+    });
+
+    // If offline, queue the change
+    if (!isOnline) {
+      await addPendingChange({
+        id: crypto.randomUUID(),
+        entity: 'subscriber',
+        op: 'upsert',
+        row: {
+          id: newId,
+          user_id: user.id,
+          name: data.name,
+          phone: normalizedPhone,
+          subscription_type: data.subscriptionType,
+          start_date: data.startDate,
+          end_date: data.endDate,
+          paid_amount: data.paidAmount,
+          remaining_amount: data.remainingAmount,
+          captain: data.captain,
+          status,
+          is_archived: false,
+          is_paused: false,
+          paused_until: null,
+        },
+        timestamp: Date.now(),
+      });
+      return { success: true, subscriber: newSubscriber };
+    }
+
+    // If online, save to database
     const { data: newData, error } = await supabase
       .from('subscribers')
       .insert({
+        id: newId,
         user_id: user.id,
         name: data.name,
         phone: normalizedPhone,
@@ -231,6 +303,8 @@ export const useCloudSubscribers = () => {
 
     if (error) {
       console.error('Error adding subscriber:', error);
+      // Revert local change on error
+      setSubscribers(prev => prev.filter(s => s.id !== newId));
       return { success: false, error: 'حدث خطأ أثناء الإضافة' };
     }
 
@@ -241,15 +315,21 @@ export const useCloudSubscribers = () => {
     });
 
     return { success: true, subscriber: mapDbToSubscriber(newData) };
-  }, [user, checkPhoneExists]);
+  }, [user, checkPhoneExists, isOnline]);
 
   const updateSubscriber = useCallback(async (id: string, data: Partial<SubscriberFormData>): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: 'غير مصرح' };
 
     const subscriber = subscribers.find(s => s.id === id);
-    const updateData: any = {};
+    if (!subscriber) return { success: false, error: 'المشترك غير موجود' };
 
-    if (data.name !== undefined) updateData.name = data.name;
+    const updateData: any = {};
+    const localUpdate: Partial<Subscriber> = { updatedAt: new Date().toISOString() };
+
+    if (data.name !== undefined) {
+      updateData.name = data.name;
+      localUpdate.name = data.name;
+    }
 
     if (data.phone !== undefined) {
       const normalizedPhone = normalizeEgyptPhoneDigits(data.phone);
@@ -257,31 +337,72 @@ export const useCloudSubscribers = () => {
         return { success: false, error: 'رقم الهاتف غير صحيح' };
       }
 
-      // منع تكرار الرقم عند التعديل
-      const exists = await checkPhoneExists(normalizedPhone, id);
-      if (exists) {
-        return { success: false, error: 'رقم الهاتف مسجل بالفعل' };
+      // منع تكرار الرقم عند التعديل - only if online
+      if (isOnline) {
+        const exists = await checkPhoneExists(normalizedPhone, id);
+        if (exists) {
+          return { success: false, error: 'رقم الهاتف مسجل بالفعل' };
+        }
       }
 
       updateData.phone = normalizedPhone;
+      localUpdate.phone = normalizedPhone;
     }
 
-    if (data.subscriptionType !== undefined) updateData.subscription_type = data.subscriptionType;
-    if (data.startDate !== undefined) updateData.start_date = data.startDate;
-    if (data.endDate !== undefined) updateData.end_date = data.endDate;
-    if (data.paidAmount !== undefined) updateData.paid_amount = data.paidAmount;
-    if (data.remainingAmount !== undefined) updateData.remaining_amount = data.remainingAmount;
-    if (data.captain !== undefined) updateData.captain = data.captain;
+    if (data.subscriptionType !== undefined) {
+      updateData.subscription_type = data.subscriptionType;
+      localUpdate.subscriptionType = data.subscriptionType;
+    }
+    if (data.startDate !== undefined) {
+      updateData.start_date = data.startDate;
+      localUpdate.startDate = data.startDate;
+    }
+    if (data.endDate !== undefined) {
+      updateData.end_date = data.endDate;
+      localUpdate.endDate = data.endDate;
+    }
+    if (data.paidAmount !== undefined) {
+      updateData.paid_amount = data.paidAmount;
+      localUpdate.paidAmount = data.paidAmount;
+    }
+    if (data.remainingAmount !== undefined) {
+      updateData.remaining_amount = data.remainingAmount;
+      localUpdate.remainingAmount = data.remainingAmount;
+    }
+    if (data.captain !== undefined) {
+      updateData.captain = data.captain;
+      localUpdate.captain = data.captain;
+    }
 
     // Recalculate status if relevant fields changed
     if (data.endDate !== undefined || data.remainingAmount !== undefined) {
-      if (subscriber) {
-        updateData.status = calculateStatus(
-          data.endDate ?? subscriber.endDate,
-          data.remainingAmount ?? subscriber.remainingAmount,
-          subscriber.isPaused
-        );
-      }
+      const newStatus = calculateStatus(
+        data.endDate ?? subscriber.endDate,
+        data.remainingAmount ?? subscriber.remainingAmount,
+        subscriber.isPaused
+      );
+      updateData.status = newStatus;
+      localUpdate.status = newStatus;
+    }
+
+    // Update local state immediately
+    setSubscribers(prev => {
+      const updated = prev.map(s => s.id === id ? { ...s, ...localUpdate } : s);
+      void setCachedSubscribers(updated);
+      return updated;
+    });
+
+    // If offline, queue the change
+    if (!isOnline) {
+      await addPendingChange({
+        id: crypto.randomUUID(),
+        entity: 'subscriber',
+        op: 'update',
+        subscriberId: id,
+        patch: updateData,
+        timestamp: Date.now(),
+      });
+      return { success: true };
     }
 
     const { error } = await supabase
@@ -294,18 +415,36 @@ export const useCloudSubscribers = () => {
       return { success: false, error: 'حدث خطأ أثناء التعديل' };
     }
 
-    if (subscriber) {
-      // Log activity with previous data
-      await logActivity(user.id, id, subscriber.name, 'update', data, subscriber);
-    }
+    // Log activity with previous data
+    await logActivity(user.id, id, subscriber.name, 'update', data, subscriber);
 
     return { success: true };
-  }, [user, subscribers, checkPhoneExists]);
+  }, [user, subscribers, checkPhoneExists, isOnline]);
 
   const deleteSubscriber = useCallback(async (id: string) => {
     if (!user) return;
     
     const subscriber = subscribers.find(s => s.id === id);
+    if (!subscriber) return;
+
+    // Update local state immediately
+    setSubscribers(prev => {
+      const updated = prev.filter(s => s.id !== id);
+      void setCachedSubscribers(updated);
+      return updated;
+    });
+
+    // If offline, queue the change
+    if (!isOnline) {
+      await addPendingChange({
+        id: crypto.randomUUID(),
+        entity: 'subscriber',
+        op: 'delete',
+        subscriberId: id,
+        timestamp: Date.now(),
+      });
+      return;
+    }
     
     const { error } = await supabase
       .from('subscribers')
@@ -314,15 +453,36 @@ export const useCloudSubscribers = () => {
 
     if (error) {
       console.error('Error deleting subscriber:', error);
-    } else if (subscriber) {
+    } else {
       await logActivity(user.id, null, subscriber.name, 'delete');
     }
-  }, [user, subscribers]);
+  }, [user, subscribers, isOnline]);
 
   const archiveSubscriber = useCallback(async (id: string) => {
     if (!user) return;
     
     const subscriber = subscribers.find(s => s.id === id);
+    if (!subscriber) return;
+
+    // Update local state immediately
+    setSubscribers(prev => {
+      const updated = prev.map(s => s.id === id ? { ...s, isArchived: true, updatedAt: new Date().toISOString() } : s);
+      void setCachedSubscribers(updated);
+      return updated;
+    });
+
+    // If offline, queue the change
+    if (!isOnline) {
+      await addPendingChange({
+        id: crypto.randomUUID(),
+        entity: 'subscriber',
+        op: 'update',
+        subscriberId: id,
+        patch: { is_archived: true },
+        timestamp: Date.now(),
+      });
+      return;
+    }
     
     const { error } = await supabase
       .from('subscribers')
@@ -331,15 +491,36 @@ export const useCloudSubscribers = () => {
 
     if (error) {
       console.error('Error archiving subscriber:', error);
-    } else if (subscriber) {
+    } else {
       await logActivity(user.id, id, subscriber.name, 'archive', undefined, { ...subscriber, isArchived: false });
     }
-  }, [user, subscribers]);
+  }, [user, subscribers, isOnline]);
 
   const restoreSubscriber = useCallback(async (id: string) => {
     if (!user) return;
     
     const subscriber = subscribers.find(s => s.id === id);
+    if (!subscriber) return;
+
+    // Update local state immediately
+    setSubscribers(prev => {
+      const updated = prev.map(s => s.id === id ? { ...s, isArchived: false, updatedAt: new Date().toISOString() } : s);
+      void setCachedSubscribers(updated);
+      return updated;
+    });
+
+    // If offline, queue the change
+    if (!isOnline) {
+      await addPendingChange({
+        id: crypto.randomUUID(),
+        entity: 'subscriber',
+        op: 'update',
+        subscriberId: id,
+        patch: { is_archived: false },
+        timestamp: Date.now(),
+      });
+      return;
+    }
     
     const { error } = await supabase
       .from('subscribers')
@@ -348,10 +529,10 @@ export const useCloudSubscribers = () => {
 
     if (error) {
       console.error('Error restoring subscriber:', error);
-    } else if (subscriber) {
+    } else {
       await logActivity(user.id, id, subscriber.name, 'restore', undefined, { ...subscriber, isArchived: true });
     }
-  }, [user, subscribers]);
+  }, [user, subscribers, isOnline]);
 
   const renewSubscription = useCallback(async (id: string, newEndDate: string, paidAmount: number) => {
     if (!user) return;
@@ -492,9 +673,13 @@ export const useCloudSubscribers = () => {
     [subscribers]
   );
 
+  // Include archived subscribers in search results
   const filteredSubscribers = useMemo(() => {
-    return activeSubscribers.filter((sub) => {
-      const matchesSearch =
+    // If there's a search query, search in all subscribers (including archived)
+    const searchIn = searchQuery.trim() ? subscribers : activeSubscribers;
+    
+    return searchIn.filter((sub) => {
+      const matchesSearch = searchQuery.trim() === '' ||
         sub.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         sub.phone.includes(searchQuery);
       const matchesStatus = filterStatus === 'all' || sub.status === filterStatus;
@@ -502,7 +687,7 @@ export const useCloudSubscribers = () => {
       
       return matchesSearch && matchesStatus && matchesCaptain;
     });
-  }, [activeSubscribers, searchQuery, filterStatus, filterCaptain]);
+  }, [subscribers, activeSubscribers, searchQuery, filterStatus, filterCaptain]);
 
   const stats = useMemo(() => {
     // الاشتراكات النشطة: نشط + قارب على الانتهاء (لأنهم لم ينتهوا بعد)

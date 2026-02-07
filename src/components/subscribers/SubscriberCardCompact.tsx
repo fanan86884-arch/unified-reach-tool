@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Edit, Trash2, Archive, RotateCcw, MessageCircle, RefreshCw, 
-  ChevronDown, ChevronUp, Pause, Play, Clock, AlertCircle
+  ChevronDown, ChevronUp, Pause, Play, Clock, AlertCircle, ArchiveRestore
 } from 'lucide-react';
 import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -127,7 +127,10 @@ export const SubscriberCardCompact = ({
   };
 
   return (
-    <Card className="card-shadow hover:card-shadow-hover transition-all duration-300 animate-fade-in overflow-hidden">
+    <Card className={cn(
+      "card-shadow hover:card-shadow-hover transition-all duration-300 animate-fade-in overflow-hidden",
+      subscriber.isArchived && "border-dashed border-warning/50 bg-warning/5"
+    )}>
       {/* Compact Header - Always Visible */}
       <div 
         className="p-4 cursor-pointer flex items-center justify-between"
@@ -135,7 +138,16 @@ export const SubscriberCardCompact = ({
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-foreground truncate">{subscriber.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-foreground truncate">{subscriber.name}</h3>
+              {/* أيقونة مؤرشف */}
+              {subscriber.isArchived && (
+                <Badge variant="outline" className="bg-warning/15 text-warning border-warning/30 text-xs shrink-0">
+                  <ArchiveRestore className="w-3 h-3 ml-1" />
+                  مؤرشف
+                </Badge>
+              )}
+            </div>
             <div className="text-sm text-muted-foreground">
               <span>{formatDateNumeric(subscriber.endDate)}</span>
               <span className="mx-1">-</span>
@@ -160,12 +172,14 @@ export const SubscriberCardCompact = ({
             {subscriber.isPaused && (
               <Pause className="w-4 h-4 text-muted-foreground" />
             )}
-            <Badge className={cn('border', displayStatus.className)}>
-              {displayStatus.label}
-              {displayStatus.showDays && (
-                <span className="mr-1">({displayStatus.daysCount} {displayStatus.daysLabel})</span>
-              )}
-            </Badge>
+            {!subscriber.isArchived && (
+              <Badge className={cn('border', displayStatus.className)}>
+                {displayStatus.label}
+                {displayStatus.showDays && (
+                  <span className="mr-1">({displayStatus.daysCount} {displayStatus.daysLabel})</span>
+                )}
+              </Badge>
+            )}
           </div>
         </div>
         <Button variant="ghost" size="sm" className="mr-2">
@@ -233,7 +247,7 @@ export const SubscriberCardCompact = ({
               <MessageCircle className="w-5 h-5" />
               <span>واتساب</span>
             </Button>
-            {!isArchived && (
+            {!isArchived && !subscriber.isArchived && (
               <>
                 <Button 
                   variant="outline" 
@@ -294,7 +308,30 @@ export const SubscriberCardCompact = ({
                 </Button>
               </>
             )}
-            {isArchived && onRestore && (
+            {/* Show restore button for archived subscribers in search results */}
+            {subscriber.isArchived && onRestore && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-12 flex-col gap-1 text-xs"
+                  onClick={() => onRestore(subscriber.id)}
+                >
+                  <RotateCcw className="w-5 h-5" />
+                  <span>استعادة</span>
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  className="h-12 flex-col gap-1 text-xs"
+                  onClick={() => onDelete(subscriber.id)}
+                >
+                  <Trash2 className="w-5 h-5" />
+                  <span>حذف</span>
+                </Button>
+              </>
+            )}
+            {isArchived && !subscriber.isArchived && onRestore && (
               <>
                 <Button 
                   variant="outline" 

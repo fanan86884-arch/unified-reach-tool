@@ -87,6 +87,7 @@ export const TabContent = memo(({
           updateSubscriber={updateSubscriber}
           deleteSubscriber={deleteSubscriber}
           archiveSubscriber={archiveSubscriber}
+          restoreSubscriber={restoreSubscriber}
           renewSubscription={renewSubscription}
           pauseSubscription={pauseSubscription}
           resumeSubscription={resumeSubscription}

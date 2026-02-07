@@ -23,6 +23,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useCloudSettings, SubscriptionPrices } from '@/hooks/useCloudSettings';
 import { useAuth } from '@/hooks/useAuth';
+import { useWhatsAppTemplates } from '@/hooks/useWhatsAppTemplates';
 import { ExcelExportImport } from './ExcelExportImport';
 import { ContactSettings } from './ContactSettings';
 import { PaymentSettings } from './PaymentSettings';
@@ -35,39 +36,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-
-const defaultTemplates = [
-  {
-    id: 'subscription',
-    name: 'رسالة الاشتراك',
-    content:
-      'تم الاشتراك في الجيم بتاريخ {تاريخ_الاشتراك} وتم دفع {المبلغ_المدفوع} جنيه والمتبقي {المبلغ_المتبقي} جنيه. ينتهي الاشتراك بتاريخ {تاريخ_الانتهاء}',
-  },
-  {
-    id: 'reminder',
-    name: 'تذكير بالمبلغ المتبقي',
-    content:
-      'مرحباً {الاسم}، نود تذكيرك بأن لديك مبلغ متبقي {المبلغ_المتبقي} جنيه. يرجى التواصل معنا لتسديد المبلغ.',
-  },
-  {
-    id: 'expiry',
-    name: 'تنبيه انتهاء الاشتراك',
-    content:
-      'مرحباً {الاسم}، اشتراكك سينتهي بتاريخ {تاريخ_الانتهاء}. يرجى التواصل معنا للتجديد.',
-  },
-  {
-    id: 'expired',
-    name: 'اشتراك منتهي',
-    content:
-      'مرحباً {الاسم}، انتهى اشتراكك في الجيم. نفتقدك! تواصل معنا لتجديد اشتراكك والعودة للتمرين.',
-  },
-  {
-    id: 'paused',
-    name: 'اشتراك موقوف',
-    content:
-      'مرحباً {الاسم}، نود أن نخبرك بأنه تم إيقاف اشتراكك لمدة {المدة_المحددة} وأنه سينتهي اشتراكك بتاريخ {تاريخ_الانتهاء}',
-  },
-];
 
 const subscriptionLabels = {
   monthly: 'شهري',
@@ -107,22 +75,8 @@ const SettingsSection = ({ title, icon: Icon, children, defaultOpen = false }: S
 };
 
 export const Settings = () => {
-  const [templates, setTemplates] = useState(() => {
-    // تحميل القوالب المحفوظة مباشرة عند التهيئة
-    try {
-      const savedTemplates = localStorage.getItem('whatsapp_templates');
-      if (savedTemplates) {
-        const parsed = JSON.parse(savedTemplates);
-        // التحقق من أن القوالب محفوظة بشكل صحيح
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.error('Error loading templates:', e);
-    }
-    return defaultTemplates;
-  });
+  const { templates, loading: templatesLoading, updateGlobalTemplate } = useWhatsAppTemplates();
+  const [localTemplates, setLocalTemplates] = useState(templates);
   const { prices, loading, savePrices } = useCloudSettings();
   const { signOut, user } = useAuth();
   const { allSubscribers, addSubscriber } = useCloudSubscribers();
@@ -134,10 +88,14 @@ export const Settings = () => {
 
   useEffect(() => {
     setLocalPrices(prices);
-  }, []);
+  }, [prices]);
+
+  useEffect(() => {
+    setLocalTemplates(templates);
+  }, [templates]);
 
   const handleTemplateChange = (id: string, content: string) => {
-    setTemplates((prev) =>
+    setLocalTemplates((prev) =>
       prev.map((t) => (t.id === id ? { ...t, content } : t))
     );
   };
@@ -149,9 +107,15 @@ export const Settings = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      localStorage.setItem('whatsapp_templates', JSON.stringify(templates));
+      // Save templates to cloud (global for all users)
+      for (const template of localTemplates) {
+        await updateGlobalTemplate(template.id, template.content);
+      }
       await savePrices(localPrices);
       toast({ title: 'تم حفظ الإعدادات بنجاح' });
+    } catch (err) {
+      console.error('Error saving settings:', err);
+      toast({ title: 'حدث خطأ أثناء الحفظ', variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
@@ -218,7 +182,7 @@ export const Settings = () => {
             المتغيرات: {'{الاسم}'}, {'{تاريخ_الاشتراك}'}, {'{تاريخ_الانتهاء}'}, {'{المبلغ_المدفوع}'}, {'{المبلغ_المتبقي}'}, {'{المدة_المحددة}'}
           </p>
           <div className="space-y-4">
-            {templates.map((template) => (
+            {localTemplates.map((template) => (
               <div key={template.id} className="space-y-2">
                 <Label>{template.name}</Label>
                 <Textarea
