@@ -16,6 +16,7 @@ interface SubscribersTabProps {
   updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => Promise<{ success: boolean; error?: string }>;
   deleteSubscriber: (id: string) => Promise<void>;
   archiveSubscriber: (id: string) => Promise<void>;
+  restoreSubscriber: (id: string) => Promise<void>;
   renewSubscription: (id: string, newEndDate: string, paidAmount: number) => Promise<void>;
   pauseSubscription: (id: string, pauseUntil: string) => Promise<void>;
   resumeSubscription: (id: string) => Promise<void>;
@@ -35,6 +36,7 @@ export const SubscribersTab = memo(({
   updateSubscriber,
   deleteSubscriber,
   archiveSubscriber,
+  restoreSubscriber,
   renewSubscription,
   pauseSubscription,
   resumeSubscription,
@@ -60,6 +62,7 @@ export const SubscribersTab = memo(({
       updateSubscriber={updateSubscriber}
       deleteSubscriber={deleteSubscriber}
       archiveSubscriber={archiveSubscriber}
+      restoreSubscriber={restoreSubscriber}
       renewSubscription={renewSubscription}
       pauseSubscription={pauseSubscription}
       resumeSubscription={resumeSubscription}

@@ -34,6 +34,7 @@ interface SubscribersListProps {
   updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => Promise<{ success: boolean; error?: string }>;
   deleteSubscriber: (id: string) => void | Promise<void>;
   archiveSubscriber: (id: string) => void | Promise<void>;
+  restoreSubscriber?: (id: string) => void | Promise<void>;
   renewSubscription: (id: string, newEndDate: string, paidAmount: number) => void | Promise<void>;
   pauseSubscription?: (id: string, pauseUntil: string) => void | Promise<void>;
   resumeSubscription?: (id: string) => void | Promise<void>;
@@ -53,6 +54,7 @@ export const SubscribersList = ({
   updateSubscriber,
   deleteSubscriber,
   archiveSubscriber,
+  restoreSubscriber,
   renewSubscription,
   pauseSubscription,
   resumeSubscription,
@@ -124,6 +126,13 @@ export const SubscribersList = ({
     if (resumeSubscription) {
       resumeSubscription(id);
       toast({ title: 'تم استئناف الاشتراك بنجاح' });
+    }
+  };
+
+  const handleRestore = (id: string) => {
+    if (restoreSubscriber) {
+      restoreSubscriber(id);
+      toast({ title: 'تم استعادة المشترك بنجاح' });
     }
   };
 
@@ -213,6 +222,7 @@ export const SubscribersList = ({
               onEdit={handleEdit}
               onDelete={handleDelete}
               onArchive={archiveSubscriber}
+              onRestore={handleRestore}
               onRenew={handleRenew}
               onWhatsApp={handleWhatsApp}
               onPause={handlePause}
