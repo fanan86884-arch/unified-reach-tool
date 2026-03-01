@@ -138,12 +138,12 @@ export const SubscriberCardCompact = ({
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <h3 className="font-bold text-foreground truncate">{subscriber.name}</h3>
               {/* أيقونة مؤرشف */}
               {subscriber.isArchived && (
-                <Badge variant="outline" className="bg-warning/15 text-warning border-warning/30 text-xs shrink-0">
-                  <ArchiveRestore className="w-3 h-3 ml-1" />
+                <Badge variant="outline" className="bg-warning/15 text-warning border-warning/30 text-[10px] px-2 py-0.5 shrink-0 whitespace-nowrap">
+                  <ArchiveRestore className="w-3 h-3 ml-1.5" />
                   مؤرشف
                 </Badge>
               )}
