@@ -16,9 +16,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { addDays, format } from 'date-fns';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { addDays, format, parse } from 'date-fns';
 import { useCloudSettings } from '@/hooks/useCloudSettings';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface SubscriberFormProps {
   isOpen: boolean;
@@ -212,43 +219,68 @@ export const SubscriberForm = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startDate">تاريخ البداية</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => {
-                  const storageDate = e.target.value;
-                  if (storageDate) {
-                    const startDate = new Date(storageDate);
-                    const endDate = addDays(startDate, subscriptionDurations[formData.subscriptionType]);
-                    setFormData({
-                      ...formData,
-                      startDate: storageDate,
-                      endDate: format(endDate, 'yyyy-MM-dd'),
-                    });
-                  }
-                }}
-                dir="ltr"
-              />
+              <Label>تاريخ البداية</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !formData.startDate && "text-muted-foreground")}
+                    dir="ltr"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.startDate ? format(parse(formData.startDate, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : 'اختر تاريخ'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.startDate ? parse(formData.startDate, 'yyyy-MM-dd', new Date()) : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        const endDate = addDays(date, subscriptionDurations[formData.subscriptionType]);
+                        setFormData({
+                          ...formData,
+                          startDate: format(date, 'yyyy-MM-dd'),
+                          endDate: format(endDate, 'yyyy-MM-dd'),
+                        });
+                      }
+                    }}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="endDate">تاريخ الانتهاء</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => {
-                  const storageDate = e.target.value;
-                  if (storageDate) {
-                    setFormData({
-                      ...formData,
-                      endDate: storageDate,
-                    });
-                  }
-                }}
-                dir="ltr"
-              />
+              <Label>تاريخ الانتهاء</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !formData.endDate && "text-muted-foreground")}
+                    dir="ltr"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.endDate ? format(parse(formData.endDate, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : 'اختر تاريخ'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.endDate ? parse(formData.endDate, 'yyyy-MM-dd', new Date()) : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        setFormData({
+                          ...formData,
+                          endDate: format(date, 'yyyy-MM-dd'),
+                        });
+                      }
+                    }}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
