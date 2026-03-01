@@ -16,8 +16,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { addDays, format, parse } from 'date-fns';
+import { addDays, format } from 'date-fns';
 import { useCloudSettings } from '@/hooks/useCloudSettings';
+import { Loader2 } from 'lucide-react';
 
 interface SubscriberFormProps {
   isOpen: boolean;
@@ -40,28 +41,6 @@ const subscriptionLabels: Record<SubscriptionType, string> = {
   quarterly: 'ربع سنوي',
   'semi-annual': 'نصف سنوي',
   annual: 'سنوي',
-};
-
-// تحويل من yyyy-MM-dd إلى dd/MM/yyyy للعرض
-const formatDateForDisplay = (dateStr: string): string => {
-  if (!dateStr) return '';
-  try {
-    const date = new Date(dateStr);
-    return format(date, 'dd/MM/yyyy');
-  } catch {
-    return dateStr;
-  }
-};
-
-// تحويل من dd/MM/yyyy إلى yyyy-MM-dd للتخزين
-const formatDateForStorage = (displayDate: string): string => {
-  if (!displayDate) return '';
-  try {
-    const parsed = parse(displayDate, 'dd/MM/yyyy', new Date());
-    return format(parsed, 'yyyy-MM-dd');
-  } catch {
-    return displayDate;
-  }
 };
 
 const getInitialFormData = (editingSubscriber: Subscriber | null | undefined, defaultPrice: number, captain: string): SubscriberFormData => {
@@ -105,14 +84,14 @@ export const SubscriberForm = ({
   const [formData, setFormData] = useState<SubscriberFormData>(() => 
     getInitialFormData(editingSubscriber, 250, defaultCaptain)
   );
-  const [displayStartDate, setDisplayStartDate] = useState('');
-  const [displayEndDate, setDisplayEndDate] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isInitialized = useRef(false);
 
   // Initialize form only when dialog opens
   useEffect(() => {
     if (!isOpen) {
       isInitialized.current = false;
+      setIsSubmitting(false);
       return;
     }
 
@@ -122,8 +101,6 @@ export const SubscriberForm = ({
     const price = getPrice('monthly');
     const data = getInitialFormData(editingSubscriber, price, defaultCaptain);
     setFormData(data);
-    setDisplayStartDate(formatDateForDisplay(data.startDate));
-    setDisplayEndDate(formatDateForDisplay(data.endDate));
   }, [isOpen, editingSubscriber, defaultCaptain, getPrice]);
 
   const handleSubscriptionTypeChange = (type: SubscriptionType) => {
@@ -137,44 +114,6 @@ export const SubscriberForm = ({
       endDate: format(endDate, 'yyyy-MM-dd'),
       remainingAmount: newRemaining,
     });
-    setDisplayEndDate(format(endDate, 'dd/MM/yyyy'));
-  };
-
-  const handleStartDateChange = (displayValue: string) => {
-    setDisplayStartDate(displayValue);
-    
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(displayValue)) {
-      try {
-        const storageDate = formatDateForStorage(displayValue);
-        const startDate = new Date(storageDate);
-        const endDate = addDays(startDate, subscriptionDurations[formData.subscriptionType]);
-        
-        setFormData({
-          ...formData,
-          startDate: storageDate,
-          endDate: format(endDate, 'yyyy-MM-dd'),
-        });
-        setDisplayEndDate(format(endDate, 'dd/MM/yyyy'));
-      } catch (e) {
-        // تجاهل الأخطاء أثناء الكتابة
-      }
-    }
-  };
-
-  const handleEndDateChange = (displayValue: string) => {
-    setDisplayEndDate(displayValue);
-    
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(displayValue)) {
-      try {
-        const storageDate = formatDateForStorage(displayValue);
-        setFormData({
-          ...formData,
-          endDate: storageDate,
-        });
-      } catch (e) {
-        // تجاهل الأخطاء أثناء الكتابة
-      }
-    }
   };
 
   const handlePaidAmountChange = (value: number) => {
@@ -188,8 +127,13 @@ export const SubscriberForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
-    // Don't close here - let the parent handle closing after validation
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onSubmit(formData);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (settingsLoading) {
@@ -283,8 +227,6 @@ export const SubscriberForm = ({
                       startDate: storageDate,
                       endDate: format(endDate, 'yyyy-MM-dd'),
                     });
-                    setDisplayStartDate(formatDateForDisplay(storageDate));
-                    setDisplayEndDate(format(endDate, 'dd/MM/yyyy'));
                   }
                 }}
                 dir="ltr"
@@ -303,7 +245,6 @@ export const SubscriberForm = ({
                       ...formData,
                       endDate: storageDate,
                     });
-                    setDisplayEndDate(formatDateForDisplay(storageDate));
                   }
                 }}
                 dir="ltr"
@@ -338,10 +279,14 @@ export const SubscriberForm = ({
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button type="submit" className="flex-1">
-              {editingSubscriber ? 'حفظ التعديلات' : 'إضافة المشترك'}
+            <Button type="submit" className="flex-1" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                editingSubscriber ? 'حفظ التعديلات' : 'إضافة المشترك'
+              )}
             </Button>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               إلغاء
             </Button>
           </div>

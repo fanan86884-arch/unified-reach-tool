@@ -113,7 +113,14 @@ export const useCloudSubscribers = () => {
 
   // Fetch subscribers
   const fetchSubscribers = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    if (!isOnline) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase

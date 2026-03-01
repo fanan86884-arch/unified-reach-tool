@@ -22,6 +22,9 @@ export const useAuth = () => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+    }).catch(() => {
+      // Offline — stop loading so cached data can render
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
