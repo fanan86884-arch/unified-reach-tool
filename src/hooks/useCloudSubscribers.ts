@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subscriber';
 import { supabase } from '@/integrations/supabase/client.runtime';
 import { differenceInDays, parseISO, startOfDay } from 'date-fns';
@@ -215,7 +215,20 @@ export const useCloudSubscribers = () => {
     });
   }, [user]);
 
+  const addingRef = useRef(false);
+
   const addSubscriber = useCallback(async (data: SubscriberFormData): Promise<{ success: boolean; subscriber?: Subscriber; error?: string }> => {
+    if (!user) return { success: false, error: 'غير مصرح' };
+    if (addingRef.current) return { success: false, error: 'جاري الإضافة...' };
+    addingRef.current = true;
+    try {
+      return await _addSubscriberInner(data);
+    } finally {
+      addingRef.current = false;
+    }
+  }, [user, isOnline]);
+
+  const _addSubscriberInner = useCallback(async (data: SubscriberFormData): Promise<{ success: boolean; subscriber?: Subscriber; error?: string }> => {
     if (!user) return { success: false, error: 'غير مصرح' };
 
     const normalizedPhone = normalizeEgyptPhoneDigits(data.phone);
