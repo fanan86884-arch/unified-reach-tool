@@ -165,7 +165,7 @@ export const useCloudSubscribers = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, autoArchiveExpired]);
+  }, [user, isOnline, autoArchiveExpired]);
 
   useEffect(() => {
     fetchSubscribers();

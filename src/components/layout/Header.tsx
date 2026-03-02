@@ -30,7 +30,7 @@ export const Header = ({ onOpenActivityLog, isRefreshing = false }: HeaderProps)
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border/50">
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border/50 pt-safe-top">
         <div className="container flex items-center justify-center h-14 px-4 relative">
           <div className="flex items-center gap-1 absolute left-4">
             <Button

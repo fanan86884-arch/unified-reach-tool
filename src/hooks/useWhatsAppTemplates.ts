@@ -43,38 +43,69 @@ const defaultTemplates: WhatsAppTemplate[] = [
   },
 ];
 
+const templateBaseId = (id: string) => id.replace(/_user_[a-z0-9-]+$/i, '');
+
 export const useWhatsAppTemplates = () => {
   const { user } = useAuth();
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>(defaultTemplates);
   const [loading, setLoading] = useState(true);
 
   const fetchTemplates = useCallback(async () => {
+    if (!user) {
+      setTemplates(defaultTemplates);
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('whatsapp_templates')
         .select('*')
-        .order('id');
+        .or(`is_global.eq.true,user_id.eq.${user.id}`);
 
       if (error) {
         console.error('Error fetching templates:', error);
         return;
       }
 
-      if (data && data.length > 0) {
-        setTemplates(data.map(t => ({
-          id: t.id,
+      const globalById = new Map<string, WhatsAppTemplate>();
+      const userById = new Map<string, WhatsAppTemplate>();
+
+      for (const t of data || []) {
+        const baseId = templateBaseId(t.id);
+        const normalizedTemplate: WhatsAppTemplate = {
+          id: baseId,
           name: t.name,
           content: t.content,
           is_global: t.is_global,
           user_id: t.user_id || undefined,
-        })));
+        };
+
+        if (t.user_id === user.id) {
+          userById.set(baseId, normalizedTemplate);
+        } else if (t.is_global) {
+          globalById.set(baseId, normalizedTemplate);
+        }
       }
+
+      const merged = defaultTemplates.map((template) => {
+        return userById.get(template.id) ?? globalById.get(template.id) ?? template;
+      });
+
+      // Keep any extra custom user templates that aren't in defaults
+      for (const [id, template] of userById.entries()) {
+        if (!merged.some((m) => m.id === id)) {
+          merged.push(template);
+        }
+      }
+
+      setTemplates(merged);
     } catch (err) {
       console.error('Error:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     fetchTemplates();
@@ -105,45 +136,39 @@ export const useWhatsAppTemplates = () => {
   const updateTemplate = useCallback(async (id: string, content: string) => {
     if (!user) return { success: false, error: 'غير مصرح' };
 
-    // Update locally first
-    setTemplates(prev => prev.map(t => t.id === id ? { ...t, content } : t));
+    const previous = templates;
+    setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, content } : t)));
 
-    // Update in database - upsert user's override
+    const fallbackName = defaultTemplates.find((t) => t.id === id)?.name || templates.find((t) => t.id === id)?.name || 'رسالة';
+
     const { error } = await supabase
       .from('whatsapp_templates')
-      .upsert({
-        id: `${id}_user_${user.id}`,
-        name: templates.find(t => t.id === id)?.name || '',
-        content,
-        user_id: user.id,
-        is_global: false,
-      }, {
-        onConflict: 'id'
-      });
+      .upsert(
+        {
+          id: `${id}_user_${user.id}`,
+          name: fallbackName,
+          content,
+          user_id: user.id,
+          is_global: false,
+        },
+        {
+          onConflict: 'id',
+        }
+      );
 
     if (error) {
       console.error('Error updating template:', error);
+      setTemplates(previous);
       return { success: false, error: 'حدث خطأ' };
     }
 
     return { success: true };
   }, [user, templates]);
 
+  // Kept for backwards compatibility in settings; persists per user and syncs on all user devices
   const updateGlobalTemplate = useCallback(async (id: string, content: string) => {
-    // Update globally (admin only)
-    const { error } = await supabase
-      .from('whatsapp_templates')
-      .update({ content, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .eq('is_global', true);
-
-    if (error) {
-      console.error('Error updating global template:', error);
-      return { success: false, error: 'حدث خطأ' };
-    }
-
-    return { success: true };
-  }, []);
+    return updateTemplate(id, content);
+  }, [updateTemplate]);
 
   return {
     templates,

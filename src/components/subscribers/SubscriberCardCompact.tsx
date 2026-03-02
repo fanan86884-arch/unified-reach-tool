@@ -136,18 +136,9 @@ export const SubscriberCardCompact = ({
         className="p-4 cursor-pointer flex items-center justify-between"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-3 flex-1 min-w-0">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3">
-              <h3 className="font-bold text-foreground truncate">{subscriber.name}</h3>
-              {/* أيقونة مؤرشف */}
-              {subscriber.isArchived && (
-                <Badge variant="outline" className="bg-warning/15 text-warning border-warning/30 text-[10px] px-2 py-0.5 shrink-0 whitespace-nowrap">
-                  <ArchiveRestore className="w-3 h-3 ml-1.5" />
-                  مؤرشف
-                </Badge>
-              )}
-            </div>
+            <h3 className="font-bold text-foreground truncate">{subscriber.name}</h3>
             <div className="text-sm text-muted-foreground">
               <span>{formatDateNumeric(subscriber.endDate)}</span>
               <span className="mx-1">-</span>
@@ -159,7 +150,7 @@ export const SubscriberCardCompact = ({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 mr-2">
             {/* رمز التعجب لو عليه فلوس - باللون الأحمر */}
             {hasRemainingAmount && (
               <AlertCircle className="w-4 h-4 text-destructive" />
@@ -182,6 +173,12 @@ export const SubscriberCardCompact = ({
             )}
           </div>
         </div>
+        {subscriber.isArchived && (
+          <Badge variant="outline" className="bg-warning/15 text-warning border-warning/30 text-[10px] px-2 py-0.5 shrink-0 whitespace-nowrap ml-2">
+            <ArchiveRestore className="w-3 h-3 ml-1.5" />
+            مؤرشف
+          </Badge>
+        )}
         <Button variant="ghost" size="sm" className="mr-2">
           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </Button>

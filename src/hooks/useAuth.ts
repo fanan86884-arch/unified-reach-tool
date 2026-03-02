@@ -2,6 +2,36 @@ import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client.runtime';
 
+const OFFLINE_AUTH_USER_KEY = 'offline_auth_user';
+
+const cacheUser = (user: User | null) => {
+  if (!user) {
+    localStorage.removeItem(OFFLINE_AUTH_USER_KEY);
+    return;
+  }
+
+  localStorage.setItem(
+    OFFLINE_AUTH_USER_KEY,
+    JSON.stringify({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      aud: user.aud,
+      created_at: user.created_at,
+    })
+  );
+};
+
+const getCachedUser = (): User | null => {
+  try {
+    const raw = localStorage.getItem(OFFLINE_AUTH_USER_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as User;
+  } catch {
+    return null;
+  }
+};
+
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -10,9 +40,11 @@ export const useAuth = () => {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
         setSession(session);
-        setUser(session?.user ?? null);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        cacheUser(currentUser);
         setLoading(false);
       }
     );
@@ -20,10 +52,20 @@ export const useAuth = () => {
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        setUser(session.user);
+        cacheUser(session.user);
+      } else {
+        const cachedUser = !navigator.onLine ? getCachedUser() : null;
+        setUser(cachedUser);
+      }
+
       setLoading(false);
     }).catch(() => {
-      // Offline — stop loading so cached data can render
+      // Offline — restore cached auth to allow full offline app boot
+      const cachedUser = getCachedUser();
+      setUser(cachedUser);
       setLoading(false);
     });
 
@@ -52,6 +94,7 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
+    localStorage.removeItem(OFFLINE_AUTH_USER_KEY);
     const { error } = await supabase.auth.signOut();
     return { error };
   };
