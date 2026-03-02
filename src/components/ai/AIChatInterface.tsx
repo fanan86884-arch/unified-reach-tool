@@ -502,7 +502,7 @@ ${currentPlan}
   const renderChatInterface = () => (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-border flex items-center gap-3">
+      <div className="pt-safe-top p-4 border-b border-border flex items-center gap-3">
         <div className="flex-1">
           <p className="font-medium">{selectedRequest?.name}</p>
           <p className="text-sm text-muted-foreground">
@@ -657,7 +657,7 @@ ${currentPlan}
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent 
         side="left" 
-        className="w-full sm:max-w-lg p-0 flex flex-col h-full"
+        className="w-screen max-w-none h-[100dvh] p-0 flex flex-col rounded-none border-0"
         onTouchStart={handleSheetTouchStart}
         onTouchEnd={handleSheetTouchEnd}
       >
@@ -665,7 +665,7 @@ ${currentPlan}
           renderChatInterface()
         ) : (
           <>
-            <SheetHeader className="p-4 border-b border-border shrink-0">
+            <SheetHeader className="pt-safe-top p-4 border-b border-border shrink-0">
               <SheetTitle className="flex items-center gap-2 text-right">
                 <Sparkles className="w-5 h-5 text-primary" />
                 مساعد الأنظمة الذكي

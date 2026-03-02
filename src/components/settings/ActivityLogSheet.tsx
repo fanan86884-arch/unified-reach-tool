@@ -13,21 +13,23 @@ const SWIPE_THRESHOLD = 80;
 export const ActivityLogSheet = ({ open, onOpenChange }: ActivityLogSheetProps) => {
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     const touch = e.touches[0];
-    (e.currentTarget as HTMLDivElement).dataset.swipeStartX = String(touch.clientX);
-    (e.currentTarget as HTMLDivElement).dataset.swipeStartY = String(touch.clientY);
-    (e.currentTarget as HTMLDivElement).dataset.fromLeftEdge = touch.clientX <= SWIPE_EDGE_SIZE ? '1' : '0';
+    const screenWidth = window.innerWidth;
+    const target = e.currentTarget as HTMLDivElement;
+    target.dataset.swipeStartX = String(touch.clientX);
+    target.dataset.swipeStartY = String(touch.clientY);
+    target.dataset.fromRightEdge = touch.clientX >= screenWidth - SWIPE_EDGE_SIZE ? '1' : '0';
   };
 
   const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
     const target = e.currentTarget as HTMLDivElement;
-    if (target.dataset.fromLeftEdge !== '1') return;
+    if (target.dataset.fromRightEdge !== '1') return;
 
     const startX = Number(target.dataset.swipeStartX || 0);
     const startY = Number(target.dataset.swipeStartY || 0);
     const endX = e.changedTouches[0].clientX;
     const endY = e.changedTouches[0].clientY;
 
-    const deltaX = endX - startX;
+    const deltaX = startX - endX;
     const deltaY = Math.abs(endY - startY);
 
     if (deltaX > SWIPE_THRESHOLD && deltaX > deltaY) {
