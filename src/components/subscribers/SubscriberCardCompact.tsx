@@ -164,10 +164,10 @@ export const SubscriberCardCompact = ({
               <Pause className="w-4 h-4 text-muted-foreground" />
             )}
             {!subscriber.isArchived && (
-              <Badge className={cn('border', displayStatus.className)}>
-                {displayStatus.label}
+              <Badge className={cn('border flex flex-col items-center leading-tight py-1 px-2', displayStatus.className)}>
+                <span>{displayStatus.label}</span>
                 {displayStatus.showDays && (
-                  <span className="mr-1">({displayStatus.daysCount} {displayStatus.daysLabel})</span>
+                  <span className="text-[10px]">{displayStatus.daysCount} {displayStatus.daysLabel}</span>
                 )}
               </Badge>
             )}
