@@ -107,10 +107,8 @@ export const Settings = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Save templates to cloud (global for all users)
-      for (const template of localTemplates) {
-        await updateGlobalTemplate(template.id, template.content);
-      }
+      // Save templates and prices to backend
+      await Promise.all(localTemplates.map((template) => updateGlobalTemplate(template.id, template.content)));
       await savePrices(localPrices);
       toast({ title: 'تم حفظ الإعدادات بنجاح' });
     } catch (err) {
@@ -139,7 +137,7 @@ export const Settings = () => {
     }
   };
 
-  if (loading) {
+  if (loading || templatesLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
