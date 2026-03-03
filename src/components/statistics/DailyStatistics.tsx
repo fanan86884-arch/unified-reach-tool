@@ -140,19 +140,20 @@ export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // 1. Subscribers added today
+  // 1. Subscribers added today OR renewed today (startDate updated to today)
   const addedToday = useMemo(() =>
     allSubscribers.filter(sub => {
-      if (!sub.createdAt) return false;
-      return isToday(parseISO(sub.createdAt));
+      const addedNow = sub.createdAt && isToday(parseISO(sub.createdAt));
+      const renewedToday = isToday(parseISO(sub.startDate)) && sub.createdAt && !isToday(parseISO(sub.createdAt));
+      return addedNow || renewedToday;
     }), [allSubscribers]);
 
-  // 2. Expiring within 3 days
+  // 2. Expiring in exactly 3 days or less (1-3 days remaining only)
   const expiringToday = useMemo(() =>
     allSubscribers.filter(sub => {
       const endDate = parseISO(sub.endDate);
       const days = differenceInDays(endDate, today);
-      return days >= 0 && days <= 3 && !sub.isPaused;
+      return days >= 1 && days <= 3 && !sub.isPaused;
     }), [allSubscribers, today]);
 
   // 3. Expired today

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
 import { AIChatInterface } from '@/components/ai/AIChatInterface';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 interface HeaderProps {
   onOpenActivityLog?: () => void;
@@ -16,6 +17,7 @@ export const Header = ({ onOpenActivityLog, isRefreshing = false }: HeaderProps)
     return saved ? saved === 'dark' : true;
   });
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const isOnline = useOnlineStatus();
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -61,7 +63,7 @@ export const Header = ({ onOpenActivityLog, isRefreshing = false }: HeaderProps)
               onClick={onOpenActivityLog}
               className="rounded-full absolute right-4 w-10 h-10 bg-card/50 hover:bg-card select-none"
             >
-              <History className={cn("w-5 h-5 transition-all", isRefreshing && "animate-spin")} />
+              <History className={cn("w-5 h-5 transition-all", isRefreshing && "animate-spin", isOnline ? "text-yellow-500" : "text-destructive")} />
             </Button>
           )}
         </div>

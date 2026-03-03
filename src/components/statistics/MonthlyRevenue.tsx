@@ -18,15 +18,15 @@ export const MonthlyRevenue = ({ allSubscribers }: MonthlyRevenueProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const currentYear = new Date().getFullYear();
 
-  // Revenue = sum of paidAmount for subscribers created in that month
+  // Revenue = sum of paidAmount based on startDate month (covers both new and renewed)
   const monthlyData = useMemo(() => {
     const monthlyRevenues: number[] = Array(12).fill(0);
     
     allSubscribers.forEach(sub => {
-      if (!sub.createdAt) return;
-      const createdDate = parseISO(sub.createdAt);
-      const subYear = getYear(createdDate);
-      const subMonth = getMonth(createdDate);
+      if (!sub.startDate) return;
+      const startDate = parseISO(sub.startDate);
+      const subYear = getYear(startDate);
+      const subMonth = getMonth(startDate);
       
       if (subYear === currentYear) {
         monthlyRevenues[subMonth] += sub.paidAmount;
