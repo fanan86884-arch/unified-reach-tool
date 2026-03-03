@@ -3,10 +3,11 @@ import { Subscriber } from '@/types/subscriber';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { MessageCircle, UserPlus, Clock, XCircle, AlertTriangle } from 'lucide-react';
+import { MessageCircle, UserPlus, Clock, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { parseISO, differenceInDays, isToday, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useWhatsAppTemplates } from '@/hooks/useWhatsAppTemplates';
 
 interface DailyStatisticsProps {
   allSubscribers: Subscriber[];
@@ -23,14 +24,6 @@ const formatDate = (dateStr: string): string => {
   return format(parseISO(dateStr), 'dd/MM/yyyy', { locale: ar });
 };
 
-const getTemplates = () => {
-  try {
-    const saved = localStorage.getItem('whatsapp_templates');
-    if (saved) return JSON.parse(saved);
-  } catch (e) { /* ignore */ }
-  return null;
-};
-
 const replaceVariables = (template: string, subscriber: Subscriber): string => {
   return template
     .replace(/{الاسم}/g, subscriber.name)
@@ -40,21 +33,6 @@ const replaceVariables = (template: string, subscriber: Subscriber): string => {
     .replace(/{المبلغ_المتبقي}/g, String(subscriber.remainingAmount));
 };
 
-const getMessageFromTemplate = (templateId: string, sub: Subscriber, defaultMsg: string): string => {
-  const templates = getTemplates();
-  if (templates) {
-    const template = templates.find((t: any) => t.id === templateId);
-    if (template) return replaceVariables(template.content, sub);
-  }
-  return defaultMsg;
-};
-
-const sendWhatsApp = (sub: Subscriber, templateId: string, defaultMsg: string) => {
-  const phone = formatPhone(sub.phone);
-  const message = getMessageFromTemplate(templateId, sub, defaultMsg);
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
-};
-
 interface DailyCategoryProps {
   title: string;
   icon: React.ReactNode;
@@ -62,9 +40,10 @@ interface DailyCategoryProps {
   templateId: string;
   defaultMessage: (sub: Subscriber) => string;
   variant: string;
+  sendWhatsApp: (sub: Subscriber, templateId: string, defaultMsg: string) => void;
 }
 
-const DailyCategory = ({ title, icon, subscribers, templateId, defaultMessage, variant }: DailyCategoryProps) => {
+const DailyCategory = ({ title, icon, subscribers, templateId, defaultMessage, variant, sendWhatsApp }: DailyCategoryProps) => {
   const { toast } = useToast();
   const count = subscribers.length;
 
@@ -137,8 +116,16 @@ const DailyCategory = ({ title, icon, subscribers, templateId, defaultMessage, v
 };
 
 export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
+  const { templates, loading } = useWhatsAppTemplates();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  const sendWhatsApp = (sub: Subscriber, templateId: string, defaultMsg: string) => {
+    const phone = formatPhone(sub.phone);
+    const template = templates.find(t => t.id === templateId);
+    const message = template ? replaceVariables(template.content, sub) : defaultMsg;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
 
   // 1. Subscribers added today OR renewed today (startDate updated to today)
   const addedToday = useMemo(() =>
@@ -172,6 +159,14 @@ export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
       return daysSinceStart >= 7;
     }), [allSubscribers, today]);
 
+  if (loading) {
+    return (
+      <Card className="p-4 card-shadow flex justify-center py-8">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </Card>
+    );
+  }
+
   return (
     <Card className="p-4 card-shadow">
       <h3 className="font-bold text-base mb-4 flex items-center gap-2">
@@ -185,6 +180,7 @@ export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
           templateId="subscription"
           defaultMessage={(sub) => `مرحباً ${sub.name}، شكراً لاشتراكك معنا! نتمنى لك تمريناً موفقاً.`}
           variant="success"
+          sendWhatsApp={sendWhatsApp}
         />
         <DailyCategory
           title="قاربت على الانتهاء"
@@ -193,6 +189,7 @@ export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
           templateId="expiry"
           defaultMessage={(sub) => `مرحباً ${sub.name}، اشتراكك سينتهي قريباً بتاريخ ${formatDate(sub.endDate)}. يرجى التواصل معنا للتجديد.`}
           variant="warning"
+          sendWhatsApp={sendWhatsApp}
         />
         <DailyCategory
           title="اشتراكات منتهية"
@@ -201,6 +198,7 @@ export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
           templateId="expired"
           defaultMessage={(sub) => `مرحباً ${sub.name}، اشتراكك انتهى. نفتقدك! تواصل معنا لتجديد اشتراكك.`}
           variant="destructive"
+          sendWhatsApp={sendWhatsApp}
         />
         <DailyCategory
           title="اشتراكات معلقة"
@@ -209,6 +207,7 @@ export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
           templateId="reminder"
           defaultMessage={(sub) => `مرحباً ${sub.name}، نود تذكيرك بأن لديك مبلغ متبقي ${sub.remainingAmount} جنيه. يرجى التواصل معنا.`}
           variant="accent"
+          sendWhatsApp={sendWhatsApp}
         />
       </Accordion>
     </Card>
