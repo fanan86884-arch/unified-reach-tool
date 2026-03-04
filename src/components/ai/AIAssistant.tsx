@@ -51,11 +51,9 @@ export const AIAssistant = ({ stats, open, onOpenChange }: AIAssistantProps) => 
   const [dietRequestsCount, setDietRequestsCount] = useState(0);
   const [workoutRequestsCount, setWorkoutRequestsCount] = useState(0);
 
-  // Calculate total notifications
   const subscriptionNotifs = stats.expiring.length + stats.expired.length + stats.pending.length;
   const totalNotifs = subscriptionNotifs + requestsCount + dietRequestsCount + workoutRequestsCount;
 
-  // Fetch pending requests count
   useEffect(() => {
     const fetchCounts = async () => {
       const [subReqs, dietReqs, workoutReqs] = await Promise.all([
@@ -71,7 +69,6 @@ export const AIAssistant = ({ stats, open, onOpenChange }: AIAssistantProps) => 
 
     fetchCounts();
 
-    // Subscribe to real-time changes
     const channel = supabase
       .channel('requests_count')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'subscription_requests' }, fetchCounts)
@@ -88,14 +85,22 @@ export const AIAssistant = ({ stats, open, onOpenChange }: AIAssistantProps) => 
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent 
         side="left" 
-        className="w-screen max-w-none h-[100dvh] p-0 flex flex-col rounded-none border-0"
+        className="w-screen max-w-none h-[100dvh] p-0 flex flex-col rounded-none border-0 [&>button]:hidden"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
         <SheetHeader className="pt-safe-top p-4 border-b border-border shrink-0">
-          <SheetTitle className="flex items-center gap-2 text-right">
-            <Sparkles className="w-5 h-5 text-primary" />
-            المساعد الذكي
+          <SheetTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-right">
+              <Sparkles className="w-5 h-5 text-primary" />
+              المساعد الذكي
+            </div>
+            <button
+              onClick={() => onOpenChange(false)}
+              className="rounded-full w-8 h-8 flex items-center justify-center hover:bg-muted text-muted-foreground"
+            >
+              ✕
+            </button>
           </SheetTitle>
         </SheetHeader>
         
@@ -139,7 +144,6 @@ export const AIAssistant = ({ stats, open, onOpenChange }: AIAssistantProps) => 
   );
 };
 
-// Export a helper hook for notification count
 export const useNotificationCount = (stats: { expiring: Subscriber[]; expired: Subscriber[]; pending: Subscriber[] }) => {
   const [requestsCount, setRequestsCount] = useState(0);
   const [dietRequestsCount, setDietRequestsCount] = useState(0);

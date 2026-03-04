@@ -18,6 +18,7 @@ import { useActivityLog, getActionLabel, ActivityLog as ActivityLogType } from '
 import { formatDistanceToNow, parseISO, isToday, isYesterday, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { SwipeableItem } from '@/components/ui/swipeable-item';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,7 +70,7 @@ const getRelativeTime = (dateStr: string): string => {
 };
 
 export const ActivityLogComponent = () => {
-  const { logs, loading, revertChange, clearLogs } = useActivityLog();
+  const { logs, loading, revertChange, clearLogs, deleteLog } = useActivityLog();
   const { toast } = useToast();
 
   const handleRevert = async (log: ActivityLogType) => {
@@ -84,6 +85,13 @@ export const ActivityLogComponent = () => {
   const handleClearLogs = async () => {
     await clearLogs();
     toast({ title: 'تم مسح سجل التغييرات' });
+  };
+
+  const handleDeleteLog = async (logId: string) => {
+    if (deleteLog) {
+      await deleteLog(logId);
+      toast({ title: 'تم حذف العنصر' });
+    }
   };
 
   if (loading) {
@@ -131,50 +139,52 @@ export const ActivityLogComponent = () => {
           <p className="text-muted-foreground">لا توجد سجلات</p>
         </div>
       ) : (
-        <div className="space-y-2 max-h-96 overflow-y-auto">
+        <div className="space-y-2">
           {logs.map((log) => {
             const Icon = actionIcons[log.actionType] || Edit;
             const colorClass = actionColors[log.actionType] || 'text-muted-foreground';
             const canRevert = log.previousData && log.subscriberId && log.actionType !== 'delete';
 
             return (
-              <Card key={log.id} className="p-3">
-                <div className="flex items-start gap-3">
-                  <div className={`mt-0.5 ${colorClass}`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-medium text-sm truncate">
-                        {getActionLabel(log.actionType)}
-                      </p>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {getRelativeTime(log.createdAt)}
-                      </span>
+              <SwipeableItem key={log.id} onDelete={() => handleDeleteLog(log.id)}>
+                <Card className="p-3">
+                  <div className="flex items-start gap-3">
+                    <div className={`mt-0.5 ${colorClass}`}>
+                      <Icon className="w-4 h-4" />
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {log.subscriberName}
-                    </p>
-                    {log.actionDetails && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {Object.entries(log.actionDetails)
-                          .map(([key, value]) => `${key}: ${value}`)
-                          .join(' • ')}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-medium text-sm truncate">
+                          {getActionLabel(log.actionType)}
+                        </p>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {getRelativeTime(log.createdAt)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {log.subscriberName}
                       </p>
+                      {log.actionDetails && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {Object.entries(log.actionDetails)
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join(' • ')}
+                        </p>
+                      )}
+                    </div>
+                    {canRevert && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRevert(log)}
+                        className="shrink-0"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                      </Button>
                     )}
                   </div>
-                  {canRevert && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRevert(log)}
-                      className="shrink-0"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              </Card>
+                </Card>
+              </SwipeableItem>
             );
           })}
         </div>

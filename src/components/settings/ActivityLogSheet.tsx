@@ -41,14 +41,22 @@ export const ActivityLogSheet = ({ open, onOpenChange }: ActivityLogSheetProps) 
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="left"
-        className="w-screen max-w-none h-[100dvh] p-0 flex flex-col rounded-none border-0"
+        className="w-screen max-w-none h-[100dvh] p-0 flex flex-col rounded-none border-0 [&>button]:hidden"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
         <SheetHeader className="pt-safe-top p-4 border-b border-border shrink-0">
-          <SheetTitle className="flex items-center gap-2 text-right">
-            <History className="w-5 h-5 text-primary" />
-            سجل التغييرات
+          <SheetTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-right">
+              <History className="w-5 h-5 text-primary" />
+              سجل التغييرات
+            </div>
+            <button
+              onClick={() => onOpenChange(false)}
+              className="rounded-full w-8 h-8 flex items-center justify-center hover:bg-muted text-muted-foreground"
+            >
+              ✕
+            </button>
           </SheetTitle>
         </SheetHeader>
 
