@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Subscriber } from '@/types/subscriber';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,32 +39,28 @@ interface DailyCategoryProps {
   subscribers: Subscriber[];
   templateId: string;
   defaultMessage: (sub: Subscriber) => string;
-  variant: string;
   sendWhatsApp: (sub: Subscriber, templateId: string, defaultMsg: string) => void;
 }
 
-const DailyCategory = ({ title, icon, subscribers, templateId, defaultMessage, variant, sendWhatsApp }: DailyCategoryProps) => {
+const DailyCategory = ({ title, icon, subscribers, templateId, defaultMessage, sendWhatsApp }: DailyCategoryProps) => {
   const { toast } = useToast();
   const count = subscribers.length;
+  const [sendIndex, setSendIndex] = useState(0);
 
-  const sendToAll = () => {
+  const sendNext = () => {
     if (count === 0) {
       toast({ title: 'لا يوجد مشتركين', variant: 'destructive' });
       return;
     }
-    subscribers.forEach((sub, i) => {
-      setTimeout(() => {
-        sendWhatsApp(sub, templateId, defaultMessage(sub));
-      }, i * 500);
-    });
-    toast({ title: `تم فتح ${count} محادثة واتساب` });
-  };
-
-  const variantColors: Record<string, string> = {
-    success: 'text-success',
-    warning: 'text-warning',
-    destructive: 'text-destructive',
-    accent: 'text-accent',
+    if (sendIndex >= count) {
+      toast({ title: 'تم إرسال لجميع المشتركين ✅' });
+      setSendIndex(0);
+      return;
+    }
+    const sub = subscribers[sendIndex];
+    sendWhatsApp(sub, templateId, defaultMessage(sub));
+    setSendIndex(prev => prev + 1);
+    toast({ title: `تم إرسال لـ ${sub.name} (${sendIndex + 1}/${count})` });
   };
 
   return (
@@ -73,7 +69,7 @@ const DailyCategory = ({ title, icon, subscribers, templateId, defaultMessage, v
         <div className="flex items-center gap-3 w-full">
           {icon}
           <span className="font-bold text-sm flex-1 text-right">{title}</span>
-          <span className={`text-2xl font-black ${variantColors[variant] || 'text-primary'}`}>
+          <span className="text-2xl font-black text-primary">
             {count}
           </span>
         </div>
@@ -84,23 +80,31 @@ const DailyCategory = ({ title, icon, subscribers, templateId, defaultMessage, v
             variant="whatsapp"
             size="sm"
             className="w-full mb-3 rounded-xl font-bold"
-            onClick={sendToAll}
+            onClick={sendNext}
           >
             <MessageCircle className="w-4 h-4" />
-            إرسال للكل ({count})
+            {sendIndex === 0
+              ? `إرسال للكل (${count})`
+              : sendIndex >= count
+                ? 'تم الإرسال للجميع ✅ — إعادة'
+                : `إرسال التالي (${sendIndex + 1}/${count})`
+            }
           </Button>
         )}
         {count === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-2">لا يوجد مشتركين</p>
         ) : (
           <div className="space-y-2">
-            {subscribers.map(sub => (
-              <div key={sub.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+            {subscribers.map((sub, i) => (
+              <div
+                key={sub.id}
+                className={`flex items-center justify-between p-2 rounded-lg bg-muted/50 ${i < sendIndex ? 'opacity-50' : ''}`}
+              >
                 <span className="text-sm font-medium truncate flex-1">{sub.name}</span>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-success shrink-0"
+                  className="text-primary shrink-0"
                   onClick={() => sendWhatsApp(sub, templateId, defaultMessage(sub))}
                 >
                   <MessageCircle className="w-4 h-4" />
@@ -127,7 +131,6 @@ export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  // 1. Subscribers added today OR renewed today (startDate updated to today)
   const addedToday = useMemo(() =>
     allSubscribers.filter(sub => {
       const addedNow = sub.createdAt && isToday(parseISO(sub.createdAt));
@@ -135,7 +138,6 @@ export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
       return addedNow || renewedToday;
     }), [allSubscribers]);
 
-  // 2. Expiring in exactly 3 days or less (1-3 days remaining only)
   const expiringToday = useMemo(() =>
     allSubscribers.filter(sub => {
       const endDate = parseISO(sub.endDate);
@@ -143,14 +145,12 @@ export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
       return days >= 1 && days <= 3 && !sub.isPaused;
     }), [allSubscribers, today]);
 
-  // 3. Expired today
   const expiredToday = useMemo(() =>
     allSubscribers.filter(sub => {
       const endDate = parseISO(sub.endDate);
       return isToday(endDate) && !sub.isPaused;
     }), [allSubscribers]);
 
-  // 4. Pending - 7+ days since subscription with remaining amount
   const pendingToday = useMemo(() =>
     allSubscribers.filter(sub => {
       if (sub.remainingAmount <= 0) return false;
@@ -175,38 +175,34 @@ export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
       <Accordion type="multiple" className="space-y-2">
         <DailyCategory
           title="المشتركين اليوم"
-          icon={<UserPlus className="w-5 h-5 text-success" />}
+          icon={<UserPlus className="w-5 h-5 text-primary" />}
           subscribers={addedToday}
           templateId="subscription"
           defaultMessage={(sub) => `مرحباً ${sub.name}، شكراً لاشتراكك معنا! نتمنى لك تمريناً موفقاً.`}
-          variant="success"
           sendWhatsApp={sendWhatsApp}
         />
         <DailyCategory
           title="قاربت على الانتهاء"
-          icon={<Clock className="w-5 h-5 text-warning" />}
+          icon={<Clock className="w-5 h-5 text-primary" />}
           subscribers={expiringToday}
           templateId="expiry"
           defaultMessage={(sub) => `مرحباً ${sub.name}، اشتراكك سينتهي قريباً بتاريخ ${formatDate(sub.endDate)}. يرجى التواصل معنا للتجديد.`}
-          variant="warning"
           sendWhatsApp={sendWhatsApp}
         />
         <DailyCategory
           title="اشتراكات منتهية"
-          icon={<XCircle className="w-5 h-5 text-destructive" />}
+          icon={<XCircle className="w-5 h-5 text-primary" />}
           subscribers={expiredToday}
           templateId="expired"
           defaultMessage={(sub) => `مرحباً ${sub.name}، اشتراكك انتهى. نفتقدك! تواصل معنا لتجديد اشتراكك.`}
-          variant="destructive"
           sendWhatsApp={sendWhatsApp}
         />
         <DailyCategory
           title="اشتراكات معلقة"
-          icon={<AlertTriangle className="w-5 h-5 text-accent" />}
+          icon={<AlertTriangle className="w-5 h-5 text-primary" />}
           subscribers={pendingToday}
           templateId="reminder"
           defaultMessage={(sub) => `مرحباً ${sub.name}، نود تذكيرك بأن لديك مبلغ متبقي ${sub.remainingAmount} جنيه. يرجى التواصل معنا.`}
-          variant="accent"
           sendWhatsApp={sendWhatsApp}
         />
       </Accordion>

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { SwipeableItem } from '@/components/ui/swipeable-item';
 import { Bell, Clock, XCircle, DollarSign, Trash2, UserPlus, CheckCircle, X, Salad, Filter, Send, Dumbbell } from 'lucide-react';
 import { differenceInDays, parseISO, startOfDay, isToday, isYesterday, formatDistanceToNow, differenceInHours } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -633,6 +634,12 @@ export const Notifications = ({ stats }: NotificationsProps) => {
     return groups;
   }, {} as Record<string, Notification[]>);
 
+  const handleDeleteOne = (id: string) => {
+    const allIds = new Set([...deletedIds, id]);
+    setDeletedIds(allIds);
+    saveDeletedIds(allIds);
+  };
+
   const handleClearAll = () => {
     const nonRequestNotifs = sortedNotifications.filter(n => n.type !== 'request' && n.type !== 'diet' && n.type !== 'workout');
     const allIds = new Set([...deletedIds, ...nonRequestNotifs.map(n => n.id)]);
@@ -708,8 +715,8 @@ export const Notifications = ({ stats }: NotificationsProps) => {
               {notifs.map((notif, index) => {
                 const Icon = notif.icon;
                 return (
+                  <SwipeableItem key={notif.id} onDelete={() => handleDeleteOne(notif.id)}>
                   <Card
-                    key={notif.id}
                     className={`p-4 border ${variantStyles[notif.variant]} animate-slide-up`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
@@ -831,6 +838,7 @@ export const Notifications = ({ stats }: NotificationsProps) => {
                       </div>
                     </div>
                   </Card>
+                  </SwipeableItem>
                 );
               })}
             </div>

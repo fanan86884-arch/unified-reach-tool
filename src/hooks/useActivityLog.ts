@@ -165,12 +165,36 @@ export const useActivityLog = () => {
     }
   }, [user]);
 
+  const deleteLog = useCallback(async (logId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('activity_log')
+        .delete()
+        .eq('id', logId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error deleting log:', error);
+        return false;
+      }
+
+      setLogs(prev => prev.filter(l => l.id !== logId));
+      return true;
+    } catch (err) {
+      console.error('Error:', err);
+      return false;
+    }
+  }, [user]);
+
   return {
     logs,
     loading,
     addLog,
     revertChange,
     clearLogs,
+    deleteLog,
     refetch: fetchLogs,
   };
 };
