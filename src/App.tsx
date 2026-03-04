@@ -15,15 +15,24 @@ import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
-// Configure QueryClient with smart caching
+// Configure QueryClient — offline-friendly: don't retry when offline
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 2, // Data is fresh for 2 minutes
-      gcTime: 1000 * 60 * 30, // Cache garbage collection after 30 minutes
-      refetchOnWindowFocus: true, // Refetch when window regains focus
-      refetchOnReconnect: true, // Refetch when network reconnects
-      retry: 2, // Retry failed requests twice
+      staleTime: 1000 * 60 * 2,
+      gcTime: 1000 * 60 * 30,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      retry: (failureCount, error) => {
+        // Don't retry if offline
+        if (!navigator.onLine) return false;
+        return failureCount < 2;
+      },
+      // Don't keep queries in loading state when offline
+      networkMode: 'offlineFirst',
+    },
+    mutations: {
+      networkMode: 'offlineFirst',
     },
   },
 });

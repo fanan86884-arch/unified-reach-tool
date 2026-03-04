@@ -2,7 +2,7 @@
 
 import { cleanupOutdatedCaches, precacheAndRoute, createHandlerBoundToURL } from "workbox-precaching";
 import { registerRoute, NavigationRoute } from "workbox-routing";
-import { NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
+import { CacheFirst, StaleWhileRevalidate, NetworkFirst } from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
 
 declare let self: ServiceWorkerGlobalScope & {
@@ -16,30 +16,38 @@ precacheAndRoute(self.__WB_MANIFEST);
 const navigationHandler = createHandlerBoundToURL("/index.html");
 registerRoute(
   new NavigationRoute(navigationHandler, {
-    // Avoid intercepting backend/function calls or asset files
     denylist: [/^\/api\//, /\.(?:json|png|jpg|jpeg|svg|ico|css|js|map|txt|woff2?)$/],
   })
 );
 
-// Static assets: fast cache with background update
+// Static assets: Cache First — serve from cache instantly, update in background
 registerRoute(
   ({ request }) =>
     request.destination === "script" ||
     request.destination === "style" ||
     request.destination === "image" ||
     request.destination === "font",
-  new StaleWhileRevalidate({
+  new CacheFirst({
     cacheName: "2b-gym-assets",
     plugins: [new ExpirationPlugin({ maxEntries: 250, maxAgeSeconds: 60 * 60 * 24 * 30 })],
   })
 );
 
-// Documents (non-navigation): network-first for freshness
+// Supabase API calls: Network first with fast timeout, fallback to cache
+registerRoute(
+  ({ url }) => url.hostname.includes("supabase.co"),
+  new NetworkFirst({
+    cacheName: "2b-gym-api",
+    networkTimeoutSeconds: 3,
+    plugins: [new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 7 })],
+  })
+);
+
+// Documents (non-navigation): Cache first for offline speed
 registerRoute(
   ({ request }) => request.destination === "document",
-  new NetworkFirst({
+  new CacheFirst({
     cacheName: "2b-gym-documents",
-    networkTimeoutSeconds: 3,
     plugins: [new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 7 })],
   })
 );
@@ -49,7 +57,6 @@ self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
-  // Background sync trigger
   if (event.data && event.data.type === "SYNC_DATA") {
     event.waitUntil(
       self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
@@ -61,7 +68,7 @@ self.addEventListener("message", (event) => {
   }
 });
 
-// Periodic background sync for data updates
+// Periodic background sync
 self.addEventListener("periodicsync", (event: any) => {
   if (event.tag === "sync-subscribers") {
     event.waitUntil(
@@ -107,7 +114,6 @@ self.addEventListener("push", (event) => {
     }
   }
 
-  // TS libdom typings can be outdated in some setups (e.g. missing vibrate/actions).
   const options: any = {
     body: data.body,
     icon: data.icon || "/logo-icon.png",
