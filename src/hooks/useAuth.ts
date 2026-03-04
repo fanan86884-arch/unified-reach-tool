@@ -38,38 +38,65 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    let settled = false;
+
+    const settle = (u: User | null, s: Session | null) => {
+      if (settled) return;
+      settled = true;
+      setUser(u);
+      setSession(s);
+      setLoading(false);
+    };
+
+    // If offline, resolve immediately from cache — don't wait for network
+    if (!navigator.onLine) {
+      const cached = getCachedUser();
+      settle(cached, null);
+      // Still set up listener for when we come back online
+    }
+
+    // Hard timeout: never stay loading longer than 3 seconds
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        const cached = getCachedUser();
+        settle(cached, null);
+      }
+    }, 3000);
+
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setSession(session);
         const currentUser = session?.user ?? null;
         setUser(currentUser);
+        setSession(session);
         cacheUser(currentUser);
-        setLoading(false);
+        if (!settled) {
+          settled = true;
+          setLoading(false);
+        }
       }
     );
 
-    // THEN check for existing session
+    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-
       if (session?.user) {
-        setUser(session.user);
         cacheUser(session.user);
-      } else {
-        const cachedUser = !navigator.onLine ? getCachedUser() : null;
-        setUser(cachedUser);
+        settle(session.user, session);
+      } else if (!settled) {
+        // No session online — check cache as fallback
+        const cached = !navigator.onLine ? getCachedUser() : null;
+        settle(cached, null);
       }
-
-      setLoading(false);
     }).catch(() => {
-      // Offline — restore cached auth to allow full offline app boot
-      const cachedUser = getCachedUser();
-      setUser(cachedUser);
-      setLoading(false);
+      // Network error — restore cached auth
+      const cached = getCachedUser();
+      settle(cached, null);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string) => {
