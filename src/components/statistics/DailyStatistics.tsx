@@ -135,7 +135,8 @@ export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
     allSubscribers.filter(sub => {
       const addedNow = sub.createdAt && isToday(parseISO(sub.createdAt));
       const renewedToday = isToday(parseISO(sub.startDate)) && sub.createdAt && !isToday(parseISO(sub.createdAt));
-      return addedNow || renewedToday;
+      const editedTodayAndActive = sub.updatedAt && isToday(parseISO(sub.updatedAt)) && sub.status === 'active' && !addedNow && !renewedToday;
+      return addedNow || renewedToday || editedTodayAndActive;
     }), [allSubscribers]);
 
   const expiringToday = useMemo(() =>
