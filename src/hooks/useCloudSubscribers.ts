@@ -160,6 +160,8 @@ export const useCloudSubscribers = () => {
       await autoArchiveExpired(updated);
       
       setSubscribers(updated);
+      // Always persist to IndexedDB for offline access
+      await setCachedSubscribers(updated);
     } catch (err) {
       console.error('Error:', err);
     } finally {

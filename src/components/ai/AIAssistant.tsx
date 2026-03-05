@@ -89,7 +89,7 @@ export const AIAssistant = ({ stats, open, onOpenChange }: AIAssistantProps) => 
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <SheetHeader className="pt-safe-top p-4 border-b border-border shrink-0">
+        <SheetHeader className="px-4 pb-4 border-b border-border shrink-0" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
           <SheetTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-right">
               <Sparkles className="w-5 h-5 text-primary" />
