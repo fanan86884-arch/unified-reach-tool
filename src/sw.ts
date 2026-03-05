@@ -29,7 +29,7 @@ registerRoute(
     request.destination === "font",
   new CacheFirst({
     cacheName: "2b-gym-assets",
-    plugins: [new ExpirationPlugin({ maxEntries: 250, maxAgeSeconds: 60 * 60 * 24 * 30 })],
+    plugins: [new ExpirationPlugin({ maxEntries: 500, maxAgeSeconds: 60 * 60 * 24 * 365 })],
   })
 );
 
@@ -39,7 +39,7 @@ registerRoute(
   new NetworkFirst({
     cacheName: "2b-gym-api",
     networkTimeoutSeconds: 3,
-    plugins: [new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 7 })],
+    plugins: [new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 90 })],
   })
 );
 
@@ -48,7 +48,7 @@ registerRoute(
   ({ request }) => request.destination === "document",
   new CacheFirst({
     cacheName: "2b-gym-documents",
-    plugins: [new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 7 })],
+    plugins: [new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 90 })],
   })
 );
 
