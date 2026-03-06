@@ -562,26 +562,58 @@ export const useCloudSubscribers = () => {
     const subscriber = subscribers.find(s => s.id === id);
     if (!subscriber) return;
 
-    // حساب تاريخ البداية والنهاية الجديد بناءً على التواريخ القديمة + شهر
-    const oldEndDate = new Date(subscriber.endDate);
-    const oldStartDate = new Date(subscriber.startDate);
+    // استخدام تاريخ الانتهاء المحدد من المستخدم مباشرة
+    const formattedEndDate = newEndDate;
     
-    // تاريخ البداية الجديد = يوم بعد تاريخ الانتهاء القديم (أول يوم من الشهر الجديد)
-    const newStartDate = new Date(oldEndDate);
-    newStartDate.setDate(newStartDate.getDate() + 1);
-    
-    // حساب عدد الأيام في الاشتراك القديم
-    const subscriptionDays = Math.round((oldEndDate.getTime() - oldStartDate.getTime()) / (1000 * 60 * 60 * 24));
-    
-    // تاريخ الانتهاء الجديد = تاريخ البداية الجديد + نفس عدد الأيام
-    const calculatedEndDate = new Date(newStartDate);
-    calculatedEndDate.setDate(calculatedEndDate.getDate() + subscriptionDays);
-    
-    const formattedStartDate = newStartDate.toISOString().split('T')[0];
-    const formattedEndDate = calculatedEndDate.toISOString().split('T')[0];
+    // حساب تاريخ البداية = تاريخ الانتهاء ناقص مدة الاشتراك
+    const subscriptionDurations: Record<string, number> = {
+      monthly: 30, quarterly: 90, 'semi-annual': 180, annual: 365,
+    };
+    const duration = subscriptionDurations[subscriber.subscriptionType] || 30;
+    const endDateObj = parseISO(newEndDate);
+    const startDateObj = new Date(endDateObj);
+    startDateObj.setDate(startDateObj.getDate() - duration);
+    const formattedStartDate = startDateObj.toISOString().split('T')[0];
     
     const newRemainingAmount = Math.max(0, subscriber.remainingAmount - paidAmount);
     const status = calculateStatus(formattedEndDate, newRemainingAmount, false);
+
+    // Update local state immediately
+    setSubscribers(prev => {
+      const updated = prev.map(s => s.id === id ? {
+        ...s,
+        startDate: formattedStartDate,
+        endDate: formattedEndDate,
+        paidAmount,
+        remainingAmount: newRemainingAmount,
+        status,
+        isPaused: false,
+        pausedUntil: null,
+        updatedAt: new Date().toISOString(),
+      } : s);
+      void setCachedSubscribers(updated);
+      return updated;
+    });
+
+    if (!isOnline) {
+      await addPendingChange({
+        id: crypto.randomUUID(),
+        entity: 'subscriber',
+        op: 'update',
+        subscriberId: id,
+        patch: {
+          start_date: formattedStartDate,
+          end_date: formattedEndDate,
+          paid_amount: paidAmount,
+          remaining_amount: newRemainingAmount,
+          status,
+          is_paused: false,
+          paused_until: null,
+        },
+        timestamp: Date.now(),
+      });
+      return;
+    }
 
     const { error } = await supabase
       .from('subscribers')
@@ -605,7 +637,7 @@ export const useCloudSubscribers = () => {
         paidAmount,
       }, subscriber);
     }
-  }, [user, subscribers]);
+  }, [user, subscribers, isOnline]);
 
   const pauseSubscription = useCallback(async (id: string, pauseUntil: string) => {
     if (!user) return;
