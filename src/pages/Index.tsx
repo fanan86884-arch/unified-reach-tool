@@ -63,18 +63,19 @@ const Index = () => {
     refetch,
   } = useCloudSubscribers();
 
-  // Use cloud subscribers directly - they already include offline cache
-  // Merge with offline data as fallback when cloud data is empty
+  const offlineActive = useMemo(() => offlineSubscribers.filter(s => !s.isArchived), [offlineSubscribers]);
+  const offlineArchived = useMemo(() => offlineSubscribers.filter(s => s.isArchived), [offlineSubscribers]);
+
   const displaySubscribers = useMemo(() => {
     if (subscribers.length > 0) return subscribers;
-    if (loading && offlineActiveSubscribers.length > 0) return offlineActiveSubscribers;
+    if (loading && offlineActive.length > 0) return offlineActive;
     return subscribers;
-  }, [loading, subscribers, offlineActiveSubscribers]);
+  }, [loading, subscribers, offlineActive]);
 
   const displayArchivedSubscribers = useMemo(() => {
     if (archivedSubscribers.length > 0) return archivedSubscribers;
-    return offlineArchivedSubscribers;
-  }, [archivedSubscribers, offlineArchivedSubscribers]);
+    return offlineArchived;
+  }, [archivedSubscribers, offlineArchived]);
 
   // Notification badge count
   const notificationCount = useNotificationBadge(stats, activeTab);
