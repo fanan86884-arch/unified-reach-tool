@@ -22,12 +22,12 @@ const Index = () => {
   const [offlineSubscribers, setOfflineSubscribers] = useState<Subscriber[]>([]);
   const mainRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const { saveSubscribersOffline, loadSubscribersOffline } = useOfflineStorage();
+  const { loadSubscribersOffline } = useOfflineStorage();
   
   // Initialize offline queue for background sync
   useOfflineQueue();
   
-  // Load offline cached subscribers on mount
+  // Load full offline cached dataset (active + archived) on mount
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -63,25 +63,30 @@ const Index = () => {
     refetch,
   } = useCloudSubscribers();
 
-  // Save subscribers to offline storage when online and we have data
-  useEffect(() => {
-    if (subscribers.length > 0) {
-      void saveSubscribersOffline(subscribers);
-      setOfflineSubscribers(subscribers);
-    }
-  }, [subscribers, saveSubscribersOffline]);
+  const offlineActiveSubscribers = useMemo(
+    () => offlineSubscribers.filter((s) => !s.isArchived),
+    [offlineSubscribers]
+  );
+
+  const offlineArchivedSubscribers = useMemo(
+    () => offlineSubscribers.filter((s) => s.isArchived),
+    [offlineSubscribers]
+  );
 
   // Use offline data when loading or offline
   const displaySubscribers = useMemo(() => {
-    if (loading && offlineSubscribers.length > 0) {
-      return offlineSubscribers;
+    if (loading && offlineActiveSubscribers.length > 0) {
+      return offlineActiveSubscribers;
     }
-    return subscribers.length > 0 ? subscribers : offlineSubscribers;
-  }, [loading, subscribers, offlineSubscribers]);
+    return subscribers.length > 0 ? subscribers : offlineActiveSubscribers;
+  }, [loading, subscribers, offlineActiveSubscribers]);
 
   const displayArchivedSubscribers = useMemo(() => {
-    return archivedSubscribers.length > 0 ? archivedSubscribers : [];
-  }, [archivedSubscribers]);
+    if (archivedSubscribers.length > 0) {
+      return archivedSubscribers;
+    }
+    return offlineArchivedSubscribers;
+  }, [archivedSubscribers, offlineArchivedSubscribers]);
 
   // Notification badge count
   const notificationCount = useNotificationBadge(stats, activeTab);
@@ -138,8 +143,8 @@ const Index = () => {
 
   const captains = useMemo(() => ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'], []);
 
-  // Show loading only if we have no cached data
-  const showLoading = loading && displaySubscribers.length === 0;
+  // Show loading only if we have no cached active or archived data
+  const showLoading = loading && displaySubscribers.length === 0 && displayArchivedSubscribers.length === 0;
 
   if (showLoading) {
     return (
