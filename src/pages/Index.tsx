@@ -143,8 +143,8 @@ const Index = () => {
 
   const captains = useMemo(() => ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'], []);
 
-  // Show loading only if we have no cached data
-  const showLoading = loading && displaySubscribers.length === 0;
+  // Show loading only if we have no cached active or archived data
+  const showLoading = loading && displaySubscribers.length === 0 && displayArchivedSubscribers.length === 0;
 
   if (showLoading) {
     return (
