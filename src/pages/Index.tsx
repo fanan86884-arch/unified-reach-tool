@@ -63,28 +63,16 @@ const Index = () => {
     refetch,
   } = useCloudSubscribers();
 
-  const offlineActiveSubscribers = useMemo(
-    () => offlineSubscribers.filter((s) => !s.isArchived),
-    [offlineSubscribers]
-  );
-
-  const offlineArchivedSubscribers = useMemo(
-    () => offlineSubscribers.filter((s) => s.isArchived),
-    [offlineSubscribers]
-  );
-
-  // Use offline data when loading or offline
+  // Use cloud subscribers directly - they already include offline cache
+  // Merge with offline data as fallback when cloud data is empty
   const displaySubscribers = useMemo(() => {
-    if (loading && offlineActiveSubscribers.length > 0) {
-      return offlineActiveSubscribers;
-    }
-    return subscribers.length > 0 ? subscribers : offlineActiveSubscribers;
+    if (subscribers.length > 0) return subscribers;
+    if (loading && offlineActiveSubscribers.length > 0) return offlineActiveSubscribers;
+    return subscribers;
   }, [loading, subscribers, offlineActiveSubscribers]);
 
   const displayArchivedSubscribers = useMemo(() => {
-    if (archivedSubscribers.length > 0) {
-      return archivedSubscribers;
-    }
+    if (archivedSubscribers.length > 0) return archivedSubscribers;
     return offlineArchivedSubscribers;
   }, [archivedSubscribers, offlineArchivedSubscribers]);
 
