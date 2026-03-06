@@ -63,30 +63,19 @@ const Index = () => {
     refetch,
   } = useCloudSubscribers();
 
-  const offlineActiveSubscribers = useMemo(
-    () => offlineSubscribers.filter((s) => !s.isArchived),
-    [offlineSubscribers]
-  );
+  const offlineActive = useMemo(() => offlineSubscribers.filter(s => !s.isArchived), [offlineSubscribers]);
+  const offlineArchived = useMemo(() => offlineSubscribers.filter(s => s.isArchived), [offlineSubscribers]);
 
-  const offlineArchivedSubscribers = useMemo(
-    () => offlineSubscribers.filter((s) => s.isArchived),
-    [offlineSubscribers]
-  );
-
-  // Use offline data when loading or offline
   const displaySubscribers = useMemo(() => {
-    if (loading && offlineActiveSubscribers.length > 0) {
-      return offlineActiveSubscribers;
-    }
-    return subscribers.length > 0 ? subscribers : offlineActiveSubscribers;
-  }, [loading, subscribers, offlineActiveSubscribers]);
+    if (subscribers.length > 0) return subscribers;
+    if (loading && offlineActive.length > 0) return offlineActive;
+    return subscribers;
+  }, [loading, subscribers, offlineActive]);
 
   const displayArchivedSubscribers = useMemo(() => {
-    if (archivedSubscribers.length > 0) {
-      return archivedSubscribers;
-    }
-    return offlineArchivedSubscribers;
-  }, [archivedSubscribers, offlineArchivedSubscribers]);
+    if (archivedSubscribers.length > 0) return archivedSubscribers;
+    return offlineArchived;
+  }, [archivedSubscribers, offlineArchived]);
 
   // Notification badge count
   const notificationCount = useNotificationBadge(stats, activeTab);
