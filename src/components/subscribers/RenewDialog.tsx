@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { addDays, format, parseISO } from 'date-fns';
+import { addDays, subDays, format, parseISO } from 'date-fns';
 
 interface RenewDialogProps {
   isOpen: boolean;
@@ -36,43 +36,44 @@ const subscriptionDurations: Record<SubscriptionType, number> = {
 export const RenewDialog = ({ isOpen, onClose, subscriber, onRenew }: RenewDialogProps) => {
   const [renewalType, setRenewalType] = useState<SubscriptionType>('monthly');
   const [paidAmount, setPaidAmount] = useState(0);
-  const [customEndDate, setCustomEndDate] = useState('');
-  const [useCustomDate, setUseCustomDate] = useState(false);
+  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState('');
 
+  // Calculate initial dates when dialog opens or renewal type changes
   useEffect(() => {
     if (subscriber && isOpen) {
       const currentEndDate = parseISO(subscriber.endDate);
-      const calculatedDate = addDays(
-        currentEndDate > new Date() ? currentEndDate : new Date(),
-        subscriptionDurations[renewalType]
-      );
-      setCustomEndDate(format(calculatedDate, 'yyyy-MM-dd'));
+      const baseDate = currentEndDate > new Date() ? currentEndDate : new Date();
+      const duration = subscriptionDurations[renewalType];
+      const newEndDate = addDays(baseDate, duration);
+      const newStartDate = subDays(newEndDate, duration);
+      setEndDate(format(newEndDate, 'yyyy-MM-dd'));
+      setStartDate(format(newStartDate, 'yyyy-MM-dd'));
     }
   }, [subscriber, renewalType, isOpen]);
 
   if (!subscriber) return null;
 
-  const currentEndDate = parseISO(subscriber.endDate);
-  const calculatedEndDate = addDays(
-    currentEndDate > new Date() ? currentEndDate : new Date(),
-    subscriptionDurations[renewalType]
-  );
-
-  const finalEndDate = useCustomDate ? customEndDate : format(calculatedEndDate, 'yyyy-MM-dd');
-
   const handleRenewalTypeChange = (value: SubscriptionType) => {
     setRenewalType(value);
-    setUseCustomDate(false);
   };
 
-  const handleCustomDateChange = (value: string) => {
-    setCustomEndDate(value);
-    setUseCustomDate(true);
+  // When user manually changes end date, auto-calculate start date
+  const handleEndDateChange = (value: string) => {
+    setEndDate(value);
+    try {
+      const newEnd = parseISO(value);
+      const duration = subscriptionDurations[renewalType];
+      const newStart = subDays(newEnd, duration);
+      setStartDate(format(newStart, 'yyyy-MM-dd'));
+    } catch {
+      // Invalid date, ignore
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onRenew(subscriber.id, finalEndDate, paidAmount);
+    onRenew(subscriber.id, endDate, paidAmount);
     onClose();
   };
 
@@ -102,17 +103,27 @@ export const RenewDialog = ({ isOpen, onClose, subscriber, onRenew }: RenewDialo
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="startDate">تاريخ بداية الاشتراك</Label>
+            <Input
+              id="startDate"
+              type="date"
+              value={startDate}
+              readOnly
+              dir="ltr"
+              className="bg-muted cursor-not-allowed"
+            />
+            <p className="text-xs text-muted-foreground">يتم حسابه تلقائياً من تاريخ الانتهاء</p>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="endDate">تاريخ الانتهاء الجديد</Label>
             <Input
               id="endDate"
               type="date"
-              value={finalEndDate}
-              onChange={(e) => handleCustomDateChange(e.target.value)}
+              value={endDate}
+              onChange={(e) => handleEndDateChange(e.target.value)}
               dir="ltr"
             />
-            {useCustomDate && (
-              <p className="text-xs text-muted-foreground">تم تعديل التاريخ يدوياً</p>
-            )}
           </div>
 
           <div className="space-y-2">
