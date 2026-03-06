@@ -67,6 +67,19 @@ export const useAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         const currentUser = session?.user ?? null;
+
+        // Keep cached auth while offline even if runtime session is missing
+        if (!currentUser && !navigator.onLine) {
+          const cached = getCachedUser();
+          setUser(cached);
+          setSession(null);
+          if (!settled) {
+            settled = true;
+            setLoading(false);
+          }
+          return;
+        }
+
         setUser(currentUser);
         setSession(session);
         cacheUser(currentUser);
@@ -83,8 +96,8 @@ export const useAuth = () => {
         cacheUser(session.user);
         settle(session.user, session);
       } else if (!settled) {
-        // No session online — check cache as fallback
-        const cached = !navigator.onLine ? getCachedUser() : null;
+        // Always use cached auth as fallback to avoid forced login in offline-first mode
+        const cached = getCachedUser();
         settle(cached, null);
       }
     }).catch(() => {
