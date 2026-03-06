@@ -42,7 +42,6 @@ const Index = () => {
   const {
     subscribers,
     archivedSubscribers,
-    allSubscribers,
     stats,
     loading,
     searchQuery,
