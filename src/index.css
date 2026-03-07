@@ -111,10 +111,10 @@ html {
     --background: 0 0% 0%;
     --foreground: 0 0% 95%;
 
-    --card: 0 0% 6%;
+    --card: 0 0% 8% / 0.6;
     --card-foreground: 0 0% 95%;
 
-    --popover: 0 0% 6%;
+    --popover: 0 0% 8% / 0.8;
     --popover-foreground: 0 0% 95%;
 
     /* Golden/Yellow - Logo Color */
@@ -139,12 +139,13 @@ html {
     --warning: 38 92% 55%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 0 0% 15%;
+    --border: 0 0% 18% / 0.5;
     --input: 0 0% 12%;
     --ring: 45 100% 55%;
 
-    --card-shadow: 0 4px 20px -4px hsl(0 0% 0% / 0.5);
-    --card-shadow-hover: 0 8px 30px -4px hsl(0 0% 0% / 0.6);
+    --card-shadow: 0 4px 24px -6px hsl(0 0% 0% / 0.4);
+    --card-shadow-hover: 0 8px 32px -6px hsl(0 0% 0% / 0.5);
+    --glass-blur: 24px;
   }
 }
 
