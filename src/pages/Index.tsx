@@ -119,11 +119,11 @@ const Index = () => {
   const handleAddSubmit = useCallback(async (data: SubscriberFormData) => {
     const result = await addSubscriber(data);
     if (result.success) {
-      toast({ title: 'تم إضافة المشترك بنجاح' });
+      toast({ title: t.subscribers.addedSuccess });
       setIsAddFormOpen(false);
       return;
     }
-    toast({ title: result.error || 'حدث خطأ أثناء الإضافة', variant: 'destructive' });
+    toast({ title: result.error || t.subscribers.addError, variant: 'destructive' });
   }, [addSubscriber, toast]);
 
   const handleOpenActivityLog = useCallback(() => {
