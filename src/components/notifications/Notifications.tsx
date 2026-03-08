@@ -7,13 +7,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { SwipeableItem } from '@/components/ui/swipeable-item';
 import { Bell, Clock, XCircle, DollarSign, Trash2, UserPlus, CheckCircle, X, Salad, Filter, Send, Dumbbell } from 'lucide-react';
 import { differenceInDays, parseISO, startOfDay, isToday, isYesterday, formatDistanceToNow, differenceInHours } from 'date-fns';
-import { ar } from 'date-fns/locale';
+import { ar as arLocale } from 'date-fns/locale';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client.runtime';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { normalizeEgyptPhoneDigits, buildWhatsAppLink } from '@/lib/phone';
 import { useContactSettings } from '@/hooks/useContactSettings';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface SubscriptionRequest {
   id: string;
@@ -88,20 +89,6 @@ interface Notification {
   id: string;
 }
 
-const getRelativeTimeLabel = (dateStr: string): string => {
-  const date = parseISO(dateStr);
-  
-  if (isToday(date)) {
-    return 'اليوم';
-  }
-  
-  if (isYesterday(date)) {
-    return 'أمس';
-  }
-  
-  return formatDistanceToNow(date, { addSuffix: true, locale: ar });
-};
-
 const DELETED_NOTIFICATIONS_KEY = 'deleted_notifications';
 
 const loadDeletedIds = (): Set<string> => {
@@ -120,45 +107,6 @@ const saveDeletedIds = (ids: Set<string>) => {
   localStorage.setItem(DELETED_NOTIFICATIONS_KEY, JSON.stringify([...ids]));
 };
 
-const subscriptionLabels: Record<string, string> = {
-  monthly: 'شهري',
-  quarterly: 'ربع سنوي',
-  'semi-annual': 'نصف سنوي',
-  annual: 'سنوي',
-};
-
-const goalLabels: Record<string, string> = {
-  weight_loss: 'خسارة وزن',
-  maintain: 'ثبات الوزن',
-  muscle_gain: 'زيادة كتلة عضلية',
-  strength: 'زيادة القوة',
-  fitness: 'لياقة عامة',
-  flexibility: 'مرونة',
-};
-
-const activityLabels: Record<string, string> = {
-  sedentary: 'خامل',
-  moderate: 'متوسط',
-  active: 'نشيط',
-};
-
-const genderLabels: Record<string, string> = {
-  male: 'ذكر',
-  female: 'أنثى',
-};
-
-const trainingLevelLabels: Record<string, string> = {
-  beginner: 'مبتدئ',
-  intermediate: 'متوسط',
-  advanced: 'متقدم',
-};
-
-const trainingLocationLabels: Record<string, string> = {
-  gym: 'الجيم',
-  home: 'المنزل',
-  outdoor: 'في الخارج',
-};
-
 export const Notifications = ({ stats }: NotificationsProps) => {
   const [deletedIds, setDeletedIds] = useState<Set<string>>(() => loadDeletedIds());
   const [subscriptionRequests, setSubscriptionRequests] = useState<SubscriptionRequest[]>([]);
@@ -171,7 +119,15 @@ export const Notifications = ({ stats }: NotificationsProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { contactInfo } = useContactSettings();
+  const { t, isRTL } = useLanguage();
   const today = startOfDay(new Date());
+
+  const getRelativeTimeLabel = (dateStr: string): string => {
+    const date = parseISO(dateStr);
+    if (isToday(date)) return t.common.today;
+    if (isYesterday(date)) return t.common.yesterday;
+    return formatDistanceToNow(date, { addSuffix: true, locale: isRTL ? arLocale : undefined });
+  };
 
   // Fetch subscription requests
   useEffect(() => {
@@ -182,9 +138,7 @@ export const Notifications = ({ stats }: NotificationsProps) => {
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
       
-      if (data) {
-        setSubscriptionRequests(data);
-      }
+      if (data) setSubscriptionRequests(data);
     };
 
     fetchRequests();
@@ -196,9 +150,7 @@ export const Notifications = ({ stats }: NotificationsProps) => {
       })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   // Fetch diet requests
@@ -210,9 +162,7 @@ export const Notifications = ({ stats }: NotificationsProps) => {
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
       
-      if (data) {
-        setDietRequests(data);
-      }
+      if (data) setDietRequests(data);
     };
 
     fetchDietRequests();
@@ -224,9 +174,7 @@ export const Notifications = ({ stats }: NotificationsProps) => {
       })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   // Fetch workout requests
@@ -238,9 +186,7 @@ export const Notifications = ({ stats }: NotificationsProps) => {
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
       
-      if (data) {
-        setWorkoutRequests(data);
-      }
+      if (data) setWorkoutRequests(data);
     };
 
     fetchWorkoutRequests();
@@ -252,60 +198,54 @@ export const Notifications = ({ stats }: NotificationsProps) => {
       })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
   
   const notifications: Notification[] = [
-    // Subscription requests - highest priority
     ...subscriptionRequests.map((req) => ({
       type: 'request' as const,
       request: req,
-      message: `طلب ${req.name ? 'اشتراك' : 'تجديد'} جديد`,
-      subMessage: `${req.name} - ${subscriptionLabels[req.subscription_type] || req.subscription_type}`,
+      message: req.name ? t.notifications.newSubscriptionRequest : t.notifications.newRenewalRequest,
+      subMessage: `${req.name} - ${t.subscriptionTypes[req.subscription_type as keyof typeof t.subscriptionTypes] || req.subscription_type}`,
       icon: UserPlus,
       variant: 'success' as const,
       priority: 0,
       timestamp: req.created_at,
       id: `request-${req.id}`,
     })),
-    // Diet requests - high priority
     ...dietRequests.map((req) => ({
       type: 'diet' as const,
       dietRequest: req,
-      message: `طلب نظام غذائي جديد`,
-      subMessage: `${req.name} - ${goalLabels[req.goal] || req.goal}`,
+      message: t.notifications.newDietRequest,
+      subMessage: `${req.name} - ${t.goals[req.goal as keyof typeof t.goals] || req.goal}`,
       icon: Salad,
       variant: 'info' as const,
       priority: 0.5,
       timestamp: req.created_at,
       id: `diet-${req.id}`,
     })),
-    // Workout requests - high priority
     ...workoutRequests.map((req) => ({
       type: 'workout' as const,
       workoutRequest: req,
-      message: `طلب نظام تمرين جديد`,
-      subMessage: `${req.name} - ${goalLabels[req.goal] || req.goal}`,
+      message: t.notifications.newWorkoutRequest,
+      subMessage: `${req.name} - ${t.goals[req.goal as keyof typeof t.goals] || req.goal}`,
       icon: Dumbbell,
       variant: 'workout' as const,
       priority: 0.6,
       timestamp: req.created_at,
       id: `workout-${req.id}`,
     })),
-    // Expired subscriptions - high priority
     ...stats.expired.map((sub) => {
       const daysSinceExpiry = differenceInDays(today, startOfDay(parseISO(sub.endDate)));
       return {
         type: 'expired' as const,
         subscriber: sub,
-        message: `انتهى اشتراك ${sub.name}`,
+        message: `${t.notifications.subscriptionExpired} ${sub.name}`,
         subMessage: daysSinceExpiry === 0 
-          ? 'انتهى اليوم' 
+          ? t.notifications.expiredToday
           : daysSinceExpiry === 1 
-            ? 'انتهى أمس'
-            : `منذ ${daysSinceExpiry} يوم`,
+            ? t.notifications.expiredYesterday
+            : `${t.notifications.since} ${daysSinceExpiry} ${t.common.day}`,
         icon: XCircle,
         variant: 'destructive' as const,
         priority: 1,
@@ -313,18 +253,17 @@ export const Notifications = ({ stats }: NotificationsProps) => {
         id: `expired-${sub.id}`,
       };
     }),
-    // Expiring soon - medium priority
     ...stats.expiring.map((sub) => {
       const daysRemaining = differenceInDays(startOfDay(parseISO(sub.endDate)), today);
       return {
         type: 'expiring' as const,
         subscriber: sub,
-        message: `اشتراك ${sub.name} سينتهي قريباً`,
+        message: `${t.notifications.subscriptionExpiring} ${sub.name}`,
         subMessage: daysRemaining === 0 
-          ? 'ينتهي اليوم' 
+          ? t.notifications.expirestoday
           : daysRemaining === 1 
-            ? 'ينتهي غداً'
-            : `متبقي ${daysRemaining} أيام`,
+            ? t.notifications.expiresTomorrow
+            : `${t.notifications.remainingDays} ${daysRemaining} ${t.common.days}`,
         icon: Clock,
         variant: 'warning' as const,
         priority: 2,
@@ -332,12 +271,11 @@ export const Notifications = ({ stats }: NotificationsProps) => {
         id: `expiring-${sub.id}`,
       };
     }),
-    // Pending payments - lower priority
     ...stats.pending.map((sub) => ({
       type: 'pending' as const,
       subscriber: sub,
-      message: `${sub.name} لديه مبلغ متبقي`,
-      subMessage: `${sub.remainingAmount} جنيه`,
+      message: `${sub.name} ${t.notifications.hasRemainingAmount}`,
+      subMessage: `${sub.remainingAmount} ${t.common.currency}`,
       icon: DollarSign,
       variant: 'accent' as const,
       priority: 3,
@@ -346,29 +284,19 @@ export const Notifications = ({ stats }: NotificationsProps) => {
     })),
   ];
 
-  // Sort by priority first, then by timestamp (newest first)
   const sortedNotifications = notifications.sort((a, b) => {
-    if (a.priority !== b.priority) {
-      return a.priority - b.priority;
-    }
+    if (a.priority !== b.priority) return a.priority - b.priority;
     return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
   });
   
-  // Filter notifications
   const filteredNotifications = sortedNotifications.filter(notif => {
     if (deletedIds.has(notif.id)) return false;
-    
     switch (filter) {
-      case 'requests':
-        return notif.type === 'request';
-      case 'diet':
-        return notif.type === 'diet';
-      case 'workout':
-        return notif.type === 'workout';
-      case 'subscriptions':
-        return ['expired', 'expiring', 'pending'].includes(notif.type);
-      default:
-        return true;
+      case 'requests': return notif.type === 'request';
+      case 'diet': return notif.type === 'diet';
+      case 'workout': return notif.type === 'workout';
+      case 'subscriptions': return ['expired', 'expiring', 'pending'].includes(notif.type);
+      default: return true;
     }
   });
 
@@ -400,47 +328,25 @@ export const Notifications = ({ stats }: NotificationsProps) => {
     return 'active';
   };
 
-  // Check for duplicate requests within 24 hours
-  const checkDuplicateRequest = async (phone: string): Promise<boolean> => {
-    const normalizedPhone = normalizeEgyptPhoneDigits(phone);
-    if (!normalizedPhone) return false;
-
-    const { data } = await supabase
-      .from('subscription_requests')
-      .select('created_at')
-      .or(`phone.eq.${normalizedPhone},phone.ilike.%${normalizedPhone.slice(-10)}`)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    if (data && data.length > 0) {
-      const lastRequest = parseISO(data[0].created_at);
-      const hoursSince = differenceInHours(new Date(), lastRequest);
-      return hoursSince < 24;
-    }
-    return false;
-  };
-
   const handleApproveRequest = async (request: SubscriptionRequest) => {
     if (!user) {
-      toast({ title: 'غير مصرح', description: 'يرجى تسجيل الدخول كموظف', variant: 'destructive' });
+      toast({ title: t.notifications.unauthorized, description: t.notifications.pleaseLoginAsEmployee, variant: 'destructive' });
       return;
     }
 
     const captain = selectedCaptain[request.id];
     if (!captain) {
-      toast({ title: 'يرجى اختيار الكابتن', variant: 'destructive' });
+      toast({ title: t.notifications.selectCaptainFirst, variant: 'destructive' });
       return;
     }
 
     try {
       const normalizedPhone = normalizeEgyptPhoneDigits(request.phone);
       if (!normalizedPhone) {
-        toast({ title: 'خطأ', description: 'رقم الهاتف غير صحيح', variant: 'destructive' });
+        toast({ title: t.common.error, description: t.notifications.invalidPhone, variant: 'destructive' });
         return;
       }
 
-      // Check if subscriber already exists (same phone) -> update it, otherwise insert new
       const { data: existingSubs, error: existingError } = await supabase
         .from('subscribers')
         .select('id, phone')
@@ -449,52 +355,32 @@ export const Notifications = ({ stats }: NotificationsProps) => {
       if (existingError) throw existingError;
 
       const existing = (existingSubs || []).find(s => normalizeEgyptPhoneDigits(s.phone) === normalizedPhone);
-
       const status = computeSubscriberStatus(request.end_date, false);
 
       if (existing?.id) {
         const { error: updateError } = await supabase
           .from('subscribers')
           .update({
-            name: request.name,
-            phone: normalizedPhone,
-            subscription_type: request.subscription_type,
-            start_date: request.start_date,
-            end_date: request.end_date,
-            paid_amount: request.paid_amount,
-            remaining_amount: request.remaining_amount,
-            captain: captain,
-            status,
-            is_archived: false,
-            is_paused: false,
-            paused_until: null,
+            name: request.name, phone: normalizedPhone, subscription_type: request.subscription_type,
+            start_date: request.start_date, end_date: request.end_date,
+            paid_amount: request.paid_amount, remaining_amount: request.remaining_amount,
+            captain, status, is_archived: false, is_paused: false, paused_until: null,
           })
           .eq('id', existing.id);
-
         if (updateError) throw updateError;
       } else {
         const { error: insertError } = await supabase
           .from('subscribers')
           .insert({
-            user_id: user.id,
-            name: request.name,
-            phone: normalizedPhone,
-            subscription_type: request.subscription_type,
-            start_date: request.start_date,
-            end_date: request.end_date,
-            paid_amount: request.paid_amount,
-            remaining_amount: request.remaining_amount,
-            status,
-            captain: captain,
-            is_archived: false,
-            is_paused: false,
-            paused_until: null,
+            user_id: user.id, name: request.name, phone: normalizedPhone,
+            subscription_type: request.subscription_type, start_date: request.start_date,
+            end_date: request.end_date, paid_amount: request.paid_amount,
+            remaining_amount: request.remaining_amount, status, captain,
+            is_archived: false, is_paused: false, paused_until: null,
           });
-
         if (insertError) throw insertError;
       }
 
-      // Update request status
       const { error: reqError } = await supabase
         .from('subscription_requests')
         .update({ status: 'approved' })
@@ -502,145 +388,100 @@ export const Notifications = ({ stats }: NotificationsProps) => {
 
       if (reqError) throw reqError;
 
-      toast({ title: `تم قبول الطلب وإضافته لـ ${captain}` });
+      toast({ title: `${t.notifications.approvedAndAdded} ${captain}` });
     } catch (e) {
       console.error('Error approving request:', e);
-      toast({ title: 'خطأ', description: 'حدث خطأ أثناء قبول الطلب', variant: 'destructive' });
+      toast({ title: t.common.error, description: t.notifications.errorApprovingRequest, variant: 'destructive' });
     }
   };
 
   const handleRejectRequest = async (request: SubscriptionRequest) => {
     try {
-      await supabase
-        .from('subscription_requests')
-        .update({ status: 'rejected' })
-        .eq('id', request.id);
-
-      toast({ title: 'تم رفض الطلب' });
+      await supabase.from('subscription_requests').update({ status: 'rejected' }).eq('id', request.id);
+      toast({ title: t.notifications.requestRejected });
     } catch (e) {
       console.error('Error rejecting request:', e);
-      toast({ title: 'خطأ', description: 'حدث خطأ أثناء رفض الطلب', variant: 'destructive' });
+      toast({ title: t.common.error, description: t.notifications.errorRejectingRequest, variant: 'destructive' });
     }
   };
 
   const handleRespondDiet = async (dietRequest: DietRequest) => {
     const response = dietResponses[dietRequest.id];
     if (!response?.trim()) {
-      toast({ title: 'يرجى كتابة الرد', variant: 'destructive' });
+      toast({ title: t.notifications.pleaseWriteReply, variant: 'destructive' });
       return;
     }
 
     try {
-      await supabase
-        .from('diet_requests')
-        .update({ 
-          status: 'responded',
-          admin_response: response.trim()
-        })
-        .eq('id', dietRequest.id);
-
-      toast({ title: 'تم إرسال الرد بنجاح' });
-      setDietResponses(prev => {
-        const copy = { ...prev };
-        delete copy[dietRequest.id];
-        return copy;
-      });
+      await supabase.from('diet_requests').update({ status: 'responded', admin_response: response.trim() }).eq('id', dietRequest.id);
+      toast({ title: t.notifications.replySentSuccess });
+      setDietResponses(prev => { const copy = { ...prev }; delete copy[dietRequest.id]; return copy; });
     } catch (e) {
       console.error('Error responding to diet request:', e);
-      toast({ title: 'خطأ', description: 'حدث خطأ أثناء إرسال الرد', variant: 'destructive' });
+      toast({ title: t.common.error, description: t.notifications.errorSendingReply, variant: 'destructive' });
     }
   };
 
   const handleRejectDiet = async (dietRequest: DietRequest) => {
     try {
-      await supabase
-        .from('diet_requests')
-        .update({ status: 'rejected' })
-        .eq('id', dietRequest.id);
-
-      toast({ title: 'تم رفض الطلب' });
+      await supabase.from('diet_requests').update({ status: 'rejected' }).eq('id', dietRequest.id);
+      toast({ title: t.notifications.requestRejected });
     } catch (e) {
       console.error('Error rejecting diet request:', e);
-      toast({ title: 'خطأ', variant: 'destructive' });
+      toast({ title: t.common.error, variant: 'destructive' });
     }
   };
 
   const handleRespondWorkout = async (workoutRequest: WorkoutRequest) => {
     const response = workoutResponses[workoutRequest.id];
     if (!response?.trim()) {
-      toast({ title: 'يرجى كتابة الرد', variant: 'destructive' });
+      toast({ title: t.notifications.pleaseWriteReply, variant: 'destructive' });
       return;
     }
 
     try {
-      await supabase
-        .from('workout_requests')
-        .update({ 
-          status: 'responded',
-          admin_response: response.trim()
-        })
-        .eq('id', workoutRequest.id);
+      await supabase.from('workout_requests').update({ status: 'responded', admin_response: response.trim() }).eq('id', workoutRequest.id);
 
-      // Send to WhatsApp
-      const message = `مرحباً ${workoutRequest.name}! 🏋️‍♂️\n\nهذا هو نظام التمرين المخصص لك:\n\n${response.trim()}\n\n2B GYM - نحو جسم أفضل 💪`;
+      const message = `${isRTL ? 'مرحباً' : 'Hello'} ${workoutRequest.name}! 🏋️‍♂️\n\n${response.trim()}\n\n2B GYM 💪`;
       const whatsappLink = buildWhatsAppLink(workoutRequest.phone);
       if (whatsappLink) {
         window.open(`${whatsappLink}?text=${encodeURIComponent(message)}`, '_blank');
       }
 
-      toast({ title: 'تم إرسال الرد بنجاح' });
-      setWorkoutResponses(prev => {
-        const copy = { ...prev };
-        delete copy[workoutRequest.id];
-        return copy;
-      });
+      toast({ title: t.notifications.replySentSuccess });
+      setWorkoutResponses(prev => { const copy = { ...prev }; delete copy[workoutRequest.id]; return copy; });
     } catch (e) {
       console.error('Error responding to workout request:', e);
-      toast({ title: 'خطأ', variant: 'destructive' });
+      toast({ title: t.common.error, variant: 'destructive' });
     }
   };
 
   const handleRejectWorkout = async (workoutRequest: WorkoutRequest) => {
     try {
-      await supabase
-        .from('workout_requests')
-        .update({ status: 'rejected' })
-        .eq('id', workoutRequest.id);
-
-      toast({ title: 'تم رفض الطلب' });
+      await supabase.from('workout_requests').update({ status: 'rejected' }).eq('id', workoutRequest.id);
+      toast({ title: t.notifications.requestRejected });
     } catch (e) {
       console.error('Error rejecting workout request:', e);
-      toast({ title: 'خطأ', variant: 'destructive' });
+      toast({ title: t.common.error, variant: 'destructive' });
     }
   };
 
-  // Group notifications by date
   const groupedByDate = filteredNotifications.reduce((groups, notif) => {
     const date = parseISO(notif.timestamp);
     let label: string;
-    
-    if (isToday(date)) {
-      label = 'اليوم';
-    } else if (isYesterday(date)) {
-      label = 'أمس';
-    } else {
-      label = getRelativeTimeLabel(notif.timestamp);
-    }
-    
-    if (!groups[label]) {
-      groups[label] = [];
-    }
+    if (isToday(date)) label = t.common.today;
+    else if (isYesterday(date)) label = t.common.yesterday;
+    else label = getRelativeTimeLabel(notif.timestamp);
+    if (!groups[label]) groups[label] = [];
     groups[label].push(notif);
     return groups;
   }, {} as Record<string, Notification[]>);
 
   const handleDeleteOne = async (id: string, notif?: Notification) => {
-    // Add to local deleted set
     const allIds = new Set([...deletedIds, id]);
     setDeletedIds(allIds);
     saveDeletedIds(allIds);
 
-    // For DB-backed notifications, update status to dismissed so they don't reappear
     if (notif) {
       try {
         if (notif.type === 'request' && notif.request) {
@@ -657,46 +498,28 @@ export const Notifications = ({ stats }: NotificationsProps) => {
   };
 
   const handleClearAll = async () => {
-    // Delete ALL visible notifications (including requests, diet, workout)
     const allIds = new Set([...deletedIds, ...filteredNotifications.map(n => n.id)]);
     setDeletedIds(allIds);
     saveDeletedIds(allIds);
 
-    // Dismiss all pending requests in DB
     try {
       const pendingSubRequests = filteredNotifications.filter(n => n.type === 'request' && n.request);
       if (pendingSubRequests.length > 0) {
-        await supabase.from('subscription_requests')
-          .update({ status: 'dismissed' })
-          .in('id', pendingSubRequests.map(n => n.request!.id));
+        await supabase.from('subscription_requests').update({ status: 'dismissed' }).in('id', pendingSubRequests.map(n => n.request!.id));
       }
-
       const pendingDietRequests = filteredNotifications.filter(n => n.type === 'diet' && n.dietRequest);
       if (pendingDietRequests.length > 0) {
-        await supabase.from('diet_requests')
-          .update({ status: 'dismissed' })
-          .in('id', pendingDietRequests.map(n => n.dietRequest!.id));
+        await supabase.from('diet_requests').update({ status: 'dismissed' }).in('id', pendingDietRequests.map(n => n.dietRequest!.id));
       }
-
       const pendingWorkoutRequests = filteredNotifications.filter(n => n.type === 'workout' && n.workoutRequest);
       if (pendingWorkoutRequests.length > 0) {
-        await supabase.from('workout_requests')
-          .update({ status: 'dismissed' })
-          .in('id', pendingWorkoutRequests.map(n => n.workoutRequest!.id));
+        await supabase.from('workout_requests').update({ status: 'dismissed' }).in('id', pendingWorkoutRequests.map(n => n.workoutRequest!.id));
       }
     } catch (e) {
       console.error('Error dismissing all notifications:', e);
     }
 
-    toast({ title: 'تم حذف جميع الإشعارات' });
-  };
-
-  const filterLabels: Record<FilterType, string> = {
-    all: 'الكل',
-    requests: 'طلبات الاشتراك',
-    diet: 'طلبات النظام الغذائي',
-    workout: 'طلبات التمرين',
-    subscriptions: 'الاشتراكات',
+    toast({ title: t.notifications.deletedAll });
   };
 
   return (
@@ -704,13 +527,13 @@ export const Notifications = ({ stats }: NotificationsProps) => {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <Bell className="w-5 h-5 text-primary" />
-          الإشعارات
+          {t.notifications.title}
         </h2>
         <div className="flex items-center gap-2">
           {filteredNotifications.length > 0 && (
             <>
               <span className="text-sm text-muted-foreground">
-                {filteredNotifications.length} إشعار
+                {filteredNotifications.length} {t.common.notification}
               </span>
               <Button
                 variant="ghost"
@@ -718,8 +541,8 @@ export const Notifications = ({ stats }: NotificationsProps) => {
                 onClick={handleClearAll}
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
               >
-                <Trash2 className="w-4 h-4 ml-1" />
-                حذف الكل
+                <Trash2 className="w-4 h-4 mx-1" />
+                {t.common.deleteAll}
               </Button>
             </>
           )}
@@ -734,11 +557,11 @@ export const Notifications = ({ stats }: NotificationsProps) => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">الكل</SelectItem>
-            <SelectItem value="requests">طلبات الاشتراك</SelectItem>
-            <SelectItem value="diet">طلبات النظام الغذائي</SelectItem>
-            <SelectItem value="workout">طلبات التمرين</SelectItem>
-            <SelectItem value="subscriptions">الاشتراكات</SelectItem>
+            <SelectItem value="all">{t.notifications.filterAll}</SelectItem>
+            <SelectItem value="requests">{t.notifications.filterRequests}</SelectItem>
+            <SelectItem value="diet">{t.notifications.filterDiet}</SelectItem>
+            <SelectItem value="workout">{t.notifications.filterWorkout}</SelectItem>
+            <SelectItem value="subscriptions">{t.notifications.filterSubscriptions}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -746,16 +569,14 @@ export const Notifications = ({ stats }: NotificationsProps) => {
       {filteredNotifications.length === 0 ? (
         <div className="text-center py-12">
           <Bell className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-          <p className="text-muted-foreground text-lg">لا توجد إشعارات جديدة</p>
-          <p className="text-sm text-muted-foreground">كل شيء على ما يرام!</p>
+          <p className="text-muted-foreground text-lg">{t.notifications.noNotifications}</p>
+          <p className="text-sm text-muted-foreground">{t.notifications.allGood}</p>
         </div>
       ) : (
         <div className="space-y-4">
           {Object.entries(groupedByDate).map(([dateLabel, notifs]) => (
             <div key={dateLabel} className="space-y-2">
-              <h3 className="text-sm font-medium text-muted-foreground px-1">
-                {dateLabel}
-              </h3>
+              <h3 className="text-sm font-medium text-muted-foreground px-1">{dateLabel}</h3>
               {notifs.map((notif, index) => {
                 const Icon = notif.icon;
                 return (
@@ -770,79 +591,61 @@ export const Notifications = ({ stats }: NotificationsProps) => {
                       </div>
                       <div className="flex-1">
                         <p className="font-medium">{notif.message}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {notif.subMessage}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{notif.subMessage}</p>
 
-                        {/* Subscription Request Actions */}
                         {notif.type === 'request' && notif.request && (
                           <>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {notif.request.phone} • {notif.request.payment_method || 'لم يحدد'}
+                              {notif.request.phone} • {notif.request.payment_method || t.notifications.notSpecified}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              المبلغ: {notif.request.paid_amount} جنيه
-                              {notif.request.remaining_amount > 0 && ` (متبقي: ${notif.request.remaining_amount})`}
+                              {t.notifications.amount}: {notif.request.paid_amount} {t.common.currency}
+                              {notif.request.remaining_amount > 0 && ` (${t.notifications.remaining}: ${notif.request.remaining_amount})`}
                             </p>
                             
-                            {/* Captain Selection */}
                             <div className="mt-3">
                               <Select 
                                 value={selectedCaptain[notif.request.id] || ''} 
                                 onValueChange={(v) => setSelectedCaptain(prev => ({ ...prev, [notif.request!.id]: v }))}
                               >
                                 <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="اختر الكابتن" />
+                                  <SelectValue placeholder={t.notifications.selectCaptain} />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {contactInfo.captains.map((captain, idx) => (
-                                    <SelectItem key={idx} value={captain.name}>
-                                      {captain.name}
-                                    </SelectItem>
+                                    <SelectItem key={idx} value={captain.name}>{captain.name}</SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
                             </div>
 
                             <div className="flex gap-2 mt-3">
-                              <Button
-                                size="sm"
-                                variant="default"
-                                className="flex-1"
-                                onClick={() => handleApproveRequest(notif.request!)}
-                                disabled={!selectedCaptain[notif.request.id]}
-                              >
-                                <CheckCircle className="w-4 h-4 ml-1" />
-                                قبول
+                              <Button size="sm" variant="default" className="flex-1" onClick={() => handleApproveRequest(notif.request!)} disabled={!selectedCaptain[notif.request.id]}>
+                                <CheckCircle className="w-4 h-4 mx-1" />
+                                {t.common.accept}
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 text-destructive hover:text-destructive"
-                                onClick={() => handleRejectRequest(notif.request!)}
-                              >
-                                <X className="w-4 h-4 ml-1" />
-                                رفض
+                              <Button size="sm" variant="outline" className="flex-1 text-destructive hover:text-destructive" onClick={() => handleRejectRequest(notif.request!)}>
+                                <X className="w-4 h-4 mx-1" />
+                                {t.common.reject}
                               </Button>
                             </div>
                           </>
                         )}
 
-                        {/* Diet Request Actions */}
                         {notif.type === 'diet' && notif.dietRequest && (
                           <>
                             <div className="mt-2 text-xs text-muted-foreground space-y-1">
-                              <p>الهاتف: {notif.dietRequest.phone}</p>
-                              <p>الوزن: {notif.dietRequest.weight} كجم | الطول: {notif.dietRequest.height} سم</p>
-                              <p>السن: {notif.dietRequest.age} | النوع: {genderLabels[notif.dietRequest.gender]}</p>
-                              <p>النشاط: {activityLabels[notif.dietRequest.activity_level]}</p>
-                              <p>مواعيد النوم: {notif.dietRequest.sleep_time} - الاستيقاظ: {notif.dietRequest.wake_time}</p>
-                              <p>عدد الوجبات: {notif.dietRequest.meals_count}</p>
+                              <p>{t.notifications.phoneLabel}: {notif.dietRequest.phone}</p>
+                              <p>{t.notifications.weight}: {notif.dietRequest.weight} {t.common.kg} | {t.notifications.height}: {notif.dietRequest.height} {t.common.cm}</p>
+                              <p>{t.notifications.age}: {notif.dietRequest.age} | {t.notifications.gender}: {t.genders[notif.dietRequest.gender as keyof typeof t.genders]}</p>
+                              <p>{t.notifications.activity}: {t.activityLevels[notif.dietRequest.activity_level as keyof typeof t.activityLevels]}</p>
+                              <p>{t.notifications.sleepSchedule}: {notif.dietRequest.sleep_time} - {t.notifications.wakeUp}: {notif.dietRequest.wake_time}</p>
+                              <p>{t.notifications.mealsCount}: {notif.dietRequest.meals_count}</p>
                             </div>
                             
                             <div className="mt-3">
                               <Textarea
-                                placeholder="اكتب النظام الغذائي هنا..."
+                                placeholder={t.notifications.writeDietPlan}
                                 value={dietResponses[notif.dietRequest.id] || ''}
                                 onChange={(e) => setDietResponses(prev => ({ ...prev, [notif.dietRequest!.id]: e.target.value }))}
                                 rows={4}
@@ -851,24 +654,13 @@ export const Notifications = ({ stats }: NotificationsProps) => {
                             </div>
 
                             <div className="flex gap-2 mt-3">
-                              <Button
-                                size="sm"
-                                variant="default"
-                                className="flex-1"
-                                onClick={() => handleRespondDiet(notif.dietRequest!)}
-                                disabled={!dietResponses[notif.dietRequest.id]?.trim()}
-                              >
-                                <Send className="w-4 h-4 ml-1" />
-                                إرسال الرد
+                              <Button size="sm" variant="default" className="flex-1" onClick={() => handleRespondDiet(notif.dietRequest!)} disabled={!dietResponses[notif.dietRequest.id]?.trim()}>
+                                <Send className="w-4 h-4 mx-1" />
+                                {t.common.sendReply}
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 text-destructive hover:text-destructive"
-                                onClick={() => handleRejectDiet(notif.dietRequest!)}
-                              >
-                                <X className="w-4 h-4 ml-1" />
-                                رفض
+                              <Button size="sm" variant="outline" className="flex-1 text-destructive hover:text-destructive" onClick={() => handleRejectDiet(notif.dietRequest!)}>
+                                <X className="w-4 h-4 mx-1" />
+                                {t.common.reject}
                               </Button>
                             </div>
                           </>
