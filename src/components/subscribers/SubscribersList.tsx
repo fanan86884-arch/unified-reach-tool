@@ -285,7 +285,7 @@ export const SubscribersList = ({
         onPause={(id, pauseUntil) => {
           if (pauseSubscription) {
             pauseSubscription(id, pauseUntil);
-            toast({ title: 'تم إيقاف الاشتراك بنجاح' });
+            toast({ title: t.pauseDialog.pauseSuccess });
           }
         }}
       />
