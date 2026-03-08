@@ -14,6 +14,7 @@ import { Loader2 } from 'lucide-react';
 import { SubscriberFormData, Subscriber } from '@/types/subscriber';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client.runtime';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('subscribers');
