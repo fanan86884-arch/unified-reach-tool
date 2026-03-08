@@ -67,8 +67,8 @@ serve(async (req) => {
 
     const vapidKeys: VapidKeys = {
       subject: 'mailto:admin@2bgym.com',
-      publicKey: configData.value.publicKey,
-      privateKey: configData.value.privateKey,
+      publicKey: vapidConfig.publicKey,
+      privateKey: vapidConfig.privateKey,
     };
 
     // Get all push subscriptions
