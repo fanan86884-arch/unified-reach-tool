@@ -664,39 +664,26 @@ export const Notifications = ({ stats }: NotificationsProps) => {
 
     // Dismiss all pending requests in DB
     try {
-      const promises: Promise<any>[] = [];
-      
       const pendingSubRequests = filteredNotifications.filter(n => n.type === 'request' && n.request);
       if (pendingSubRequests.length > 0) {
-        promises.push(
-          supabase.from('subscription_requests')
-            .update({ status: 'dismissed' })
-            .in('id', pendingSubRequests.map(n => n.request!.id))
-            .then()
-        );
+        await supabase.from('subscription_requests')
+          .update({ status: 'dismissed' })
+          .in('id', pendingSubRequests.map(n => n.request!.id));
       }
 
       const pendingDietRequests = filteredNotifications.filter(n => n.type === 'diet' && n.dietRequest);
       if (pendingDietRequests.length > 0) {
-        promises.push(
-          supabase.from('diet_requests')
-            .update({ status: 'dismissed' })
-            .in('id', pendingDietRequests.map(n => n.dietRequest!.id))
-            .then()
-        );
+        await supabase.from('diet_requests')
+          .update({ status: 'dismissed' })
+          .in('id', pendingDietRequests.map(n => n.dietRequest!.id));
       }
 
       const pendingWorkoutRequests = filteredNotifications.filter(n => n.type === 'workout' && n.workoutRequest);
       if (pendingWorkoutRequests.length > 0) {
-        promises.push(
-          supabase.from('workout_requests')
-            .update({ status: 'dismissed' })
-            .in('id', pendingWorkoutRequests.map(n => n.workoutRequest!.id))
-            .then()
-        );
+        await supabase.from('workout_requests')
+          .update({ status: 'dismissed' })
+          .in('id', pendingWorkoutRequests.map(n => n.workoutRequest!.id));
       }
-
-      await Promise.all(promises);
     } catch (e) {
       console.error('Error dismissing all notifications:', e);
     }
