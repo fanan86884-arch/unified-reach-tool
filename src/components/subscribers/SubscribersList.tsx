@@ -135,7 +135,7 @@ export const SubscribersList = ({
   const handleRestore = (id: string) => {
     if (restoreSubscriber) {
       restoreSubscriber(id);
-      toast({ title: 'تم استعادة المشترك بنجاح' });
+      toast({ title: t.subscribers.restoredSuccess });
     }
   };
 
