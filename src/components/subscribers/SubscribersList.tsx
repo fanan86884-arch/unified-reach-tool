@@ -71,6 +71,7 @@ export const SubscribersList = ({
   const [pausingSubscriber, setPausingSubscriber] = useState<Subscriber | null>(null);
   const [whatsAppSubscriber, setWhatsAppSubscriber] = useState<Subscriber | null>(null);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   // Expose openForm function via ref or callback
   const openFormCallback = useRef<(() => void) | null>(null);
