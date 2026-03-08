@@ -3,7 +3,7 @@ import { Subscriber } from '@/types/subscriber';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { MessageCircle, UserPlus, Clock, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { MessageCircle, UserPlus, Clock, XCircle, AlertTriangle, Loader2, CalendarDays } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { parseISO, differenceInDays, isToday, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -171,7 +171,8 @@ export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
   return (
     <Card className="p-4 card-shadow">
       <h3 className="font-bold text-base mb-4 flex items-center gap-2">
-        📊 الإحصائيات اليومية
+        <CalendarDays className="w-5 h-5 text-primary" />
+        الإحصائيات اليومية
       </h3>
       <Accordion type="multiple" className="space-y-2">
         <DailyCategory
