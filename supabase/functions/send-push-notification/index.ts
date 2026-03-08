@@ -1,106 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import {
+  buildPushPayload,
+  type PushSubscription,
+  type PushMessage,
+  type VapidKeys,
+} from "https://esm.sh/@block65/webcrypto-web-push@1.0.2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// VAPID keys for web push
-// These are demo keys - in production, generate your own
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
-const VAPID_PRIVATE_KEY = 'a1kNPeZx-rE7OyDH7VOw1a9s_rWH3k7FQrRnbBNXB6M';
-
-interface PushPayload {
-  title: string;
-  body: string;
-  icon?: string;
-  tag?: string;
-  data?: Record<string, unknown>;
-}
-
-async function sendWebPush(
-  subscription: { endpoint: string; p256dh: string; auth: string },
-  payload: PushPayload
-): Promise<boolean> {
-  try {
-    // Import web-push functionality using crypto
-    const encoder = new TextEncoder();
-    
-    // Create JWT for VAPID authentication
-    const header = { alg: 'ES256', typ: 'JWT' };
-    const now = Math.floor(Date.now() / 1000);
-    const endpointUrl = new URL(subscription.endpoint);
-    
-    const claims = {
-      aud: `${endpointUrl.protocol}//${endpointUrl.host}`,
-      exp: now + 12 * 60 * 60, // 12 hours
-      sub: 'mailto:admin@2bgym.com'
-    };
-
-    // Base64url encode
-    const base64urlEncode = (data: Uint8Array): string => {
-      let binary = '';
-      for (let i = 0; i < data.length; i++) {
-        binary += String.fromCharCode(data[i]);
-      }
-      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    };
-
-    const headerB64 = base64urlEncode(encoder.encode(JSON.stringify(header)));
-    const claimsB64 = base64urlEncode(encoder.encode(JSON.stringify(claims)));
-    const unsignedToken = `${headerB64}.${claimsB64}`;
-
-    // Import the private key
-    const privateKeyBytes = Uint8Array.from(
-      atob(VAPID_PRIVATE_KEY.replace(/-/g, '+').replace(/_/g, '/')),
-      c => c.charCodeAt(0)
-    );
-
-    const privateKey = await crypto.subtle.importKey(
-      'raw',
-      privateKeyBytes,
-      { name: 'ECDSA', namedCurve: 'P-256' },
-      false,
-      ['sign']
-    );
-
-    // Sign the token
-    const signature = await crypto.subtle.sign(
-      { name: 'ECDSA', hash: 'SHA-256' },
-      privateKey,
-      encoder.encode(unsignedToken)
-    );
-
-    const signatureB64 = base64urlEncode(new Uint8Array(signature));
-    const jwt = `${unsignedToken}.${signatureB64}`;
-
-    // Send the push notification
-    const response = await fetch(subscription.endpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`,
-        'Content-Type': 'application/json',
-        'Content-Encoding': 'aes128gcm',
-        'TTL': '86400'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      console.error('Push failed:', response.status, await response.text());
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Error sending push:', error);
-    return false;
-  }
-}
-
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -108,19 +20,36 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { title, body, type, data } = await req.json();
+    const { title, body, type, data: notifData } = await req.json();
+
+    // Get VAPID keys from system_config
+    const { data: configData, error: configError } = await supabase
+      .from('system_config')
+      .select('value')
+      .eq('key', 'vapid_keys')
+      .single();
+
+    if (configError || !configData?.value) {
+      return new Response(
+        JSON.stringify({ error: 'VAPID keys not configured. Call get-push-config first.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const vapidKeys: VapidKeys = {
+      subject: 'mailto:admin@2bgym.com',
+      publicKey: configData.value.publicKey,
+      privateKey: configData.value.privateKey,
+    };
 
     // Get all push subscriptions
     const { data: subscriptions, error: subError } = await supabase
       .from('push_subscriptions')
       .select('*');
 
-    if (subError) {
-      throw subError;
-    }
+    if (subError) throw subError;
 
     if (!subscriptions || subscriptions.length === 0) {
       return new Response(
@@ -129,36 +58,58 @@ serve(async (req) => {
       );
     }
 
-    const payload: PushPayload = {
+    const payload = JSON.stringify({
       title: title || '2B GYM',
       body: body || 'لديك إشعار جديد',
-      icon: '/src/assets/logo.png',
+      icon: '/logo-icon.png',
+      badge: '/logo-icon.png',
       tag: type || 'notification',
-      data: data || {}
-    };
+      data: notifData || {},
+    });
 
     let sentCount = 0;
     const failedEndpoints: string[] = [];
 
-    // Send to all subscriptions
     for (const sub of subscriptions) {
-      const success = await sendWebPush(
-        {
+      try {
+        const pushSubscription: PushSubscription = {
           endpoint: sub.endpoint,
-          p256dh: sub.p256dh,
-          auth: sub.auth
-        },
-        payload
-      );
+          expirationTime: null,
+          keys: {
+            p256dh: sub.p256dh,
+            auth: sub.auth,
+          },
+        };
 
-      if (success) {
-        sentCount++;
-      } else {
+        const message: PushMessage = {
+          data: payload,
+          options: {
+            ttl: 86400,
+            urgency: 'high',
+          },
+        };
+
+        // buildPushPayload returns a Request with properly encrypted payload
+        const pushRequest = await buildPushPayload(message, pushSubscription, vapidKeys);
+        const response = await fetch(pushRequest);
+
+        if (response.ok || response.status === 201) {
+          sentCount++;
+        } else {
+          const errText = await response.text();
+          console.error(`Push failed for ${sub.endpoint}: ${response.status} ${errText}`);
+          // 404 or 410 means subscription is expired
+          if (response.status === 404 || response.status === 410) {
+            failedEndpoints.push(sub.endpoint);
+          }
+        }
+      } catch (error) {
+        console.error(`Error sending to ${sub.endpoint}:`, error);
         failedEndpoints.push(sub.endpoint);
       }
     }
 
-    // Clean up failed subscriptions (they might be expired)
+    // Clean up expired subscriptions
     if (failedEndpoints.length > 0) {
       await supabase
         .from('push_subscriptions')
@@ -167,23 +118,18 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        message: 'Push notifications sent', 
+      JSON.stringify({
+        message: 'Push notifications sent',
         sent: sentCount,
-        failed: failedEndpoints.length
+        failed: failedEndpoints.length,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-
   } catch (error) {
     console.error('Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
