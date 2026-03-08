@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subscriber';
 import { SubscriberCardCompact } from './SubscriberCardCompact';
 import { SubscriberForm } from './SubscriberForm';
@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Search, Filter, Users } from 'lucide-react';
+import { Plus, Search, Filter, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface SubscribersListProps {
@@ -61,6 +61,7 @@ export const SubscribersList = ({
   onOpenForm,
 }: SubscribersListProps) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [isRenewOpen, setIsRenewOpen] = useState(false);
   const [isPauseOpen, setIsPauseOpen] = useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
@@ -161,48 +162,63 @@ export const SubscribersList = ({
           <Users className="w-5 h-5 text-primary" />
           قائمة المشتركين
         </h2>
-        <Button onClick={handleOpenForm} size="icon" className="rounded-full w-9 h-9">
-          <Plus className="w-5 h-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowFilters(!showFilters)}
+            className="rounded-full w-9 h-9"
+          >
+            {showFilters ? <ChevronUp className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+          </Button>
+          <Button onClick={handleOpenForm} size="icon" className="rounded-full w-9 h-9">
+            <Plus className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="بحث بالاسم أو رقم الهاتف..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pr-10"
-          />
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as SubscriptionStatus | 'all')}>
-            <SelectTrigger className="w-full sm:w-40">
-              <Filter className="w-4 h-4 ml-2" />
-              <SelectValue placeholder="الحالة" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">كل الحالات</SelectItem>
-              <SelectItem value="active">نشط</SelectItem>
-              <SelectItem value="expiring">قارب على الانتهاء</SelectItem>
-              <SelectItem value="expired">منتهي</SelectItem>
-              <SelectItem value="paused">موقوف</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={filterCaptain} onValueChange={setFilterCaptain}>
-            <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="الكابتن" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">كل الكباتن</SelectItem>
-              {captains.map((captain) => (
-                <SelectItem key={captain} value={captain}>
-                  {captain}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: showFilters ? '300px' : '0', opacity: showFilters ? 1 : 0 }}
+      >
+        <div className="flex flex-col gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="بحث بالاسم أو رقم الهاتف..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pr-10"
+            />
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as SubscriptionStatus | 'all')}>
+              <SelectTrigger className="w-full sm:w-40">
+                <Filter className="w-4 h-4 ml-2" />
+                <SelectValue placeholder="الحالة" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كل الحالات</SelectItem>
+                <SelectItem value="active">نشط</SelectItem>
+                <SelectItem value="expiring">قارب على الانتهاء</SelectItem>
+                <SelectItem value="expired">منتهي</SelectItem>
+                <SelectItem value="paused">موقوف</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterCaptain} onValueChange={setFilterCaptain}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="الكابتن" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كل الكباتن</SelectItem>
+                {captains.map((captain) => (
+                  <SelectItem key={captain} value={captain}>
+                    {captain}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
