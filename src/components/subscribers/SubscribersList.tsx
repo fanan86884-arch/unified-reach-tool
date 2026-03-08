@@ -161,9 +161,8 @@ export const SubscribersList = ({
           <Users className="w-5 h-5 text-primary" />
           قائمة المشتركين
         </h2>
-        <Button onClick={handleOpenForm} className="gap-2">
-          <Plus className="w-4 h-4" />
-          إضافة مشترك
+        <Button onClick={handleOpenForm} size="icon" className="rounded-full w-9 h-9">
+          <Plus className="w-5 h-5" />
         </Button>
       </div>
 
