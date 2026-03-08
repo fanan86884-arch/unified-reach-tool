@@ -16,7 +16,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { addDays, subDays, format, parseISO } from 'date-fns';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { addDays, subDays, format, parse, parseISO } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface RenewDialogProps {
   isOpen: boolean;
@@ -46,7 +54,7 @@ export const RenewDialog = ({ isOpen, onClose, subscriber, onRenew }: RenewDialo
       const baseDate = currentEndDate > new Date() ? currentEndDate : new Date();
       const duration = subscriptionDurations[renewalType];
       const newEndDate = addDays(baseDate, duration);
-      const newStartDate = subDays(newEndDate, duration);
+      const newStartDate = subDays(newEndDate, 1);
       setEndDate(format(newEndDate, 'yyyy-MM-dd'));
       setStartDate(format(newStartDate, 'yyyy-MM-dd'));
     }
@@ -58,17 +66,12 @@ export const RenewDialog = ({ isOpen, onClose, subscriber, onRenew }: RenewDialo
     setRenewalType(value);
   };
 
-  // When user manually changes end date, auto-calculate start date
-  const handleEndDateChange = (value: string) => {
-    setEndDate(value);
-    try {
-      const newEnd = parseISO(value);
-      const duration = subscriptionDurations[renewalType];
-      const newStart = subDays(newEnd, duration);
-      setStartDate(format(newStart, 'yyyy-MM-dd'));
-    } catch {
-      // Invalid date, ignore
-    }
+  // When user changes end date, auto-calculate start date (1 day before)
+  const handleEndDateChange = (date: Date) => {
+    const newEndStr = format(date, 'yyyy-MM-dd');
+    setEndDate(newEndStr);
+    const newStart = subDays(date, 1);
+    setStartDate(format(newStart, 'yyyy-MM-dd'));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -103,27 +106,45 @@ export const RenewDialog = ({ isOpen, onClose, subscriber, onRenew }: RenewDialo
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="startDate">تاريخ بداية الاشتراك</Label>
-            <Input
-              id="startDate"
-              type="date"
-              value={startDate}
-              readOnly
-              dir="ltr"
-              className="bg-muted cursor-not-allowed"
-            />
-            <p className="text-xs text-muted-foreground">يتم حسابه تلقائياً من تاريخ الانتهاء</p>
+            <Label>تاريخ الانتهاء الجديد</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}
+                  dir="ltr"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {endDate ? format(parse(endDate, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : 'اختر تاريخ'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={endDate ? parse(endDate, 'yyyy-MM-dd', new Date()) : undefined}
+                  onSelect={(date) => {
+                    if (date) handleEndDateChange(date);
+                  }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="endDate">تاريخ الانتهاء الجديد</Label>
-            <Input
-              id="endDate"
-              type="date"
-              value={endDate}
-              onChange={(e) => handleEndDateChange(e.target.value)}
+            <Label>تاريخ بداية الاشتراك</Label>
+            <Button
+              variant="outline"
+              className="w-full justify-start text-left font-normal bg-muted cursor-not-allowed"
               dir="ltr"
-            />
+              type="button"
+              disabled
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {startDate ? format(parse(startDate, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : '-'}
+            </Button>
+            <p className="text-xs text-muted-foreground">يتم حسابه تلقائياً (يوم قبل تاريخ الانتهاء)</p>
           </div>
 
           <div className="space-y-2">

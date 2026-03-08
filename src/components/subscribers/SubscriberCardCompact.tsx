@@ -177,17 +177,17 @@ export const SubscriberCardCompact = ({
           const monthsSinceExpiry = Math.max(1, Math.floor(differenceInCalendarDays(today, endDate) / 30));
           const expiredMonths = daysDiff < 0 ? monthsSinceExpiry : 0;
           return (
-            <div className="flex flex-col items-center shrink-0 ml-2 gap-0.5">
-              <Badge variant="outline" className="bg-warning/15 text-warning border-warning/30 text-[10px] px-2 py-0.5 whitespace-nowrap">
+            <Badge variant="outline" className="bg-warning/15 text-warning border-warning/30 text-[10px] px-2 py-1 whitespace-nowrap flex flex-col items-center shrink-0 ml-2">
+              <span className="flex items-center">
                 <ArchiveRestore className="w-3 h-3 ml-1.5" />
                 مؤرشف
-              </Badge>
+              </span>
               {expiredMonths > 0 && (
                 <span className="text-[9px] text-muted-foreground whitespace-nowrap">
                   منذ {expiredMonths} {expiredMonths === 1 ? 'شهر' : expiredMonths <= 10 ? 'شهور' : 'شهر'}
                 </span>
               )}
-            </div>
+            </Badge>
           );
         })()}
         <Button variant="ghost" size="sm" className="mr-2">
