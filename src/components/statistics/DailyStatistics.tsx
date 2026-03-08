@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { forwardRef, useMemo, useState } from 'react';
 import { Subscriber } from '@/types/subscriber';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
