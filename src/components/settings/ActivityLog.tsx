@@ -1,96 +1,65 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-  History, 
-  RotateCcw, 
-  Trash2, 
-  UserPlus, 
-  UserMinus, 
-  Edit, 
-  Archive, 
-  ArchiveRestore,
-  RefreshCw,
-  Pause,
-  Play,
-  Loader2
+  History, RotateCcw, Trash2, UserPlus, UserMinus, Edit, Archive, ArchiveRestore,
+  RefreshCw, Pause, Play, Loader2
 } from 'lucide-react';
-import { useActivityLog, getActionLabel, ActivityLog as ActivityLogType } from '@/hooks/useActivityLog';
+import { useActivityLog, ActivityLog as ActivityLogType } from '@/hooks/useActivityLog';
 import { formatDistanceToNow, parseISO, isToday, isYesterday, format } from 'date-fns';
-import { ar } from 'date-fns/locale';
+import { ar as arLocale } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { SwipeableItem } from '@/components/ui/swipeable-item';
+import { useLanguage } from '@/i18n/LanguageContext';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
 const actionIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  add: UserPlus,
-  update: Edit,
-  delete: UserMinus,
-  archive: Archive,
-  restore: ArchiveRestore,
-  renew: RefreshCw,
-  pause: Pause,
-  resume: Play,
-  revert: RotateCcw,
+  add: UserPlus, update: Edit, delete: UserMinus, archive: Archive, restore: ArchiveRestore,
+  renew: RefreshCw, pause: Pause, resume: Play, revert: RotateCcw,
 };
 
 const actionColors: Record<string, string> = {
-  add: 'text-green-500',
-  update: 'text-blue-500',
-  delete: 'text-destructive',
-  archive: 'text-muted-foreground',
-  restore: 'text-primary',
-  renew: 'text-green-500',
-  pause: 'text-warning',
-  resume: 'text-primary',
-  revert: 'text-accent',
-};
-
-const getRelativeTime = (dateStr: string): string => {
-  const date = parseISO(dateStr);
-  
-  if (isToday(date)) {
-    return `اليوم ${format(date, 'HH:mm', { locale: ar })}`;
-  }
-  
-  if (isYesterday(date)) {
-    return `أمس ${format(date, 'HH:mm', { locale: ar })}`;
-  }
-  
-  return formatDistanceToNow(date, { addSuffix: true, locale: ar });
+  add: 'text-green-500', update: 'text-blue-500', delete: 'text-destructive',
+  archive: 'text-muted-foreground', restore: 'text-primary', renew: 'text-green-500',
+  pause: 'text-warning', resume: 'text-primary', revert: 'text-accent',
 };
 
 export const ActivityLogComponent = () => {
   const { logs, loading, revertChange, clearLogs, deleteLog } = useActivityLog();
   const { toast } = useToast();
+  const { t, isRTL } = useLanguage();
+
+  const getRelativeTime = (dateStr: string): string => {
+    const date = parseISO(dateStr);
+    if (isToday(date)) return `${t.common.today} ${format(date, 'HH:mm')}`;
+    if (isYesterday(date)) return `${t.common.yesterday} ${format(date, 'HH:mm')}`;
+    return formatDistanceToNow(date, { addSuffix: true, locale: isRTL ? arLocale : undefined });
+  };
+
+  const getActionLabel = (actionType: string): string => {
+    return t.activityLog.actionLabels[actionType as keyof typeof t.activityLog.actionLabels] || actionType;
+  };
 
   const handleRevert = async (log: ActivityLogType) => {
     const success = await revertChange(log);
     if (success) {
-      toast({ title: 'تم إرجاع التغيير بنجاح' });
+      toast({ title: t.activityLog.revertSuccess });
     } else {
-      toast({ title: 'فشل في إرجاع التغيير', variant: 'destructive' });
+      toast({ title: t.activityLog.revertFailed, variant: 'destructive' });
     }
   };
 
   const handleClearLogs = async () => {
     await clearLogs();
-    toast({ title: 'تم مسح سجل التغييرات' });
+    toast({ title: t.activityLog.logsCleared });
   };
 
   const handleDeleteLog = async (logId: string) => {
     if (deleteLog) {
       await deleteLog(logId);
-      toast({ title: 'تم حذف العنصر' });
+      toast({ title: t.activityLog.itemDeleted });
     }
   };
 
@@ -107,26 +76,24 @@ export const ActivityLogComponent = () => {
       <div className="flex items-center justify-between">
         <h4 className="font-medium flex items-center gap-2">
           <History className="w-4 h-4 text-primary" />
-          سجل التغييرات
+          {t.activityLog.title}
         </h4>
         {logs.length > 0 && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
                 <Trash2 className="w-4 h-4" />
-                مسح السجل
+                {t.activityLog.clearLog}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
-                <AlertDialogDescription>
-                  سيتم مسح جميع سجلات التغييرات. لا يمكن التراجع عن هذا الإجراء.
-                </AlertDialogDescription>
+                <AlertDialogTitle>{t.activityLog.areYouSure}</AlertDialogTitle>
+                <AlertDialogDescription>{t.activityLog.clearWarning}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                <AlertDialogAction onClick={handleClearLogs}>مسح</AlertDialogAction>
+                <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleClearLogs}>{t.activityLog.clear}</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -136,7 +103,7 @@ export const ActivityLogComponent = () => {
       {logs.length === 0 ? (
         <div className="text-center py-8">
           <History className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
-          <p className="text-muted-foreground">لا توجد سجلات</p>
+          <p className="text-muted-foreground">{t.activityLog.noLogs}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -149,36 +116,21 @@ export const ActivityLogComponent = () => {
               <SwipeableItem key={log.id} onDelete={() => handleDeleteLog(log.id)}>
                 <Card className="p-3">
                   <div className="flex items-start gap-3">
-                    <div className={`mt-0.5 ${colorClass}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
+                    <div className={`mt-0.5 ${colorClass}`}><Icon className="w-4 h-4" /></div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="font-medium text-sm truncate">
-                          {getActionLabel(log.actionType)}
-                        </p>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {getRelativeTime(log.createdAt)}
-                        </span>
+                        <p className="font-medium text-sm truncate">{getActionLabel(log.actionType)}</p>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">{getRelativeTime(log.createdAt)}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {log.subscriberName}
-                      </p>
+                      <p className="text-sm text-muted-foreground truncate">{log.subscriberName}</p>
                       {log.actionDetails && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {Object.entries(log.actionDetails)
-                            .map(([key, value]) => `${key}: ${value}`)
-                            .join(' • ')}
+                          {Object.entries(log.actionDetails).map(([key, value]) => `${key}: ${value}`).join(' • ')}
                         </p>
                       )}
                     </div>
                     {canRevert && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRevert(log)}
-                        className="shrink-0"
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleRevert(log)} className="shrink-0">
                         <RotateCcw className="w-4 h-4" />
                       </Button>
                     )}

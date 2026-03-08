@@ -14,6 +14,7 @@ import { Loader2 } from 'lucide-react';
 import { SubscriberFormData, Subscriber } from '@/types/subscriber';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client.runtime';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('subscribers');
@@ -22,6 +23,7 @@ const Index = () => {
   const [offlineSubscribers, setOfflineSubscribers] = useState<Subscriber[]>([]);
   const mainRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { t } = useLanguage();
   const { loadSubscribersOffline } = useOfflineStorage();
   
   // Initialize offline queue for background sync
@@ -119,11 +121,11 @@ const Index = () => {
   const handleAddSubmit = useCallback(async (data: SubscriberFormData) => {
     const result = await addSubscriber(data);
     if (result.success) {
-      toast({ title: 'تم إضافة المشترك بنجاح' });
+      toast({ title: t.subscribers.addedSuccess });
       setIsAddFormOpen(false);
       return;
     }
-    toast({ title: result.error || 'حدث خطأ أثناء الإضافة', variant: 'destructive' });
+    toast({ title: result.error || t.subscribers.addError, variant: 'destructive' });
   }, [addSubscriber, toast]);
 
   const handleOpenActivityLog = useCallback(() => {
