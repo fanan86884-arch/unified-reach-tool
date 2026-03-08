@@ -82,35 +82,37 @@ const App = () => {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <NotificationSoundProvider>
-            {/* Splash Screen - only on first load */}
-            {showSplash && isFirstLoad && (
-              <SplashScreen onComplete={handleSplashComplete} />
-            )}
-            
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/lookup" element={<CustomerLookup />} />
-              <Route path="/install" element={<Install />} />
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <Index />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </NotificationSoundProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <NotificationSoundProvider>
+              {/* Splash Screen - only on first load */}
+              {showSplash && isFirstLoad && (
+                <SplashScreen onComplete={handleSplashComplete} />
+              )}
+              
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/lookup" element={<CustomerLookup />} />
+                <Route path="/install" element={<Install />} />
+                  <Route
+                    path="/"
+                    element={
+                      <ProtectedRoute>
+                        <Index />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </NotificationSoundProvider>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 };
