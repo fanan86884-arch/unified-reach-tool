@@ -117,7 +117,9 @@ const DailyCategory = forwardRef<HTMLDivElement, DailyCategoryProps>(({ title, i
       </AccordionContent>
     </AccordionItem>
   );
-};
+});
+
+DailyCategory.displayName = 'DailyCategory';
 
 export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
   const { templates, loading } = useWhatsAppTemplates();
