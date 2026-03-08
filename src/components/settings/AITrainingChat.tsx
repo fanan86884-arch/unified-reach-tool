@@ -6,13 +6,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
   Brain, Send, Loader2, Salad, Dumbbell, 
-  MessageSquare, Plus, Check, Sparkles
+  MessageSquare, Sparkles, Trash2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client.runtime';
 import { useToast } from '@/hooks/use-toast';
 
 interface Message {
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant';
   content: string;
 }
 
@@ -25,32 +25,26 @@ interface TrainingExample {
   created_at: string;
 }
 
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-training-chat`;
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
 
 export const AITrainingChat = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: `مرحباً! 👋 أنا مساعد تدريب الذكاء الاصطناعي.
+      content: `أهلاً! أنا مساعدك الذكي في 2B GYM 💪
 
-يمكنك تدريبي على أسلوبك الخاص في كتابة الأنظمة الغذائية وبرامج التمرين.
+أقدر أساعدك في:
+- إنشاء أنظمة غذائية وبرامج تمرين
+- الإجابة على أسئلة اللياقة والتغذية
+- تعلم أسلوبك في الكتابة (ابعتلي نظام وأنا هتعلمه)
 
-**كيف يعمل التدريب:**
-1. أرسل لي نظام غذائي أو برنامج تمرين تريد أن أتعلم منه
-2. سأحلل الأسلوب والتنسيق المستخدم
-3. سأحفظه كمثال للتدريب
-
-**أوامر مفيدة:**
-- "احفظ هذا كنظام غذائي" + لصق النظام
-- "احفظ هذا كبرنامج تمرين" + لصق البرنامج
-- "أظهر الأمثلة المحفوظة"
-
-ابدأ بإرسال نظام تريد حفظه للتدريب! 💪`
+جرب تسألني أي حاجة أو ابعتلي نظام غذائي عشان أتعلم منه!`
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [examples, setExamples] = useState<TrainingExample[]>([]);
+  const [pendingSaveContent, setPendingSaveContent] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -71,96 +65,155 @@ export const AITrainingChat = () => {
     if (data) setExamples(data as TrainingExample[]);
   };
 
-  const saveExample = async (type: 'diet' | 'workout', content: string) => {
-    const title = type === 'diet' 
-      ? `نظام غذائي - ${new Date().toLocaleDateString('ar-EG')}`
-      : `برنامج تمرين - ${new Date().toLocaleDateString('ar-EG')}`;
-
-    const { error } = await supabase.from('ai_training_examples').insert({
-      type,
-      title,
-      client_data: {},
-      plan_content: content,
-    });
-
-    if (error) throw error;
-    
+  const deleteExample = async (id: string) => {
+    await supabase.from('ai_training_examples').delete().eq('id', id);
     await fetchExamples();
-    return title;
+    toast({ title: 'تم حذف المثال' });
+  };
+
+  const handleSaveTraining = async (type: 'diet' | 'workout', content: string) => {
+    try {
+      const resp = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          messages: [],
+          saveData: { type, content },
+        }),
+      });
+
+      if (!resp.ok) throw new Error('Save failed');
+      
+      await fetchExamples();
+      setPendingSaveContent(null);
+      
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: `تمام! حفظت ${type === 'diet' ? 'النظام الغذائي' : 'برنامج التمرين'} في ذاكرتي ✅\nهستخدمه كمرجع في الأنظمة اللي هنشئها بعد كده.\n\nعايز تضيف مثال تاني؟`
+      }]);
+    } catch (err) {
+      console.error('Save error:', err);
+      toast({ title: 'خطأ في الحفظ', variant: 'destructive' });
+    }
   };
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
 
     const userMessage = inputMessage.trim();
-    const newMessages: Message[] = [...messages, { role: 'user', content: userMessage }];
-    setMessages(newMessages);
+    const userMsg: Message = { role: 'user', content: userMessage };
+    const allMessages = [...messages, userMsg];
+    setMessages(allMessages);
     setInputMessage('');
     setIsLoading(true);
 
+    // Check for save commands client-side
+    const lowerMsg = userMessage.toLowerCase();
+    const isDietSave = (lowerMsg.includes('احفظ') || lowerMsg.includes('حفظ')) && (lowerMsg.includes('غذائي') || lowerMsg.includes('دايت'));
+    const isWorkoutSave = (lowerMsg.includes('احفظ') || lowerMsg.includes('حفظ')) && (lowerMsg.includes('تمرين') || lowerMsg.includes('تمارين'));
+
+    if (isDietSave && pendingSaveContent) {
+      await handleSaveTraining('diet', pendingSaveContent);
+      setIsLoading(false);
+      return;
+    }
+    if (isWorkoutSave && pendingSaveContent) {
+      await handleSaveTraining('workout', pendingSaveContent);
+      setIsLoading(false);
+      return;
+    }
+
+    // If long text, store as potential training content
+    if (userMessage.length > 200) {
+      setPendingSaveContent(userMessage);
+    }
+
+    // Stream AI response
+    let assistantContent = '';
+
     try {
-      // Check for save commands
-      const lowerMsg = userMessage.toLowerCase();
-      const isDietSave = lowerMsg.includes('احفظ') && (lowerMsg.includes('غذائي') || lowerMsg.includes('دايت'));
-      const isWorkoutSave = lowerMsg.includes('احفظ') && (lowerMsg.includes('تمرين') || lowerMsg.includes('تمارين'));
-      const isShowExamples = lowerMsg.includes('أظهر') && lowerMsg.includes('أمثلة');
+      const resp = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          messages: allMessages.map(m => ({ role: m.role, content: m.content })),
+          mode: 'training',
+        }),
+      });
 
-      let response = '';
+      if (!resp.ok || !resp.body) {
+        const errorData = await resp.json().catch(() => ({}));
+        throw new Error(errorData.error || 'فشل الاتصال');
+      }
 
-      if (isShowExamples) {
-        // Show saved examples
-        await fetchExamples();
-        if (examples.length === 0) {
-          response = 'لا توجد أمثلة محفوظة بعد. أرسل لي نظام غذائي أو برنامج تمرين لحفظه!';
-        } else {
-          response = `**الأمثلة المحفوظة (${examples.length}):**\n\n`;
-          examples.forEach((ex, idx) => {
-            const icon = ex.type === 'diet' ? '🥗' : '💪';
-            const status = ex.is_active ? '✅' : '❌';
-            response += `${idx + 1}. ${icon} ${ex.title} ${status}\n`;
-          });
-          response += '\n_الأمثلة المفعلة (✅) تُستخدم في التدريب_';
-        }
-      } else if (isDietSave || isWorkoutSave) {
-        // Extract content (everything after the command)
-        const content = userMessage
-          .replace(/احفظ.*?(غذائي|دايت|تمرين|تمارين)/i, '')
-          .trim();
-        
-        if (content.length < 50) {
-          response = 'يبدو أن المحتوى قصير جداً. من فضلك ألصق النظام الكامل بعد أمر الحفظ.';
-        } else {
-          const type = isDietSave ? 'diet' : 'workout';
-          const title = await saveExample(type, content);
-          response = `✅ تم حفظ "${title}" بنجاح!\n\nسأستخدم هذا المثال لتعلم أسلوبك في الأنظمة المستقبلية.\n\nهل تريد إضافة مثال آخر؟`;
-        }
-      } else {
-        // Check if the message looks like a plan (long text)
-        if (userMessage.length > 200) {
-          response = `يبدو أن هذا نظام ${userMessage.includes('تمرين') || userMessage.includes('سكوات') ? 'تمرين' : 'غذائي'}!
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = '';
 
-هل تريد حفظه كمثال للتدريب؟
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-أرسل:
-- "احفظ هذا كنظام غذائي" لحفظه كمثال غذائي
-- "احفظ هذا كبرنامج تمرين" لحفظه كمثال تمارين`;
-        } else {
-          // General conversation
-          response = `شكراً على رسالتك! 
+        textBuffer += decoder.decode(value, { stream: true });
 
-يمكنني مساعدتك في:
-1. **حفظ أنظمة غذائية** - أرسل "احفظ هذا كنظام غذائي" ثم الصق النظام
-2. **حفظ برامج تمرين** - أرسل "احفظ هذا كبرنامج تمرين" ثم الصق البرنامج
-3. **عرض الأمثلة** - أرسل "أظهر الأمثلة المحفوظة"
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
 
-كلما أضفت أمثلة أكثر، سأتعلم أسلوبك بشكل أفضل! 📚`;
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantContent += content;
+              setMessages(prev => {
+                const last = prev[prev.length - 1];
+                if (last?.role === 'assistant' && prev.length > 1 && prev[prev.length - 2]?.role === 'user') {
+                  return prev.map((m, i) =>
+                    i === prev.length - 1 ? { ...m, content: assistantContent } : m
+                  );
+                }
+                return [...prev, { role: 'assistant', content: assistantContent }];
+              });
+            }
+          } catch {
+            textBuffer = line + '\n' + textBuffer;
+            break;
+          }
         }
       }
 
-      setMessages([...newMessages, { role: 'assistant', content: response }]);
+      // Check if AI response contains save commands
+      if (assistantContent.includes('[SAVE_DIET]')) {
+        const content = assistantContent.replace('[SAVE_DIET]', '').trim();
+        if (content.length > 50) {
+          await handleSaveTraining('diet', pendingSaveContent || content);
+        }
+      } else if (assistantContent.includes('[SAVE_WORKOUT]')) {
+        const content = assistantContent.replace('[SAVE_WORKOUT]', '').trim();
+        if (content.length > 50) {
+          await handleSaveTraining('workout', pendingSaveContent || content);
+        }
+      }
+
     } catch (err) {
-      console.error('Error:', err);
-      toast({ title: 'خطأ في المعالجة', variant: 'destructive' });
+      console.error('Chat error:', err);
+      const errorMsg = err instanceof Error ? err.message : 'خطأ في الاتصال';
+      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${errorMsg}` }]);
+      toast({ title: errorMsg, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -174,14 +227,14 @@ export const AITrainingChat = () => {
           <Brain className="w-5 h-5 text-primary" />
         </div>
         <div className="flex-1">
-          <h3 className="font-bold">تدريب الذكاء الاصطناعي</h3>
+          <h3 className="font-bold">المساعد الذكي</h3>
           <p className="text-xs text-muted-foreground">
-            {examples.filter(e => e.is_active).length} مثال مُفعّل
+            {examples.filter(e => e.is_active).length} مثال في الذاكرة
           </p>
         </div>
         <Badge variant="secondary">
           <Sparkles className="w-3 h-3 ml-1" />
-          تفاعلي
+          ذكي
         </Badge>
       </div>
 
@@ -205,7 +258,7 @@ export const AITrainingChat = () => {
             </div>
           ))}
           
-          {isLoading && (
+          {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
             <div className="flex justify-end">
               <div className="bg-muted rounded-2xl px-4 py-3">
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -216,6 +269,26 @@ export const AITrainingChat = () => {
         </div>
       </ScrollArea>
 
+      {/* Saved examples preview */}
+      {examples.length > 0 && (
+        <div className="px-4 py-2 border-t border-border">
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {examples.slice(0, 5).map((ex) => (
+              <Badge
+                key={ex.id}
+                variant="outline"
+                className="shrink-0 text-[10px] gap-1 cursor-pointer hover:bg-destructive/10"
+                onClick={() => deleteExample(ex.id)}
+              >
+                {ex.type === 'diet' ? <Salad className="w-3 h-3" /> : <Dumbbell className="w-3 h-3" />}
+                {ex.title.slice(0, 20)}
+                <Trash2 className="w-2.5 h-2.5 text-destructive" />
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Quick actions */}
       <div className="px-4 py-2 border-t border-border">
         <div className="flex gap-2 flex-wrap">
@@ -223,28 +296,28 @@ export const AITrainingChat = () => {
             variant="outline"
             size="sm"
             className="text-xs"
-            onClick={() => setInputMessage('احفظ هذا كنظام غذائي:\n')}
+            onClick={() => setInputMessage('ايه اللي اتعلمته لحد دلوقتي؟')}
+          >
+            <Brain className="w-3 h-3 ml-1" />
+            ما تعلمته
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            onClick={() => setInputMessage('اعملي نظام غذائي لشخص وزنه 80 كجم عايز يخس')}
           >
             <Salad className="w-3 h-3 ml-1" />
-            حفظ نظام غذائي
+            جرب نظام غذائي
           </Button>
           <Button
             variant="outline"
             size="sm"
             className="text-xs"
-            onClick={() => setInputMessage('احفظ هذا كبرنامج تمرين:\n')}
+            onClick={() => setInputMessage('اعملي برنامج تمرين 4 أيام في الأسبوع')}
           >
             <Dumbbell className="w-3 h-3 ml-1" />
-            حفظ برنامج تمرين
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs"
-            onClick={() => setInputMessage('أظهر الأمثلة المحفوظة')}
-          >
-            <MessageSquare className="w-3 h-3 ml-1" />
-            عرض الأمثلة
+            جرب برنامج تمرين
           </Button>
         </div>
       </div>
@@ -255,14 +328,14 @@ export const AITrainingChat = () => {
           <Input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="اكتب رسالتك أو الصق نظام للتدريب..."
+            placeholder="اسأل أي حاجة أو ابعت نظام للتدريب..."
             className="flex-1"
             dir="rtl"
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
             disabled={isLoading}
           />
           <Button onClick={handleSendMessage} disabled={isLoading || !inputMessage.trim()}>
-            <Send className="w-4 h-4" />
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
       </div>
