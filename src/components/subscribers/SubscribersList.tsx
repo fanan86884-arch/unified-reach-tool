@@ -86,17 +86,17 @@ export const SubscribersList = ({
     if (editingSubscriber) {
       const result = await updateSubscriber(editingSubscriber.id, data);
       if (!result.success) {
-        toast({ title: result.error || 'حدث خطأ أثناء التعديل', variant: 'destructive' });
+        toast({ title: result.error || t.settings.saveError, variant: 'destructive' });
         return;
       }
-      toast({ title: 'تم تحديث بيانات المشترك بنجاح' });
+      toast({ title: t.subscribers.updatedSuccess });
     } else {
       const result = await addSubscriber(data);
       if (result.success) {
-        toast({ title: 'تم إضافة المشترك بنجاح' });
+        toast({ title: t.subscribers.addedSuccess });
       } else {
-        toast({ title: result.error || 'حدث خطأ أثناء الإضافة', variant: 'destructive' });
-        return; // Don't close the form on error
+        toast({ title: result.error || t.settings.saveError, variant: 'destructive' });
+        return;
       }
     }
     setEditingSubscriber(null);
