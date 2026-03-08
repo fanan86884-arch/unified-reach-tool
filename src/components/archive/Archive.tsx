@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Subscriber } from '@/types/subscriber';
 import { SubscriberCardCompact } from '@/components/subscribers/SubscriberCardCompact';
-import { Archive as ArchiveIcon, Search } from 'lucide-react';
+import { Archive as ArchiveIcon, Search, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { WhatsAppDialog } from '@/components/subscribers/WhatsAppDialog';
