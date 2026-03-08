@@ -68,9 +68,6 @@ export function usePushNotifications() {
 
     setIosInfo({ isIOS: iosCheck, isPWA: pwaCheck, isSafari: safariCheck });
 
-    // Push is supported if:
-    // - Browser supports it AND
-    // - On iOS, only works as installed PWA
     const browserSupports = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
     const iosLimitation = iosCheck && !pwaCheck;
 
@@ -80,6 +77,26 @@ export function usePushNotifications() {
       setPermission(Notification.permission);
       checkSubscription();
     }
+
+    // Listen for subscription changes from SW
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.data?.type === 'PUSH_SUBSCRIPTION_CHANGED' && event.data.newSubscription) {
+        const sub = event.data.newSubscription;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && sub.keys?.p256dh && sub.keys?.auth) {
+          await supabase.from('push_subscriptions').upsert({
+            user_id: user.id,
+            endpoint: sub.endpoint,
+            p256dh: sub.keys.p256dh,
+            auth: sub.keys.auth,
+          }, { onConflict: 'user_id,endpoint' });
+        }
+      }
+    };
+    navigator.serviceWorker?.addEventListener('message', handleMessage);
+    return () => {
+      navigator.serviceWorker?.removeEventListener('message', handleMessage);
+    };
   }, []);
 
   const checkSubscription = async () => {

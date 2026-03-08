@@ -94,7 +94,7 @@ self.addEventListener("sync", (event: any) => {
   }
 });
 
-// Push notification handler
+// Push notification handler — works even when app is closed
 self.addEventListener("push", (event) => {
   let data: any = {
     title: "2B GYM",
@@ -114,11 +114,14 @@ self.addEventListener("push", (event) => {
     }
   }
 
+  // Use unique tag so multiple notifications don't collapse
+  const tag = `${data.tag || "notification"}-${Date.now()}`;
+
   const options: any = {
     body: data.body,
     icon: data.icon || "/logo-icon.png",
     badge: data.badge || "/logo-icon.png",
-    tag: data.tag || "notification",
+    tag,
     vibrate: [300, 100, 300, 100, 300],
     data: data.data || {},
     dir: "rtl",
@@ -134,6 +137,7 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     Promise.all([
       self.registration.showNotification(data.title, options),
+      // Try to play sound in any open window
       self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
         clientList.forEach((client) => {
           client.postMessage({ type: "PLAY_NOTIFICATION_SOUND", data });
@@ -152,6 +156,7 @@ self.addEventListener("notificationclick", (event) => {
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      // Focus an existing window if available
       for (const client of clientList) {
         if ("focus" in client) {
           client.focus();
@@ -159,7 +164,34 @@ self.addEventListener("notificationclick", (event) => {
           return;
         }
       }
+      // Otherwise open a new window
       return self.clients.openWindow?.(urlToOpen);
     })
   );
 });
+
+// Handle push subscription changes (e.g. browser refreshes the subscription)
+self.addEventListener("pushsubscriptionchange", ((event: any) => {
+  event.waitUntil(
+    (async () => {
+      try {
+        // Re-subscribe with the same application server key
+        const oldSubscription = event.oldSubscription;
+        const newSubscription = await self.registration.pushManager.subscribe(
+          oldSubscription?.options || { userVisibleOnly: true }
+        );
+
+        // Notify any open client to update the subscription in database
+        const clientList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+        clientList.forEach((client) => {
+          client.postMessage({
+            type: "PUSH_SUBSCRIPTION_CHANGED",
+            newSubscription: newSubscription.toJSON(),
+          });
+        });
+      } catch (err) {
+        console.error("Failed to re-subscribe on pushsubscriptionchange:", err);
+      }
+    })()
+  );
+}) as EventListener);
