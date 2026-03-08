@@ -128,7 +128,7 @@ export const SubscriberCardCompact = ({
 
   return (
     <Card className={cn(
-      "card-shadow hover:card-shadow-hover transition-all duration-300 animate-fade-in overflow-hidden",
+      "card-shadow hover:card-shadow-hover transition-all duration-300 overflow-hidden active:scale-[0.98]",
       subscriber.isArchived && "border-dashed border-warning/50 bg-warning/5"
     )}>
       {/* Compact Header - Always Visible */}
