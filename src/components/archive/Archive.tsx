@@ -55,20 +55,35 @@ export const Archive = ({
 
   return (
     <div className="space-y-4 pb-20">
-      <h2 className="text-xl font-bold flex items-center gap-2">
-        <ArchiveIcon className="w-5 h-5 text-primary" />
-        الأرشيف
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <ArchiveIcon className="w-5 h-5 text-primary" />
+          الأرشيف
+        </h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowSearch(!showSearch)}
+          className="rounded-full w-9 h-9"
+        >
+          {showSearch ? <ChevronUp className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+        </Button>
+      </div>
 
       {/* خانة البحث */}
-      <div className="relative">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="ابحث عن مشترك..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pr-10"
-        />
+      <div
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: showSearch ? '60px' : '0', opacity: showSearch ? 1 : 0 }}
+      >
+        <div className="relative">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="ابحث عن مشترك..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pr-10"
+          />
+        </div>
       </div>
 
       {filteredSubscribers.length === 0 ? (
