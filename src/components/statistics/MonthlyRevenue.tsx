@@ -14,7 +14,50 @@ const MONTH_NAMES = [
   'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
 ];
 
-const PASSCODE = '8908';
+// Check if WebAuthn is available
+const isWebAuthnAvailable = () => {
+  return !!(window.PublicKeyCredential && navigator.credentials);
+};
+
+// Create a WebAuthn challenge for biometric auth
+const authenticateWithBiometric = async (): Promise<boolean> => {
+  try {
+    if (!isWebAuthnAvailable()) return false;
+
+    // Create a random challenge
+    const challenge = new Uint8Array(32);
+    crypto.getRandomValues(challenge);
+
+    // Try to use platform authenticator (face/fingerprint)
+    const credential = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: { name: 'Gym App', id: window.location.hostname },
+        user: {
+          id: new Uint8Array(16),
+          name: 'gym-user',
+          displayName: 'Gym User',
+        },
+        pubKeyCredParams: [
+          { alg: -7, type: 'public-key' },
+          { alg: -257, type: 'public-key' },
+        ],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required',
+        },
+        timeout: 60000,
+      },
+    });
+
+    return !!credential;
+  } catch (e) {
+    console.log('Biometric auth failed or cancelled:', e);
+    return false;
+  }
+};
+
+const PASSCODE_FALLBACK = '8908';
 
 export const MonthlyRevenue = ({ allSubscribers }: MonthlyRevenueProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -22,7 +65,7 @@ export const MonthlyRevenue = ({ allSubscribers }: MonthlyRevenueProps) => {
   const [showPasscodeInput, setShowPasscodeInput] = useState(false);
   const [passcodeValue, setPasscodeValue] = useState('');
   const [passcodeError, setPasscodeError] = useState(false);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const currentYear = new Date().getFullYear();
 
   const monthlyData = useMemo(() => {
@@ -48,30 +91,34 @@ export const MonthlyRevenue = ({ allSubscribers }: MonthlyRevenueProps) => {
   const currentMonthRevenue = monthlyData[currentMonth];
   const maxRevenue = Math.max(...monthlyData, 1);
 
-  const handleEyeClick = useCallback(() => {
+  const handleReveal = useCallback(async () => {
     if (isRevealed) {
       setIsRevealed(false);
+      return;
     }
-  }, [isRevealed]);
 
-  const handleLongPressStart = useCallback(() => {
-    if (isRevealed) return;
-    longPressTimer.current = setTimeout(() => {
-      setShowPasscodeInput(true);
-      setPasscodeValue('');
-      setPasscodeError(false);
-    }, 600);
-  }, [isRevealed]);
+    if (isAuthenticating) return;
+    setIsAuthenticating(true);
 
-  const handleLongPressEnd = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
+    // Try biometric first
+    if (isWebAuthnAvailable()) {
+      const success = await authenticateWithBiometric();
+      if (success) {
+        setIsRevealed(true);
+        setIsAuthenticating(false);
+        return;
+      }
     }
-  }, []);
+
+    // Fallback to passcode
+    setShowPasscodeInput(true);
+    setPasscodeValue('');
+    setPasscodeError(false);
+    setIsAuthenticating(false);
+  }, [isRevealed, isAuthenticating]);
 
   const handlePasscodeSubmit = useCallback(() => {
-    if (passcodeValue === PASSCODE) {
+    if (passcodeValue === PASSCODE_FALLBACK) {
       setIsRevealed(true);
       setShowPasscodeInput(false);
       setPasscodeValue('');
@@ -108,25 +155,25 @@ export const MonthlyRevenue = ({ allSubscribers }: MonthlyRevenueProps) => {
             <p className="text-xl font-bold text-primary">{renderValue(totalRevenue)}</p>
             <p className="text-xs text-muted-foreground">جنيه إجمالي</p>
           </div>
-          {/* Eye button */}
+          {/* Eye button - single click for biometric/passcode */}
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); handleEyeClick(); }}
-            onMouseDown={(e) => { e.stopPropagation(); handleLongPressStart(); }}
-            onMouseUp={handleLongPressEnd}
-            onMouseLeave={handleLongPressEnd}
-            onTouchStart={(e) => { e.stopPropagation(); handleLongPressStart(); }}
-            onTouchEnd={handleLongPressEnd}
-            onTouchCancel={handleLongPressEnd}
+            onClick={(e) => { e.stopPropagation(); handleReveal(); }}
             className="w-9 h-9 rounded-xl flex items-center justify-center bg-muted/50 hover:bg-muted transition-colors active:scale-95"
           >
-            {isRevealed ? <Eye className="w-4 h-4 text-primary" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
+            {isAuthenticating ? (
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            ) : isRevealed ? (
+              <Eye className="w-4 h-4 text-primary" />
+            ) : (
+              <EyeOff className="w-4 h-4 text-muted-foreground" />
+            )}
           </button>
           {isExpanded ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
         </div>
       </button>
 
-      {/* Passcode input overlay */}
+      {/* Passcode fallback input */}
       {showPasscodeInput && (
         <div className="mt-4 pt-4 border-t border-border animate-fade-in">
           <div className="flex items-center gap-3 justify-center">

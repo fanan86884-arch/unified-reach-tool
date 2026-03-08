@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Subscriber } from '@/types/subscriber';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Phone, User, Calendar, CreditCard, Dumbbell, PhoneCall } from 'lucide-react';
+import { Search, Phone, User, Calendar, CreditCard, Dumbbell, PhoneCall, Crown } from 'lucide-react';
 import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -35,6 +35,8 @@ export const CustomerLookup = () => {
   const [result, setResult] = useState<Subscriber | null>(null);
   const [searched, setSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [renewalCount, setRenewalCount] = useState(0);
+  const VIP_THRESHOLD = 10;
 
   const handleSearch = async () => {
     setIsSearching(true);
@@ -70,8 +72,16 @@ export const CustomerLookup = () => {
           updatedAt: row.updated_at,
         };
         setResult(subscriber);
+
+        // Fetch renewal count for VIP progress
+        const { count } = await supabase
+          .from('renewal_history')
+          .select('*', { count: 'exact', head: true })
+          .eq('subscriber_id', row.id);
+        setRenewalCount(count || 0);
       } else {
         setResult(null);
+        setRenewalCount(0);
       }
     } catch (e) {
       console.error('Search error:', e);
@@ -230,6 +240,34 @@ export const CustomerLookup = () => {
                         {result.remainingAmount} جنيه
                       </p>
                     </div>
+                  </div>
+
+                  {/* VIP Progress */}
+                  <div className="p-4 bg-muted rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Crown className="w-4 h-4 text-yellow-500" />
+                      <span className="text-sm text-muted-foreground">
+                        {renewalCount >= VIP_THRESHOLD ? 'عميل مميز ⭐' : 'حالة التميز'}
+                      </span>
+                    </div>
+                    {renewalCount >= VIP_THRESHOLD ? (
+                      <p className="font-bold text-yellow-600 dark:text-yellow-400">
+                        مبروك! أنت عميل مميز ({renewalCount} تجديد متتالي)
+                      </p>
+                    ) : (
+                      <>
+                        <div className="w-full h-3 bg-background rounded-full overflow-hidden mb-2">
+                          <div 
+                            className="h-full bg-yellow-500 rounded-full transition-all duration-500"
+                            style={{ width: `${(renewalCount / VIP_THRESHOLD) * 100}%` }}
+                          />
+                        </div>
+                        <p className="text-sm">
+                          <span className="font-bold">{VIP_THRESHOLD - renewalCount}</span>
+                          <span className="text-muted-foreground"> شهور متبقية لتصبح عميل مميز</span>
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               </Card>

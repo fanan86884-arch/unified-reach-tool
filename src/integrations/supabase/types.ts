@@ -290,6 +290,44 @@ export type Database = {
         }
         Relationships: []
       }
+      renewal_history: {
+        Row: {
+          end_date: string
+          id: string
+          paid_amount: number
+          renewed_at: string
+          start_date: string
+          subscriber_id: string
+          user_id: string
+        }
+        Insert: {
+          end_date: string
+          id?: string
+          paid_amount?: number
+          renewed_at?: string
+          start_date: string
+          subscriber_id: string
+          user_id: string
+        }
+        Update: {
+          end_date?: string
+          id?: string
+          paid_amount?: number
+          renewed_at?: string
+          start_date?: string
+          subscriber_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_subscriber"
+            columns: ["subscriber_id"]
+            isOneToOne: false
+            referencedRelation: "subscribers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settings: {
         Row: {
           annual_price: number

@@ -7,6 +7,7 @@ import { Users, Clock, XCircle, AlertTriangle, Pause, MessageCircle, ChevronDown
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { VipClients } from './VipClients';
 
 interface GeneralStatisticsProps {
   stats: {
@@ -18,6 +19,7 @@ interface GeneralStatisticsProps {
     byCaptain: Record<string, Subscriber[]>;
     captains: string[];
   };
+  allSubscribers?: Subscriber[];
 }
 
 const WHATSAPP_QUEUE_PREFIX = 'whatsapp_queue_';
@@ -70,7 +72,7 @@ const getMessageFromTemplate = (templateId: string, sub: Subscriber, defaultMsg:
   return defaultMsg;
 };
 
-export const GeneralStatistics = ({ stats }: GeneralStatisticsProps) => {
+export const GeneralStatistics = ({ stats, allSubscribers = [] }: GeneralStatisticsProps) => {
   const { toast } = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
   const [queues, setQueues] = useState<Record<string, number>>({});
@@ -142,6 +144,9 @@ export const GeneralStatistics = ({ stats }: GeneralStatisticsProps) => {
               onSendAll={() => sendWhatsAppToAll('paused', stats.paused, (sub) => getMessageFromTemplate('paused', sub, `مرحباً ${sub.name}، تم إيقاف اشتراكك لمدة ${formatPauseDuration(sub)}`))}
               buttonLabel={`إرسال للكل${getQueueProgress('paused', stats.paused.length)}`} />
           </div>
+
+          {/* VIP Clients Section */}
+          <VipClients allSubscribers={allSubscribers} />
 
           <h3 className="text-lg font-bold mt-4">إحصائيات الكباتن</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
