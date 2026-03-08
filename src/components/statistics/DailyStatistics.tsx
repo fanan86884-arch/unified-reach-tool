@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { forwardRef, useMemo, useState } from 'react';
 import { Subscriber } from '@/types/subscriber';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,7 +42,7 @@ interface DailyCategoryProps {
   sendWhatsApp: (sub: Subscriber, templateId: string, defaultMsg: string) => void;
 }
 
-const DailyCategory = ({ title, icon, subscribers, templateId, defaultMessage, sendWhatsApp }: DailyCategoryProps) => {
+const DailyCategory = forwardRef<HTMLDivElement, DailyCategoryProps>(({ title, icon, subscribers, templateId, defaultMessage, sendWhatsApp }, ref) => {
   const { toast } = useToast();
   const count = subscribers.length;
   const [sendIndex, setSendIndex] = useState(0);
@@ -117,7 +117,9 @@ const DailyCategory = ({ title, icon, subscribers, templateId, defaultMessage, s
       </AccordionContent>
     </AccordionItem>
   );
-};
+});
+
+DailyCategory.displayName = 'DailyCategory';
 
 export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
   const { templates, loading } = useWhatsAppTemplates();
