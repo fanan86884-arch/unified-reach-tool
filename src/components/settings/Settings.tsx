@@ -15,7 +15,6 @@ import {
   User,
   Phone,
   CreditCard,
-  Brain,
   Bell
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -27,8 +26,6 @@ import { useWhatsAppTemplates } from '@/hooks/useWhatsAppTemplates';
 import { ExcelExportImport } from './ExcelExportImport';
 import { ContactSettings } from './ContactSettings';
 import { PaymentSettings } from './PaymentSettings';
-import { AITrainingSettings } from './AITrainingSettings';
-import { AITrainingChat } from './AITrainingChat';
 import { PushNotificationSettings } from './PushNotificationSettings';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import {
@@ -219,18 +216,6 @@ export const Settings = () => {
         </div>
       </SettingsSection>
 
-      {/* AI Training Settings */}
-      <SettingsSection title="تدريب الذكاء الاصطناعي" icon={Brain}>
-        <div className="mt-4 space-y-6">
-          <AITrainingChat />
-          <div className="border-t pt-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              أو أضف أمثلة يدوياً من هنا:
-            </p>
-            <AITrainingSettings />
-          </div>
-        </div>
-      </SettingsSection>
 
       {/* Save Button */}
       <Button onClick={handleSave} className="w-full" disabled={isSaving}>
