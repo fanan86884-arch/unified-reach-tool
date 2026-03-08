@@ -145,6 +145,9 @@ export const GeneralStatistics = ({ stats, allSubscribers = [] }: GeneralStatist
               buttonLabel={`إرسال للكل${getQueueProgress('paused', stats.paused.length)}`} />
           </div>
 
+          {/* VIP Clients Section */}
+          <VipClients allSubscribers={allSubscribers} />
+
           <h3 className="text-lg font-bold mt-4">إحصائيات الكباتن</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {stats.captains.map((captain) => {
