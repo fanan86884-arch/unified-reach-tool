@@ -4,8 +4,8 @@ import { SubscriberCardCompact } from '@/components/subscribers/SubscriberCardCo
 import { Archive as ArchiveIcon, Search, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
-import { WhatsAppDialog } from '@/components/subscribers/WhatsAppDialog';
 import { RestoreConfirmDialog } from './RestoreConfirmDialog';
+import { Button } from '@/components/ui/button';
 
 interface ArchiveProps {
   archivedSubscribers: Subscriber[];
