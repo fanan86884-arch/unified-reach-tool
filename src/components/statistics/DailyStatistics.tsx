@@ -171,7 +171,8 @@ export const DailyStatistics = ({ allSubscribers }: DailyStatisticsProps) => {
   return (
     <Card className="p-4 card-shadow">
       <h3 className="font-bold text-base mb-4 flex items-center gap-2">
-        📊 الإحصائيات اليومية
+        <CalendarDays className="w-5 h-5 text-primary" />
+        الإحصائيات اليومية
       </h3>
       <Accordion type="multiple" className="space-y-2">
         <DailyCategory
