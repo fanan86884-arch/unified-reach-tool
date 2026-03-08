@@ -114,7 +114,7 @@ html {
     --card: 0 0% 8%;
     --card-foreground: 0 0% 95%;
 
-    --popover: 0 0% 8% / 0.8;
+    --popover: 0 0% 8%;
     --popover-foreground: 0 0% 95%;
 
     /* Golden/Yellow - Logo Color */
