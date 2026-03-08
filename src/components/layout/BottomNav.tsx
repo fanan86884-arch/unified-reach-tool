@@ -23,7 +23,7 @@ export const BottomNav = ({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background/95 dark:bg-[hsl(0_0%_7%)]/95 backdrop-blur-xl z-50 pb-safe select-none">
+    <nav className="fixed bottom-0 left-0 right-0 bg-card/90 dark:bg-[hsl(20_8%_8%)]/90 backdrop-blur-2xl z-50 pb-safe select-none">
       <div className="flex justify-around items-center h-16 max-w-lg mx-auto px-2">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
