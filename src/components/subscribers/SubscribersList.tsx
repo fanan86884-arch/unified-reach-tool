@@ -128,7 +128,7 @@ export const SubscribersList = ({
   const handleResume = (id: string) => {
     if (resumeSubscription) {
       resumeSubscription(id);
-      toast({ title: 'تم استئناف الاشتراك بنجاح' });
+      toast({ title: t.actions.resume });
     }
   };
 
