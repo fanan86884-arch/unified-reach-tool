@@ -694,7 +694,7 @@ ${currentPlan}
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent 
         side="left" 
-        className="w-screen max-w-none h-[100dvh] p-0 flex flex-col rounded-none border-0"
+        className="w-screen max-w-none h-[100dvh] p-0 flex flex-col rounded-none border-0 [&>button]:hidden"
         onTouchStart={handleSheetTouchStart}
         onTouchEnd={handleSheetTouchEnd}
       >
