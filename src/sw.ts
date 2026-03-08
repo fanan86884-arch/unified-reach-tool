@@ -117,7 +117,7 @@ self.addEventListener("push", (event) => {
   // Use unique tag so multiple notifications don't collapse
   const tag = `${data.tag || "notification"}-${Date.now()}`;
 
-  const options: NotificationOptions = {
+  const options: any = {
     body: data.body,
     icon: data.icon || "/logo-icon.png",
     badge: data.badge || "/logo-icon.png",
