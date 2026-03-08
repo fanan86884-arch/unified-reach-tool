@@ -186,7 +186,7 @@ export const SubscriberCardCompact = ({
 
       {/* Expanded Details */}
       {isExpanded && (
-        <div className="px-4 pb-4 border-t border-border/50 pt-3 animate-fade-in">
+        <div className="px-4 pb-4 pt-3 animate-fade-in">
           <div className="grid grid-cols-2 gap-3 text-sm mb-4">
             <div>
               <span className="text-muted-foreground">الهاتف:</span>
