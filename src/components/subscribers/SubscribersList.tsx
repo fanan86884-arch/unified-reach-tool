@@ -209,10 +209,10 @@ export const SubscribersList = ({
             </Select>
             <Select value={filterCaptain} onValueChange={setFilterCaptain}>
               <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="الكابتن" />
+                <SelectValue placeholder={t.filters.captain} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">كل الكباتن</SelectItem>
+                <SelectItem value="all">{t.filters.allCaptains}</SelectItem>
                 {captains.map((captain) => (
                   <SelectItem key={captain} value={captain}>
                     {captain}
