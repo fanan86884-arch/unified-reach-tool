@@ -26,8 +26,6 @@ import { useWhatsAppTemplates } from '@/hooks/useWhatsAppTemplates';
 import { ExcelExportImport } from './ExcelExportImport';
 import { ContactSettings } from './ContactSettings';
 import { PaymentSettings } from './PaymentSettings';
-import { AITrainingSettings } from './AITrainingSettings';
-import { AITrainingChat } from './AITrainingChat';
 import { PushNotificationSettings } from './PushNotificationSettings';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import {
