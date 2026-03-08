@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { WhatsAppDialog } from '@/components/subscribers/WhatsAppDialog';
 import { RestoreConfirmDialog } from './RestoreConfirmDialog';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface ArchiveProps {
   archivedSubscribers: Subscriber[];
@@ -20,6 +21,7 @@ export const Archive = ({
   deleteSubscriber,
 }: ArchiveProps) => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [whatsAppSubscriber, setWhatsAppSubscriber] = useState<Subscriber | null>(null);
@@ -32,15 +34,15 @@ export const Archive = ({
   const confirmRestore = () => {
     if (restoreConfirmSubscriber) {
       restoreSubscriber(restoreConfirmSubscriber.id);
-      toast({ title: 'تم استعادة المشترك بنجاح' });
+      toast({ title: t.subscribers.restoredSuccess });
       setRestoreConfirmSubscriber(null);
     }
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا المشترك نهائياً؟')) {
+    if (confirm(t.subscribers.deleteConfirm)) {
       deleteSubscriber(id);
-      toast({ title: 'تم حذف المشترك نهائياً', variant: 'destructive' });
+      toast({ title: t.subscribers.deletedSuccess, variant: 'destructive' });
     }
   };
 
@@ -48,7 +50,6 @@ export const Archive = ({
     setWhatsAppSubscriber(subscriber);
   };
 
-  // فلترة المشتركين بناءً على البحث
   const filteredSubscribers = archivedSubscribers.filter((subscriber) =>
     subscriber.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     subscriber.phone.includes(searchQuery)
@@ -59,7 +60,7 @@ export const Archive = ({
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <ArchiveIcon className="w-5 h-5 text-primary" />
-          الأرشيف
+          {t.archive.title}
         </h2>
         <Button
           variant="ghost"
@@ -71,7 +72,6 @@ export const Archive = ({
         </Button>
       </div>
 
-      {/* خانة البحث */}
       <div
         className="overflow-hidden transition-all duration-300 ease-in-out"
         style={{ maxHeight: showSearch ? '60px' : '0', opacity: showSearch ? 1 : 0 }}
@@ -79,7 +79,7 @@ export const Archive = ({
         <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="ابحث عن مشترك..."
+            placeholder={t.archive.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pr-10"
@@ -91,7 +91,7 @@ export const Archive = ({
         <div className="text-center py-12">
           <ArchiveIcon className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
           <p className="text-muted-foreground text-lg">
-            {searchQuery ? 'لا توجد نتائج للبحث' : 'لا يوجد مشتركين في الأرشيف'}
+            {searchQuery ? t.archive.noSearchResults : t.archive.noArchived}
           </p>
         </div>
       ) : (
@@ -114,14 +114,12 @@ export const Archive = ({
         </div>
       )}
 
-      {/* WhatsApp Dialog */}
       <WhatsAppDialog
         isOpen={!!whatsAppSubscriber}
         onClose={() => setWhatsAppSubscriber(null)}
         subscriber={whatsAppSubscriber}
       />
 
-      {/* Restore Confirm Dialog */}
       <RestoreConfirmDialog
         isOpen={!!restoreConfirmSubscriber}
         onClose={() => setRestoreConfirmSubscriber(null)}
