@@ -72,8 +72,16 @@ export const CustomerLookup = () => {
           updatedAt: row.updated_at,
         };
         setResult(subscriber);
+
+        // Fetch renewal count for VIP progress
+        const { count } = await supabase
+          .from('renewal_history')
+          .select('*', { count: 'exact', head: true })
+          .eq('subscriber_id', row.id);
+        setRenewalCount(count || 0);
       } else {
         setResult(null);
+        setRenewalCount(0);
       }
     } catch (e) {
       console.error('Search error:', e);
