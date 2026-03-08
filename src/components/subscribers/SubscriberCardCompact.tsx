@@ -160,8 +160,8 @@ export const SubscriberCardCompact = ({
           const expiredMonths = daysDiff < 0 ? monthsSinceExpiry : 0;
           return (
             <Badge variant="outline" className="bg-warning/15 text-warning border-warning/30 text-[10px] px-2 py-1 whitespace-nowrap flex flex-col items-center shrink-0 ml-2">
-              <span className="flex items-center">
-                <ArchiveRestore className="w-3 h-3 ml-1.5" />
+              <span className="flex items-center gap-1.5">
+                <ArchiveRestore className="w-3 h-3" />
                 {t.status.archived}
               </span>
               {expiredMonths > 0 && (
