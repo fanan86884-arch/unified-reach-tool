@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Plus, Search, Filter, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface SubscribersListProps {
   subscribers: Subscriber[];
