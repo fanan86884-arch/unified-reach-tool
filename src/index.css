@@ -139,7 +139,7 @@ html {
     --warning: 38 92% 55%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 0 0% 18% / 0.5;
+    --border: 0 0% 18% / 0.25;
     --input: 0 0% 12%;
     --ring: 45 100% 55%;
 
