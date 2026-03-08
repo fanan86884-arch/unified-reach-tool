@@ -539,7 +539,7 @@ ${currentPlan}
   const renderChatInterface = () => (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="pt-safe-top p-4 border-b border-border flex items-center gap-3">
+      <div className="p-4 border-b border-border flex items-center gap-3" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
         <div className="flex-1">
           <p className="font-medium">{selectedRequest?.name}</p>
           <p className="text-sm text-muted-foreground">
