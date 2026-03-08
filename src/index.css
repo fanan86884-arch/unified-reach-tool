@@ -84,7 +84,7 @@ html {
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 220 13% 91% / 0.6;
+    --border: 220 13% 91% / 0.3;
     --input: 220 13% 91%;
     --ring: 45 100% 50%;
 
@@ -139,7 +139,7 @@ html {
     --warning: 38 92% 55%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 0 0% 18% / 0.5;
+    --border: 0 0% 18% / 0.25;
     --input: 0 0% 12%;
     --ring: 45 100% 55%;
 
