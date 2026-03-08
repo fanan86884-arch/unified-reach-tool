@@ -29,7 +29,7 @@ export const Statistics = ({ stats, allSubscribers = [] }: StatisticsProps) => {
       <DailyStatistics allSubscribers={allSubscribers} />
 
       {/* 2. General Statistics */}
-      <GeneralStatistics stats={stats} />
+      <GeneralStatistics stats={stats} allSubscribers={allSubscribers} />
 
       {/* 3. Monthly Revenue */}
       <MonthlyRevenue allSubscribers={allSubscribers} />

@@ -35,6 +35,8 @@ export const CustomerLookup = () => {
   const [result, setResult] = useState<Subscriber | null>(null);
   const [searched, setSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [renewalCount, setRenewalCount] = useState(0);
+  const VIP_THRESHOLD = 10;
 
   const handleSearch = async () => {
     setIsSearching(true);
