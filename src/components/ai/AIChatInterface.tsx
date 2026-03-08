@@ -378,6 +378,38 @@ ${currentPlan}
     setCurrentPlan('');
   };
 
+  const handleDeleteDietRequest = async (id: string) => {
+    try {
+      await supabase.from('diet_requests').update({ status: 'dismissed' }).eq('id', id);
+      setDietRequests(prev => prev.filter(r => r.id !== id));
+      toast({ title: 'تم حذف الطلب' });
+    } catch (e) {
+      console.error('Error deleting diet request:', e);
+    }
+  };
+
+  const handleDeleteWorkoutRequest = async (id: string) => {
+    try {
+      await supabase.from('workout_requests').update({ status: 'dismissed' }).eq('id', id);
+      setWorkoutRequests(prev => prev.filter(r => r.id !== id));
+      toast({ title: 'تم حذف الطلب' });
+    } catch (e) {
+      console.error('Error deleting workout request:', e);
+    }
+  };
+
+  const handleDeletePlan = async (id: string) => {
+    try {
+      // Delete associated messages first, then the plan
+      await supabase.from('diet_plan_messages').delete().eq('diet_plan_id', id);
+      await supabase.from('diet_plans').delete().eq('id', id);
+      setSavedPlans(prev => prev.filter(p => p.id !== id));
+      toast({ title: 'تم حذف النظام من السجل' });
+    } catch (e) {
+      console.error('Error deleting plan:', e);
+    }
+  };
+
   const renderRequestsList = () => (
     <div className="space-y-4 p-4">
       {activeTab === 'diet' && (
@@ -398,24 +430,25 @@ ${currentPlan}
           ) : (
             <div className="space-y-3">
               {dietRequests.map((req) => (
-                <Card 
-                  key={req.id} 
-                  className="p-4 cursor-pointer hover:border-primary transition-colors"
-                  onClick={() => handleSelectDietRequest(req)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <User className="w-5 h-5 text-primary" />
+                <SwipeableItem key={req.id} onDelete={() => handleDeleteDietRequest(req.id)}>
+                  <Card 
+                    className="p-4 cursor-pointer hover:border-primary transition-colors"
+                    onClick={() => handleSelectDietRequest(req)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{req.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {goalLabels[req.goal]} • {req.weight}كجم • {req.age} سنة
+                        </p>
+                      </div>
+                      <Sparkles className="w-5 h-5 text-primary" />
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{req.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {goalLabels[req.goal]} • {req.weight}كجم • {req.age} سنة
-                      </p>
-                    </div>
-                    <Sparkles className="w-5 h-5 text-primary" />
-                  </div>
-                </Card>
+                  </Card>
+                </SwipeableItem>
               ))}
             </div>
           )}
@@ -425,7 +458,7 @@ ${currentPlan}
       {activeTab === 'workout' && (
         <>
           <div className="flex items-center gap-2 mb-4">
-            <Dumbbell className="w-5 h-5 text-orange-500" />
+            <Dumbbell className="w-5 h-5 text-primary" />
             <h3 className="font-bold">طلبات أنظمة التمرين</h3>
             {workoutRequests.length > 0 && (
               <Badge variant="secondary">{workoutRequests.length}</Badge>
@@ -440,24 +473,25 @@ ${currentPlan}
           ) : (
             <div className="space-y-3">
               {workoutRequests.map((req) => (
-                <Card 
-                  key={req.id} 
-                  className="p-4 cursor-pointer hover:border-orange-500 transition-colors"
-                  onClick={() => handleSelectWorkoutRequest(req)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center">
-                      <User className="w-5 h-5 text-orange-500" />
+                <SwipeableItem key={req.id} onDelete={() => handleDeleteWorkoutRequest(req.id)}>
+                  <Card 
+                    className="p-4 cursor-pointer hover:border-primary transition-colors"
+                    onClick={() => handleSelectWorkoutRequest(req)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{req.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {goalLabels[req.goal]} • {req.training_days} أيام/أسبوع
+                        </p>
+                      </div>
+                      <Sparkles className="w-5 h-5 text-primary" />
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{req.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {goalLabels[req.goal]} • {req.training_days} أيام/أسبوع
-                      </p>
-                    </div>
-                    <Sparkles className="w-5 h-5 text-orange-500" />
-                  </div>
-                </Card>
+                  </Card>
+                </SwipeableItem>
               ))}
             </div>
           )}
@@ -479,19 +513,21 @@ ${currentPlan}
           ) : (
             <div className="space-y-3">
               {savedPlans.map((plan) => (
-                <Card key={plan.id} className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{plan.client_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(plan.created_at).toLocaleDateString('ar-EG')}
-                      </p>
+                <SwipeableItem key={plan.id} onDelete={() => handleDeletePlan(plan.id)}>
+                  <Card className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{plan.client_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(plan.created_at).toLocaleDateString('ar-EG')}
+                        </p>
+                      </div>
+                      <Badge variant={plan.status === 'sent' ? 'default' : 'secondary'}>
+                        {plan.status === 'sent' ? 'مرسل' : 'معتمد'}
+                      </Badge>
                     </div>
-                    <Badge variant={plan.status === 'sent' ? 'default' : 'secondary'}>
-                      {plan.status === 'sent' ? 'مرسل' : 'معتمد'}
-                    </Badge>
-                  </div>
-                </Card>
+                  </Card>
+                </SwipeableItem>
               ))}
             </div>
           )}
