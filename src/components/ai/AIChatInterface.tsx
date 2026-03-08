@@ -8,8 +8,9 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   Sparkles, Send, Loader2, User, Salad, Dumbbell, 
-  Check, Copy, MessageSquare, History, X, Phone
+  Check, Copy, MessageSquare, History, X, Phone, Trash2
 } from 'lucide-react';
+import { SwipeableItem } from '@/components/ui/swipeable-item';
 import { supabase } from '@/integrations/supabase/client.runtime';
 import { useToast } from '@/hooks/use-toast';
 import { buildWhatsAppLink } from '@/lib/phone';
