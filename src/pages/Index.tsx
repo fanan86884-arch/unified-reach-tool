@@ -151,7 +151,7 @@ const Index = () => {
       
       <main 
         ref={mainRef}
-        className="container px-4 py-6 pb-24 overflow-y-auto"
+        className="container px-4 md:px-8 py-6 pb-24 overflow-y-auto"
         onTouchStart={(e) => handleTouchStart(e, mainRef.current?.scrollTop ?? 0)}
         onTouchMove={(e) => handleTouchMove(e, mainRef.current?.scrollTop ?? 0)}
         onTouchEnd={handleTouchEnd}
