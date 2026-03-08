@@ -1,4 +1,4 @@
-import { memo, Suspense, lazy } from 'react';
+import { memo, Suspense, lazy, useRef, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { SubscribersTab } from './SubscribersTab';
 import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subscriber';
@@ -48,6 +48,34 @@ const LoadingFallback = () => (
   </div>
 );
 
+// Animated wrapper for tab transitions
+const TabTransition = ({ tabKey, children }: { tabKey: string; children: React.ReactNode }) => {
+  const [visible, setVisible] = useState(false);
+  const prevKey = useRef(tabKey);
+
+  useEffect(() => {
+    if (prevKey.current !== tabKey) {
+      setVisible(false);
+      prevKey.current = tabKey;
+    }
+    // Small delay to trigger enter animation
+    const t = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(t);
+  }, [tabKey]);
+
+  return (
+    <div
+      className="transition-all duration-300 ease-out"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(12px)',
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
 export const TabContent = memo(({
   activeTab,
   subscribers,
@@ -70,60 +98,68 @@ export const TabContent = memo(({
   pauseSubscription,
   resumeSubscription,
 }: TabContentProps) => {
-  switch (activeTab) {
-    case 'subscribers':
-      return (
-        <SubscribersTab
-          subscribers={subscribers}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
-          filterCaptain={filterCaptain}
-          setFilterCaptain={setFilterCaptain}
-          filterDateRange={filterDateRange}
-          setFilterDateRange={setFilterDateRange}
-          addSubscriber={addSubscriber}
-          updateSubscriber={updateSubscriber}
-          deleteSubscriber={deleteSubscriber}
-          archiveSubscriber={archiveSubscriber}
-          restoreSubscriber={restoreSubscriber}
-          renewSubscription={renewSubscription}
-          pauseSubscription={pauseSubscription}
-          resumeSubscription={resumeSubscription}
-        />
-      );
-    case 'statistics':
-      return (
-        <Suspense fallback={<LoadingFallback />}>
-          <Statistics stats={stats} allSubscribers={subscribers} />
-        </Suspense>
-      );
-    case 'archive':
-      return (
-        <Suspense fallback={<LoadingFallback />}>
-          <Archive
-            archivedSubscribers={archivedSubscribers}
-            restoreSubscriber={restoreSubscriber}
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'subscribers':
+        return (
+          <SubscribersTab
+            subscribers={subscribers}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            filterCaptain={filterCaptain}
+            setFilterCaptain={setFilterCaptain}
+            filterDateRange={filterDateRange}
+            setFilterDateRange={setFilterDateRange}
+            addSubscriber={addSubscriber}
+            updateSubscriber={updateSubscriber}
             deleteSubscriber={deleteSubscriber}
+            archiveSubscriber={archiveSubscriber}
+            restoreSubscriber={restoreSubscriber}
+            renewSubscription={renewSubscription}
+            pauseSubscription={pauseSubscription}
+            resumeSubscription={resumeSubscription}
           />
-        </Suspense>
-      );
-    case 'notifications':
-      return (
-        <Suspense fallback={<LoadingFallback />}>
-          <Notifications stats={stats} />
-        </Suspense>
-      );
-    case 'settings':
-      return (
-        <Suspense fallback={<LoadingFallback />}>
-          <Settings />
-        </Suspense>
-      );
-    default:
-      return null;
-  }
+        );
+      case 'statistics':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <Statistics stats={stats} allSubscribers={subscribers} />
+          </Suspense>
+        );
+      case 'archive':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <Archive
+              archivedSubscribers={archivedSubscribers}
+              restoreSubscriber={restoreSubscriber}
+              deleteSubscriber={deleteSubscriber}
+            />
+          </Suspense>
+        );
+      case 'notifications':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <Notifications stats={stats} />
+          </Suspense>
+        );
+      case 'settings':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <Settings />
+          </Suspense>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <TabTransition tabKey={activeTab}>
+      {renderContent()}
+    </TabTransition>
+  );
 });
 
 TabContent.displayName = 'TabContent';

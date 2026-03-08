@@ -230,19 +230,24 @@ export const SubscribersList = ({
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {subscribers.map((subscriber) => (
-            <SubscriberCardCompact
+          {subscribers.map((subscriber, index) => (
+            <div
               key={subscriber.id}
-              subscriber={subscriber}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onArchive={archiveSubscriber}
-              onRestore={handleRestore}
-              onRenew={handleRenew}
-              onWhatsApp={handleWhatsApp}
-              onPause={handlePause}
-              onResume={handleResume}
-            />
+              className="animate-fade-in"
+              style={{ animationDelay: `${Math.min(index * 40, 400)}ms`, animationFillMode: 'both' }}
+            >
+              <SubscriberCardCompact
+                subscriber={subscriber}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onArchive={archiveSubscriber}
+                onRestore={handleRestore}
+                onRenew={handleRenew}
+                onWhatsApp={handleWhatsApp}
+                onPause={handlePause}
+                onResume={handleResume}
+              />
+            </div>
           ))}
         </div>
       )}
