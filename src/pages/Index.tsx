@@ -144,7 +144,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background select-none">
+    <div className="min-h-screen bg-background select-none max-w-5xl mx-auto">
       <Header onOpenActivityLog={handleOpenActivityLog} isRefreshing={isRefreshing} />
       
       <PullToRefresh pullDistance={pullDistance} isRefreshing={isRefreshing} />
