@@ -12,6 +12,44 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function base64urlEncode(data: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function getOrCreateVapidKeys(supabase: any) {
+  const { data } = await supabase
+    .from('system_config')
+    .select('value')
+    .eq('key', 'vapid_keys')
+    .single();
+
+  if (data?.value) return data.value;
+
+  const keyPair = await crypto.subtle.generateKey(
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    true,
+    ['sign']
+  );
+
+  const publicKeyRaw = new Uint8Array(
+    await crypto.subtle.exportKey('raw', keyPair.publicKey)
+  );
+  const privateKeyJwk = await crypto.subtle.exportKey('jwk', keyPair.privateKey);
+
+  const keys = {
+    publicKey: base64urlEncode(publicKeyRaw),
+    privateKey: privateKeyJwk.d,
+  };
+
+  await supabase
+    .from('system_config')
+    .upsert({ key: 'vapid_keys', value: keys });
+
+  return keys;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -24,24 +62,13 @@ serve(async (req) => {
 
     const { title, body, type, data: notifData } = await req.json();
 
-    // Get VAPID keys from system_config
-    const { data: configData, error: configError } = await supabase
-      .from('system_config')
-      .select('value')
-      .eq('key', 'vapid_keys')
-      .single();
-
-    if (configError || !configData?.value) {
-      return new Response(
-        JSON.stringify({ error: 'VAPID keys not configured. Call get-push-config first.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Auto-generate VAPID keys if not configured
+    const vapidConfig = await getOrCreateVapidKeys(supabase);
 
     const vapidKeys: VapidKeys = {
       subject: 'mailto:admin@2bgym.com',
-      publicKey: configData.value.publicKey,
-      privateKey: configData.value.privateKey,
+      publicKey: vapidConfig.publicKey,
+      privateKey: vapidConfig.privateKey,
     };
 
     // Get all push subscriptions
