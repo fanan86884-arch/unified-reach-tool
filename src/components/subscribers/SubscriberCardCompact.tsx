@@ -183,7 +183,7 @@ export const SubscriberCardCompact = ({
                 مؤرشف
               </span>
               {expiredMonths > 0 && (
-                <span className="text-[9px] text-muted-foreground whitespace-nowrap">
+                <span className="text-[9px] text-warning whitespace-nowrap">
                   منذ {expiredMonths} {expiredMonths === 1 ? 'شهر' : expiredMonths <= 10 ? 'شهور' : 'شهر'}
                 </span>
               )}
