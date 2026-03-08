@@ -636,6 +636,15 @@ export const useCloudSubscribers = () => {
         newEndDate: formattedEndDate,
         paidAmount,
       }, subscriber);
+
+      // Record in renewal_history for VIP tracking
+      await supabase.from('renewal_history').insert({
+        subscriber_id: id,
+        user_id: user.id,
+        start_date: formattedStartDate,
+        end_date: formattedEndDate,
+        paid_amount: paidAmount,
+      });
     }
   }, [user, subscribers, isOnline]);
 
