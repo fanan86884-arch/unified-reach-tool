@@ -42,7 +42,7 @@ interface DailyCategoryProps {
   sendWhatsApp: (sub: Subscriber, templateId: string, defaultMsg: string) => void;
 }
 
-const DailyCategory = ({ title, icon, subscribers, templateId, defaultMessage, sendWhatsApp }: DailyCategoryProps) => {
+const DailyCategory = forwardRef<HTMLDivElement, DailyCategoryProps>(({ title, icon, subscribers, templateId, defaultMessage, sendWhatsApp }, ref) => {
   const { toast } = useToast();
   const count = subscribers.length;
   const [sendIndex, setSendIndex] = useState(0);
