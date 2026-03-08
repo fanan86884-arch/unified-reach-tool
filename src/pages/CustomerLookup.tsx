@@ -270,6 +270,7 @@ export const CustomerLookup = () => {
                     )}
                   </div>
                 </div>
+              </Card>
             ) : (
               <Card className="p-8 text-center card-shadow">
                 <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
