@@ -144,7 +144,7 @@ export const SubscribersList = ({
     setIsWhatsAppOpen(true);
   };
 
-  const captains = ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
+  const captains = stats.captains.length > 0 ? stats.captains : ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
 
   // Expose method to open form externally
   const handleOpenForm = () => {
