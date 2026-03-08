@@ -52,9 +52,8 @@ export const Header = ({ onOpenActivityLog, isRefreshing = false }: HeaderProps)
               <Sparkles className="w-5 h-5 text-primary" />
             </Button>
           </div>
-          <div className="flex items-center gap-3 select-none">
+          <div className="flex items-center select-none">
             <img src={logo} alt="2B GYM Logo" className="w-9 h-9 object-contain drop-shadow-lg pointer-events-none" />
-            <h1 className="text-xl font-black tracking-tight text-foreground">2B GYM</h1>
           </div>
           {onOpenActivityLog && (
             <Button
