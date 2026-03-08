@@ -26,6 +26,7 @@ import { addDays, format, parse } from 'date-fns';
 import { useCloudSettings } from '@/hooks/useCloudSettings';
 import { Loader2, CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface SubscriberFormProps {
   isOpen: boolean;
@@ -35,19 +36,11 @@ interface SubscriberFormProps {
   captains: string[];
 }
 
-// مدة الاشتراك بالأيام (الشهر = 30 يوم)
 const subscriptionDurations: Record<SubscriptionType, number> = {
   monthly: 30,
   quarterly: 90,
   'semi-annual': 180,
   annual: 365,
-};
-
-const subscriptionLabels: Record<SubscriptionType, string> = {
-  monthly: 'شهري',
-  quarterly: 'ربع سنوي',
-  'semi-annual': 'نصف سنوي',
-  annual: 'سنوي',
 };
 
 const getInitialFormData = (editingSubscriber: Subscriber | null | undefined, defaultPrice: number, captain: string): SubscriberFormData => {
@@ -86,6 +79,7 @@ export const SubscriberForm = ({
   captains,
 }: SubscriberFormProps) => {
   const { getPrice, calculateRemaining, loading: settingsLoading } = useCloudSettings();
+  const { t } = useLanguage();
   const defaultCaptain = captains[0] || 'كابتن خالد';
   
   const [formData, setFormData] = useState<SubscriberFormData>(() => 
@@ -94,7 +88,6 @@ export const SubscriberForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isInitialized = useRef(false);
 
-  // Initialize form only when dialog opens
   useEffect(() => {
     if (!isOpen) {
       isInitialized.current = false;
@@ -153,36 +146,36 @@ export const SubscriberForm = ({
         <div className="overflow-y-auto flex-1 -mx-6 px-6 scrollbar-thin" style={{ WebkitOverflowScrolling: 'touch' }}>
         <DialogHeader>
           <DialogTitle>
-            {editingSubscriber ? 'تعديل مشترك' : 'إضافة مشترك جديد'}
+            {editingSubscriber ? t.subscribers.editSubscriber : t.subscribers.addNew}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">الاسم</Label>
+            <Label htmlFor="name">{t.form.name}</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="أدخل اسم المشترك"
+              placeholder={t.form.namePlaceholder}
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">رقم الموبايل</Label>
+            <Label htmlFor="phone">{t.form.phone}</Label>
             <Input
               id="phone"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="01xxxxxxxxx"
+              placeholder={t.form.phonePlaceholder}
               required
               dir="ltr"
             />
-            <p className="text-xs text-muted-foreground">رقم مصري بدون مفتاح الدولة</p>
+            <p className="text-xs text-muted-foreground">{t.form.phoneHint}</p>
           </div>
 
           <div className="space-y-2">
-            <Label>نوع الاشتراك</Label>
+            <Label>{t.form.subscriptionType}</Label>
             <Select
               value={formData.subscriptionType}
               onValueChange={(value) => handleSubscriptionTypeChange(value as SubscriptionType)}
@@ -191,9 +184,9 @@ export const SubscriberForm = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(subscriptionLabels).map(([value, label]) => (
+                {(Object.keys(subscriptionDurations) as SubscriptionType[]).map((value) => (
                   <SelectItem key={value} value={value}>
-                    {label} - {getPrice(value as SubscriptionType)} جنيه
+                    {t.subscriptionTypes[value]} - {getPrice(value)} {t.common.currency}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -201,7 +194,7 @@ export const SubscriberForm = ({
           </div>
 
           <div className="space-y-2">
-            <Label>الكابتن</Label>
+            <Label>{t.form.captain}</Label>
             <Select
               value={formData.captain}
               onValueChange={(value) => setFormData({ ...formData, captain: value })}
@@ -210,16 +203,16 @@ export const SubscriberForm = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="كابتن خالد">كابتن خالد</SelectItem>
-                <SelectItem value="كابتن محمد">كابتن محمد</SelectItem>
-                <SelectItem value="كابتن أحمد">كابتن أحمد</SelectItem>
+                {captains.map((captain) => (
+                  <SelectItem key={captain} value={captain}>{captain}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>تاريخ البداية</Label>
+              <Label>{t.form.startDate}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -228,7 +221,7 @@ export const SubscriberForm = ({
                     dir="ltr"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.startDate ? format(parse(formData.startDate, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : 'اختر تاريخ'}
+                    {formData.startDate ? format(parse(formData.startDate, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : t.form.selectDate}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -252,7 +245,7 @@ export const SubscriberForm = ({
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label>تاريخ الانتهاء</Label>
+              <Label>{t.form.endDate}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -261,7 +254,7 @@ export const SubscriberForm = ({
                     dir="ltr"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.endDate ? format(parse(formData.endDate, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : 'اختر تاريخ'}
+                    {formData.endDate ? format(parse(formData.endDate, 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : t.form.selectDate}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -286,7 +279,7 @@ export const SubscriberForm = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="paidAmount">المبلغ المدفوع</Label>
+              <Label htmlFor="paidAmount">{t.form.paidAmount}</Label>
               <Input
                 id="paidAmount"
                 type="number"
@@ -298,7 +291,7 @@ export const SubscriberForm = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="remainingAmount">المبلغ المتبقي</Label>
+              <Label htmlFor="remainingAmount">{t.form.remainingAmount}</Label>
               <Input
                 id="remainingAmount"
                 type="number"
@@ -315,11 +308,11 @@ export const SubscriberForm = ({
               {isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                editingSubscriber ? 'حفظ التعديلات' : 'إضافة المشترك'
+                editingSubscriber ? t.subscribers.saveChanges : t.subscribers.addSubscriber
               )}
             </Button>
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
-              إلغاء
+              {t.common.cancel}
             </Button>
           </div>
         </form>

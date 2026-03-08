@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Users, Clock, XCircle, AlertTriangle, Pause, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO, differenceInDays } from 'date-fns';
-import { ar } from 'date-fns/locale';
+import { ar as arLocale } from 'date-fns/locale';
 import { VipClients } from './VipClients';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface GeneralStatisticsProps {
   stats: {
@@ -32,17 +33,17 @@ const formatPhone = (phone: string): string => {
 };
 
 const formatDate = (dateStr: string): string => {
-  return format(parseISO(dateStr), 'dd/MM/yyyy', { locale: ar });
+  return format(parseISO(dateStr), 'dd/MM/yyyy', { locale: arLocale });
 };
 
 const formatPauseDuration = (subscriber: Subscriber): string => {
   if (!subscriber.pausedUntil) return '';
   const pauseEnd = parseISO(subscriber.pausedUntil);
   const days = differenceInDays(pauseEnd, new Date());
-  if (days <= 7) return `${days} أيام`;
-  if (days <= 14) return 'أسبوعين';
-  if (days <= 30) return 'شهر';
-  return `${days} يوم`;
+  if (days <= 7) return `${days} days`;
+  if (days <= 14) return '2 weeks';
+  if (days <= 30) return '1 month';
+  return `${days} days`;
 };
 
 const getTemplates = () => {
@@ -74,12 +75,13 @@ const getMessageFromTemplate = (templateId: string, sub: Subscriber, defaultMsg:
 
 export const GeneralStatistics = ({ stats, allSubscribers = [] }: GeneralStatisticsProps) => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
   const [queues, setQueues] = useState<Record<string, number>>({});
 
   const sendWhatsAppToAll = (categoryId: string, subscribers: Subscriber[], getMessage: (sub: Subscriber) => string) => {
     if (subscribers.length === 0) {
-      toast({ title: 'لا يوجد مشتركين في هذه الفئة', variant: 'destructive' });
+      toast({ title: t.statistics.noSubscribersInCategory, variant: 'destructive' });
       return;
     }
     const queueKey = WHATSAPP_QUEUE_PREFIX + categoryId;
@@ -95,11 +97,11 @@ export const GeneralStatistics = ({ stats, allSubscribers = [] }: GeneralStatist
     if (nextIndex >= subscribers.length) {
       localStorage.removeItem(queueKey);
       setQueues(prev => { const n = { ...prev }; delete n[queueKey]; return n; });
-      toast({ title: 'تم إرسال جميع الرسائل بنجاح!' });
+      toast({ title: t.statistics.allMessagesSent });
     } else {
       localStorage.setItem(queueKey, JSON.stringify({ index: nextIndex, total: subscribers.length }));
       setQueues(prev => ({ ...prev, [queueKey]: nextIndex }));
-      toast({ title: `تم إرسال ${currentIndex + 1} من ${subscribers.length}`, description: 'اضغط "إرسال للكل" للمشترك التالي' });
+      toast({ title: `${t.statistics.messageSent} ${currentIndex + 1} ${t.statistics.of} ${subscribers.length}`, description: t.statistics.pressNextToSend });
     }
   };
 
@@ -120,7 +122,7 @@ export const GeneralStatistics = ({ stats, allSubscribers = [] }: GeneralStatist
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <Users className="w-5 h-5 text-primary" />
           </div>
-          <h3 className="font-bold text-sm">الإحصائيات العامة</h3>
+          <h3 className="font-bold text-sm">{t.statistics.general}</h3>
         </div>
         {isExpanded ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
       </button>
@@ -128,27 +130,26 @@ export const GeneralStatistics = ({ stats, allSubscribers = [] }: GeneralStatist
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-border space-y-4">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            <StatCard title="اشتراكات نشطة" count={stats.active.length} icon={Users} variant="success"
-              onSendAll={() => sendWhatsAppToAll('active', stats.active, (sub) => getMessageFromTemplate('subscription', sub, `مرحباً ${sub.name}، شكراً لاشتراكك معنا!`))}
-              buttonLabel={`إرسال للكل${getQueueProgress('active', stats.active.length)}`} />
-            <StatCard title="قاربت على الانتهاء" count={stats.expiring.length} icon={Clock} variant="warning"
-              onSendAll={() => sendWhatsAppToAll('expiring', stats.expiring, (sub) => getMessageFromTemplate('expiry', sub, `مرحباً ${sub.name}، اشتراكك سينتهي قريباً بتاريخ ${formatDate(sub.endDate)}.`))}
-              buttonLabel={`إرسال للكل${getQueueProgress('expiring', stats.expiring.length)}`} />
-            <StatCard title="اشتراكات منتهية" count={stats.expired.length} icon={XCircle} variant="destructive"
-              onSendAll={() => sendWhatsAppToAll('expired', stats.expired, (sub) => getMessageFromTemplate('expired', sub, `مرحباً ${sub.name}، اشتراكك انتهى. نفتقدك!`))}
-              buttonLabel={`إرسال للكل${getQueueProgress('expired', stats.expired.length)}`} />
-            <StatCard title="اشتراكات معلقة" count={stats.pending.length} icon={AlertTriangle} variant="accent"
-              onSendAll={() => sendWhatsAppToAll('pending', stats.pending, (sub) => getMessageFromTemplate('reminder', sub, `مرحباً ${sub.name}، لديك مبلغ متبقي ${sub.remainingAmount} جنيه.`))}
-              buttonLabel={`إرسال للكل${getQueueProgress('pending', stats.pending.length)}`} />
-            <StatCard title="اشتراكات موقوفة" count={stats.paused.length} icon={Pause} variant="muted"
-              onSendAll={() => sendWhatsAppToAll('paused', stats.paused, (sub) => getMessageFromTemplate('paused', sub, `مرحباً ${sub.name}، تم إيقاف اشتراكك لمدة ${formatPauseDuration(sub)}`))}
-              buttonLabel={`إرسال للكل${getQueueProgress('paused', stats.paused.length)}`} />
+            <StatCard title={t.statistics.activeSubscriptions} count={stats.active.length} icon={Users} variant="success"
+              onSendAll={() => sendWhatsAppToAll('active', stats.active, (sub) => getMessageFromTemplate('subscription', sub, `Hello ${sub.name}, thanks for your subscription!`))}
+              buttonLabel={`${t.actions.sendToAll}${getQueueProgress('active', stats.active.length)}`} />
+            <StatCard title={t.statistics.expiringSubscriptions} count={stats.expiring.length} icon={Clock} variant="warning"
+              onSendAll={() => sendWhatsAppToAll('expiring', stats.expiring, (sub) => getMessageFromTemplate('expiry', sub, `Hello ${sub.name}, your subscription expires on ${formatDate(sub.endDate)}.`))}
+              buttonLabel={`${t.actions.sendToAll}${getQueueProgress('expiring', stats.expiring.length)}`} />
+            <StatCard title={t.statistics.expiredSubscriptions} count={stats.expired.length} icon={XCircle} variant="destructive"
+              onSendAll={() => sendWhatsAppToAll('expired', stats.expired, (sub) => getMessageFromTemplate('expired', sub, `Hello ${sub.name}, your subscription has expired. We miss you!`))}
+              buttonLabel={`${t.actions.sendToAll}${getQueueProgress('expired', stats.expired.length)}`} />
+            <StatCard title={t.statistics.pendingSubscriptions} count={stats.pending.length} icon={AlertTriangle} variant="accent"
+              onSendAll={() => sendWhatsAppToAll('pending', stats.pending, (sub) => getMessageFromTemplate('reminder', sub, `Hello ${sub.name}, you have a remaining balance of ${sub.remainingAmount}.`))}
+              buttonLabel={`${t.actions.sendToAll}${getQueueProgress('pending', stats.pending.length)}`} />
+            <StatCard title={t.statistics.pausedSubscriptions} count={stats.paused.length} icon={Pause} variant="muted"
+              onSendAll={() => sendWhatsAppToAll('paused', stats.paused, (sub) => getMessageFromTemplate('paused', sub, `Hello ${sub.name}, your subscription has been paused.`))}
+              buttonLabel={`${t.actions.sendToAll}${getQueueProgress('paused', stats.paused.length)}`} />
           </div>
 
-          {/* VIP Clients Section */}
           <VipClients allSubscribers={allSubscribers} />
 
-          <h3 className="text-lg font-bold mt-4">إحصائيات الكباتن</h3>
+          <h3 className="text-lg font-bold mt-4">{t.statistics.captainStats}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {stats.captains.map((captain) => {
               const captainSubs = stats.byCaptain[captain] || [];
@@ -158,11 +159,11 @@ export const GeneralStatistics = ({ stats, allSubscribers = [] }: GeneralStatist
                     <h4 className="font-medium">{captain}</h4>
                     <span className="text-2xl font-bold text-primary">{captainSubs.length}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">مشترك</p>
+                  <p className="text-sm text-muted-foreground mb-3">{t.subscribers.subscriber}</p>
                   <Button variant="whatsapp" size="sm" className="w-full" disabled={!captainSubs.length}
-                    onClick={() => sendWhatsAppToAll(`captain_${captain}`, captainSubs, (sub) => `مرحباً ${sub.name}، رسالة من ${captain}.`)}>
+                    onClick={() => sendWhatsAppToAll(`captain_${captain}`, captainSubs, (sub) => `Hello ${sub.name}, a message from ${captain}.`)}>
                     <MessageCircle className="w-4 h-4" />
-                    إرسال للكل{getQueueProgress(`captain_${captain}`, captainSubs.length)}
+                    {t.actions.sendToAll}{getQueueProgress(`captain_${captain}`, captainSubs.length)}
                   </Button>
                 </Card>
               );

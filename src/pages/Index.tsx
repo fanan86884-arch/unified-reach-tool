@@ -144,14 +144,14 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background select-none">
+    <div className="min-h-screen bg-background select-none max-w-5xl mx-auto">
       <Header onOpenActivityLog={handleOpenActivityLog} isRefreshing={isRefreshing} />
       
       <PullToRefresh pullDistance={pullDistance} isRefreshing={isRefreshing} />
       
       <main 
         ref={mainRef}
-        className="container px-4 py-6 pb-24 overflow-y-auto"
+        className="container px-4 md:px-8 py-6 pb-24 overflow-y-auto"
         onTouchStart={(e) => handleTouchStart(e, mainRef.current?.scrollTop ?? 0)}
         onTouchMove={(e) => handleTouchMove(e, mainRef.current?.scrollTop ?? 0)}
         onTouchEnd={handleTouchEnd}

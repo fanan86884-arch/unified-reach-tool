@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Plus, Search, Filter, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface SubscribersListProps {
   subscribers: Subscriber[];
@@ -70,6 +71,7 @@ export const SubscribersList = ({
   const [pausingSubscriber, setPausingSubscriber] = useState<Subscriber | null>(null);
   const [whatsAppSubscriber, setWhatsAppSubscriber] = useState<Subscriber | null>(null);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   // Expose openForm function via ref or callback
   const openFormCallback = useRef<(() => void) | null>(null);
@@ -84,17 +86,17 @@ export const SubscribersList = ({
     if (editingSubscriber) {
       const result = await updateSubscriber(editingSubscriber.id, data);
       if (!result.success) {
-        toast({ title: result.error || 'حدث خطأ أثناء التعديل', variant: 'destructive' });
+        toast({ title: result.error || t.settings.saveError, variant: 'destructive' });
         return;
       }
-      toast({ title: 'تم تحديث بيانات المشترك بنجاح' });
+      toast({ title: t.subscribers.updatedSuccess });
     } else {
       const result = await addSubscriber(data);
       if (result.success) {
-        toast({ title: 'تم إضافة المشترك بنجاح' });
+        toast({ title: t.subscribers.addedSuccess });
       } else {
-        toast({ title: result.error || 'حدث خطأ أثناء الإضافة', variant: 'destructive' });
-        return; // Don't close the form on error
+        toast({ title: result.error || t.settings.saveError, variant: 'destructive' });
+        return;
       }
     }
     setEditingSubscriber(null);
@@ -107,9 +109,9 @@ export const SubscribersList = ({
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا المشترك؟')) {
+    if (confirm(t.subscribers.deleteConfirm)) {
       deleteSubscriber(id);
-      toast({ title: 'تم حذف المشترك', variant: 'destructive' });
+      toast({ title: t.subscribers.deletedSuccess, variant: 'destructive' });
     }
   };
 
@@ -126,14 +128,14 @@ export const SubscribersList = ({
   const handleResume = (id: string) => {
     if (resumeSubscription) {
       resumeSubscription(id);
-      toast({ title: 'تم استئناف الاشتراك بنجاح' });
+      toast({ title: t.actions.resume });
     }
   };
 
   const handleRestore = (id: string) => {
     if (restoreSubscriber) {
       restoreSubscriber(id);
-      toast({ title: 'تم استعادة المشترك بنجاح' });
+      toast({ title: t.subscribers.restoredSuccess });
     }
   };
 
@@ -142,7 +144,7 @@ export const SubscribersList = ({
     setIsWhatsAppOpen(true);
   };
 
-  const captains = ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
+  const captains = stats.captains.length > 0 ? stats.captains : ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
 
   // Expose method to open form externally
   const handleOpenForm = () => {
@@ -160,7 +162,7 @@ export const SubscribersList = ({
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <Users className="w-5 h-5 text-primary" />
-          قائمة المشتركين
+          {t.subscribers.title}
         </h2>
         <div className="flex items-center gap-2">
           <Button
@@ -185,7 +187,7 @@ export const SubscribersList = ({
           <div className="relative flex-1">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="بحث بالاسم أو رقم الهاتف..."
+              placeholder={t.subscribers.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pr-10"
@@ -195,22 +197,22 @@ export const SubscribersList = ({
             <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as SubscriptionStatus | 'all')}>
               <SelectTrigger className="w-full sm:w-40">
                 <Filter className="w-4 h-4 ml-2" />
-                <SelectValue placeholder="الحالة" />
+                <SelectValue placeholder={t.filters.status} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">كل الحالات</SelectItem>
-                <SelectItem value="active">نشط</SelectItem>
-                <SelectItem value="expiring">قارب على الانتهاء</SelectItem>
-                <SelectItem value="expired">منتهي</SelectItem>
-                <SelectItem value="paused">موقوف</SelectItem>
+                <SelectItem value="all">{t.filters.allStatuses}</SelectItem>
+                <SelectItem value="active">{t.status.active}</SelectItem>
+                <SelectItem value="expiring">{t.status.expiring}</SelectItem>
+                <SelectItem value="expired">{t.status.expired}</SelectItem>
+                <SelectItem value="paused">{t.status.paused}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filterCaptain} onValueChange={setFilterCaptain}>
               <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="الكابتن" />
+                <SelectValue placeholder={t.filters.captain} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">كل الكباتن</SelectItem>
+                <SelectItem value="all">{t.filters.allCaptains}</SelectItem>
                 {captains.map((captain) => (
                   <SelectItem key={captain} value={captain}>
                     {captain}
@@ -225,11 +227,11 @@ export const SubscribersList = ({
       {subscribers.length === 0 ? (
         <div className="text-center py-12">
           <Users className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-          <p className="text-muted-foreground text-lg">لا يوجد مشتركين</p>
-          <p className="text-sm text-muted-foreground">أضف مشتركاً جديداً للبدء</p>
+          <p className="text-muted-foreground text-lg">{t.subscribers.noSubscribers}</p>
+          <p className="text-sm text-muted-foreground">{t.subscribers.addFirst}</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {subscribers.map((subscriber, index) => (
             <div
               key={subscriber.id}
@@ -283,7 +285,7 @@ export const SubscribersList = ({
         onPause={(id, pauseUntil) => {
           if (pauseSubscription) {
             pauseSubscription(id, pauseUntil);
-            toast({ title: 'تم إيقاف الاشتراك بنجاح' });
+            toast({ title: t.pauseDialog.pauseSuccess });
           }
         }}
       />

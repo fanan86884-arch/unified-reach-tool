@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { LanguageProvider } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -81,35 +82,37 @@ const App = () => {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <NotificationSoundProvider>
-            {/* Splash Screen - only on first load */}
-            {showSplash && isFirstLoad && (
-              <SplashScreen onComplete={handleSplashComplete} />
-            )}
-            
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/lookup" element={<CustomerLookup />} />
-              <Route path="/install" element={<Install />} />
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <Index />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </NotificationSoundProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <NotificationSoundProvider>
+              {/* Splash Screen - only on first load */}
+              {showSplash && isFirstLoad && (
+                <SplashScreen onComplete={handleSplashComplete} />
+              )}
+              
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/lookup" element={<CustomerLookup />} />
+                <Route path="/install" element={<Install />} />
+                  <Route
+                    path="/"
+                    element={
+                      <ProtectedRoute>
+                        <Index />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </NotificationSoundProvider>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 };
