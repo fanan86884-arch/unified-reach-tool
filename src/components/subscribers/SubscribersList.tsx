@@ -61,6 +61,7 @@ export const SubscribersList = ({
   onOpenForm,
 }: SubscribersListProps) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [isRenewOpen, setIsRenewOpen] = useState(false);
   const [isPauseOpen, setIsPauseOpen] = useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
