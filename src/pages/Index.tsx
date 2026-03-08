@@ -23,6 +23,7 @@ const Index = () => {
   const [offlineSubscribers, setOfflineSubscribers] = useState<Subscriber[]>([]);
   const mainRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { t } = useLanguage();
   const { loadSubscribersOffline } = useOfflineStorage();
   
   // Initialize offline queue for background sync
