@@ -197,14 +197,14 @@ export const SubscribersList = ({
             <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as SubscriptionStatus | 'all')}>
               <SelectTrigger className="w-full sm:w-40">
                 <Filter className="w-4 h-4 ml-2" />
-                <SelectValue placeholder="الحالة" />
+                <SelectValue placeholder={t.filters.status} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">كل الحالات</SelectItem>
-                <SelectItem value="active">نشط</SelectItem>
-                <SelectItem value="expiring">قارب على الانتهاء</SelectItem>
-                <SelectItem value="expired">منتهي</SelectItem>
-                <SelectItem value="paused">موقوف</SelectItem>
+                <SelectItem value="all">{t.filters.allStatuses}</SelectItem>
+                <SelectItem value="active">{t.status.active}</SelectItem>
+                <SelectItem value="expiring">{t.status.expiring}</SelectItem>
+                <SelectItem value="expired">{t.status.expired}</SelectItem>
+                <SelectItem value="paused">{t.status.paused}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={filterCaptain} onValueChange={setFilterCaptain}>
