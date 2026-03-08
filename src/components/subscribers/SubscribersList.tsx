@@ -109,9 +109,9 @@ export const SubscribersList = ({
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا المشترك؟')) {
+    if (confirm(t.subscribers.deleteConfirm)) {
       deleteSubscriber(id);
-      toast({ title: 'تم حذف المشترك', variant: 'destructive' });
+      toast({ title: t.subscribers.deletedSuccess, variant: 'destructive' });
     }
   };
 
