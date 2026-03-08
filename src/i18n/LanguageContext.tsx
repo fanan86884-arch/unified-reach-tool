@@ -3,7 +3,7 @@ import { ar } from './translations/ar';
 import { en } from './translations/en';
 
 export type Language = 'ar' | 'en';
-export type Translations = typeof ar & { dir: 'rtl' | 'ltr' };
+export type Translations = Omit<typeof ar, 'dir'> & { dir: 'rtl' | 'ltr' };
 
 interface LanguageContextType {
   lang: Language;
