@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface SubscriberCardCompactProps {
   subscriber: Subscriber;
@@ -23,13 +24,6 @@ interface SubscriberCardCompactProps {
   isArchived?: boolean;
 }
 
-const subscriptionTypeLabels = {
-  monthly: 'شهري',
-  quarterly: 'ربع سنوي',
-  'semi-annual': 'نصف سنوي',
-  annual: 'سنوي',
-};
-
 export const SubscriberCardCompact = ({
   subscriber,
   onEdit,
@@ -43,18 +37,17 @@ export const SubscriberCardCompact = ({
   isArchived = false,
 }: SubscriberCardCompactProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { t } = useLanguage();
 
-  // حساب الأيام المتبقية بشكل صحيح (حسب التقويم) مع احتساب اليوم الحالي
   const today = startOfDay(new Date());
   const endDate = startOfDay(parseISO(subscriber.endDate));
-  const daysDiff = differenceInCalendarDays(endDate, today); // سالب = منتهي
-  const daysRemaining = daysDiff + 1; // شامل اليوم الحالي
-  // تحديد الحالة للعرض
+  const daysDiff = differenceInCalendarDays(endDate, today);
+  const daysRemaining = daysDiff + 1;
+
   const getDisplayStatus = () => {
-    // إذا كان الاشتراك موقوف
     if (subscriber.isPaused) {
       return {
-        label: 'موقوف',
+        label: t.status.paused,
         className: 'bg-muted text-muted-foreground',
         showDays: false,
         daysCount: 0,
@@ -64,64 +57,57 @@ export const SubscriberCardCompact = ({
       };
     }
 
-    // إذا انتهى الاشتراك (تاريخ الانتهاء قبل اليوم)
     if (daysDiff < 0) {
       const daysSinceExpiry = Math.abs(daysDiff);
-      // إذا مر شهر (30 يوم) أو أكثر، نعرض بالشهور
       if (daysSinceExpiry >= 30) {
         const months = Math.floor(daysSinceExpiry / 30);
         return {
-          label: 'منتهي',
+          label: t.status.expired,
           className: 'bg-destructive/15 text-destructive border-destructive/30',
           showDays: true,
           daysCount: months,
-          daysLabel: months === 1 ? 'شهر' : 'شهور',
+          daysLabel: months === 1 ? t.common.month : t.common.months,
           isExpiring: false,
           isExpired: true,
         };
       }
       return {
-        label: 'منتهي',
+        label: t.status.expired,
         className: 'bg-destructive/15 text-destructive border-destructive/30',
         showDays: true,
         daysCount: daysSinceExpiry,
-        daysLabel: 'يوم',
+        daysLabel: t.common.day,
         isExpiring: false,
         isExpired: true,
       };
     }
 
-    // قارب على الانتهاء (3 أيام أو أقل)
     if (daysRemaining <= 3) {
       return {
-        label: 'متبقي',
+        label: t.status.remaining,
         className: 'bg-warning/15 text-warning border-warning/30',
         showDays: true,
         daysCount: daysRemaining,
-        daysLabel: 'يوم',
+        daysLabel: t.common.day,
         isExpiring: true,
         isExpired: false,
       };
     }
 
-    // نشط عادي
     return {
-      label: 'نشط',
+      label: t.status.active,
       className: 'bg-success/15 text-success border-success/30',
       showDays: true,
       daysCount: daysRemaining,
-      daysLabel: 'يوم',
+      daysLabel: t.common.day,
       isExpiring: false,
       isExpired: false,
     };
   };
 
   const displayStatus = getDisplayStatus();
-  
-  // هل عليه فلوس متبقية؟
   const hasRemainingAmount = subscriber.remainingAmount > 0;
 
-  // تنسيق التاريخ كأرقام فقط
   const formatDateNumeric = (dateStr: string) => {
     return format(parseISO(dateStr), 'dd/MM/yyyy');
   };
@@ -131,7 +117,6 @@ export const SubscriberCardCompact = ({
       "card-shadow hover:card-shadow-hover transition-all duration-300 overflow-hidden active:scale-[0.98]",
       subscriber.isArchived && "border-dashed border-warning/50 bg-warning/5"
     )}>
-      {/* Compact Header - Always Visible */}
       <div 
         className="p-4 cursor-pointer flex items-center justify-between"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -145,21 +130,18 @@ export const SubscriberCardCompact = ({
               <span>{formatDateNumeric(subscriber.startDate)}</span>
               {subscriber.isPaused && subscriber.pausedUntil && (
                 <span className="mr-2 text-warning">
-                  (موقوف حتى {format(parseISO(subscriber.pausedUntil), 'dd/MM')})
+                  ({t.actions.pausedUntil} {format(parseISO(subscriber.pausedUntil), 'dd/MM')})
                 </span>
               )}
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0 mr-2">
-            {/* رمز التعجب لو عليه فلوس - باللون الأحمر */}
             {hasRemainingAmount && (
               <AlertCircle className="w-4 h-4 text-destructive" />
             )}
-            {/* رمز العقرب (الساعة) لو قارب على الانتهاء */}
             {displayStatus.isExpiring && (
               <Clock className="w-4 h-4 text-warning" />
             )}
-            {/* رمز الإيقاف */}
             {subscriber.isPaused && (
               <Pause className="w-4 h-4 text-muted-foreground" />
             )}
@@ -180,11 +162,11 @@ export const SubscriberCardCompact = ({
             <Badge variant="outline" className="bg-warning/15 text-warning border-warning/30 text-[10px] px-2 py-1 whitespace-nowrap flex flex-col items-center shrink-0 ml-2">
               <span className="flex items-center">
                 <ArchiveRestore className="w-3 h-3 ml-1.5" />
-                مؤرشف
+                {t.status.archived}
               </span>
               {expiredMonths > 0 && (
                 <span className="text-[9px] text-warning whitespace-nowrap">
-                  منذ {expiredMonths} {expiredMonths === 1 ? 'شهر' : expiredMonths <= 10 ? 'شهور' : 'شهر'}
+                  {t.actions.sinceMonths} {expiredMonths} {expiredMonths === 1 ? t.common.month : expiredMonths <= 10 ? t.common.months : t.common.month}
                 </span>
               )}
             </Badge>
@@ -195,24 +177,23 @@ export const SubscriberCardCompact = ({
         </Button>
       </div>
 
-      {/* Expanded Details */}
       {isExpanded && (
         <div className="px-4 pb-4 pt-3 animate-fade-in">
           <div className="grid grid-cols-2 gap-3 text-sm mb-4">
             <div>
-              <span className="text-muted-foreground">الهاتف:</span>
+              <span className="text-muted-foreground">{t.subscribers.phone}:</span>
               <p className="font-medium">{subscriber.phone}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">نوع الاشتراك:</span>
-              <p className="font-medium">{subscriptionTypeLabels[subscriber.subscriptionType]}</p>
+              <span className="text-muted-foreground">{t.subscribers.subscriptionType}:</span>
+              <p className="font-medium">{t.subscriptionTypes[subscriber.subscriptionType]}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">الكابتن:</span>
+              <span className="text-muted-foreground">{t.subscribers.captain}:</span>
               <p className="font-medium">{subscriber.captain}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">الأيام المتبقية:</span>
+              <span className="text-muted-foreground">{t.subscribers.daysRemaining}:</span>
                <p
                  className={cn(
                    'font-bold',
@@ -225,22 +206,22 @@ export const SubscriberCardCompact = ({
                      : 'text-success'
                  )}
                >
-                 {subscriber.isPaused ? 'موقوف' : daysDiff < 0 ? 'منتهي' : `${daysRemaining} يوم`}
+                 {subscriber.isPaused ? t.status.paused : daysDiff < 0 ? t.status.expired : `${daysRemaining} ${t.common.day}`}
                </p>
             </div>
             <div>
-              <span className="text-muted-foreground">المدفوع:</span>
-              <p className="font-medium text-success">{subscriber.paidAmount} جنيه</p>
+              <span className="text-muted-foreground">{t.subscribers.paidAmount}:</span>
+              <p className="font-medium text-success">{subscriber.paidAmount} {t.common.currency}</p>
             </div>
             <div>
-              <span className="text-muted-foreground">المتبقي:</span>
+              <span className="text-muted-foreground">{t.subscribers.remainingAmount}:</span>
               <p
                 className={cn(
                   'font-medium',
                   subscriber.remainingAmount > 0 ? 'text-destructive' : 'text-success'
                 )}
               >
-                {subscriber.remainingAmount} جنيه
+                {subscriber.remainingAmount} {t.common.currency}
               </p>
             </div>
           </div>
@@ -253,7 +234,7 @@ export const SubscriberCardCompact = ({
               onClick={() => onWhatsApp(subscriber)}
             >
               <MessageCircle className="w-5 h-5" />
-              <span>واتساب</span>
+              <span>{t.actions.whatsapp}</span>
             </Button>
             {!isArchived && !subscriber.isArchived && (
               <>
@@ -264,7 +245,7 @@ export const SubscriberCardCompact = ({
                   onClick={() => onEdit(subscriber)}
                 >
                   <Edit className="w-5 h-5" />
-                  <span>تعديل</span>
+                  <span>{t.common.edit}</span>
                 </Button>
                 <Button 
                   variant="success" 
@@ -273,7 +254,7 @@ export const SubscriberCardCompact = ({
                   onClick={() => onRenew(subscriber)}
                 >
                   <RefreshCw className="w-5 h-5" />
-                  <span>تجديد</span>
+                  <span>{t.actions.renew}</span>
                 </Button>
                 {subscriber.isPaused ? (
                   <Button 
@@ -283,7 +264,7 @@ export const SubscriberCardCompact = ({
                     onClick={() => onResume(subscriber.id)}
                   >
                     <Play className="w-5 h-5" />
-                    <span>استئناف</span>
+                    <span>{t.actions.resume}</span>
                   </Button>
                 ) : (
                   <Button 
@@ -293,7 +274,7 @@ export const SubscriberCardCompact = ({
                     onClick={() => onPause(subscriber)}
                   >
                     <Pause className="w-5 h-5" />
-                    <span>إيقاف</span>
+                    <span>{t.actions.pause}</span>
                   </Button>
                 )}
                 <Button 
@@ -303,7 +284,7 @@ export const SubscriberCardCompact = ({
                   onClick={() => onArchive(subscriber.id)}
                 >
                   <Archive className="w-5 h-5" />
-                  <span>أرشفة</span>
+                  <span>{t.actions.archive}</span>
                 </Button>
                 <Button 
                   variant="destructive" 
@@ -312,11 +293,10 @@ export const SubscriberCardCompact = ({
                   onClick={() => onDelete(subscriber.id)}
                 >
                   <Trash2 className="w-5 h-5" />
-                  <span>حذف</span>
+                  <span>{t.common.delete}</span>
                 </Button>
               </>
             )}
-            {/* Show restore button for archived subscribers in search results */}
             {subscriber.isArchived && onRestore && (
               <>
                 <Button 
@@ -326,7 +306,7 @@ export const SubscriberCardCompact = ({
                   onClick={() => onRestore(subscriber.id)}
                 >
                   <RotateCcw className="w-5 h-5" />
-                  <span>استعادة</span>
+                  <span>{t.actions.restore}</span>
                 </Button>
                 <Button 
                   variant="destructive" 
@@ -335,7 +315,7 @@ export const SubscriberCardCompact = ({
                   onClick={() => onDelete(subscriber.id)}
                 >
                   <Trash2 className="w-5 h-5" />
-                  <span>حذف</span>
+                  <span>{t.common.delete}</span>
                 </Button>
               </>
             )}
@@ -348,7 +328,7 @@ export const SubscriberCardCompact = ({
                   onClick={() => onRestore(subscriber.id)}
                 >
                   <RotateCcw className="w-5 h-5" />
-                  <span>استعادة</span>
+                  <span>{t.actions.restore}</span>
                 </Button>
                 <Button 
                   variant="destructive" 
@@ -357,7 +337,7 @@ export const SubscriberCardCompact = ({
                   onClick={() => onDelete(subscriber.id)}
                 >
                   <Trash2 className="w-5 h-5" />
-                  <span>حذف</span>
+                  <span>{t.common.delete}</span>
                 </Button>
               </>
             )}
