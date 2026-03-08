@@ -231,7 +231,7 @@ export const SubscribersList = ({
           <p className="text-sm text-muted-foreground">{t.subscribers.addFirst}</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {subscribers.map((subscriber, index) => (
             <div
               key={subscriber.id}
