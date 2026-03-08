@@ -1,38 +1,30 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client.runtime';
 import { toast } from '@/hooks/use-toast';
-
-// VAPID public key - this needs to match the one in the edge function
-const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding)
     .replace(/-/g, '+')
     .replace(/_/g, '/');
-
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
-
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i);
   }
   return outputArray;
 }
 
-// Detect iOS
 function isIOS(): boolean {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
-// Check if running as PWA (standalone mode)
 function isPWA(): boolean {
-  return window.matchMedia('(display-mode: standalone)').matches || 
+  return window.matchMedia('(display-mode: standalone)').matches ||
     (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
 }
 
-// Check if Safari
 function isSafari(): boolean {
   return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 }
@@ -48,24 +40,40 @@ export function usePushNotifications() {
     isSafari: false,
   });
 
+  // Cache the VAPID public key
+  const vapidKeyRef = useRef<string | null>(null);
+
+  const fetchVapidPublicKey = async (): Promise<string> => {
+    if (vapidKeyRef.current) return vapidKeyRef.current;
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://xlowcsumezdzgjvjcvln.supabase.co';
+    const response = await fetch(`${supabaseUrl}/functions/v1/get-push-config`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '',
+      },
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch VAPID key');
+
+    const { publicKey } = await response.json();
+    vapidKeyRef.current = publicKey;
+    return publicKey;
+  };
+
   useEffect(() => {
-    // Detect iOS/Safari environment
     const iosCheck = isIOS();
     const pwaCheck = isPWA();
     const safariCheck = isSafari();
-    
-    setIosInfo({
-      isIOS: iosCheck,
-      isPWA: pwaCheck,
-      isSafari: safariCheck,
-    });
+
+    setIosInfo({ isIOS: iosCheck, isPWA: pwaCheck, isSafari: safariCheck });
 
     // Push is supported if:
     // - Browser supports it AND
-    // - Not iOS Safari in browser (only works as PWA on iOS)
+    // - On iOS, only works as installed PWA
     const browserSupports = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-    const iosLimitation = iosCheck && safariCheck && !pwaCheck;
-    
+    const iosLimitation = iosCheck && !pwaCheck;
+
     setIsSupported(browserSupports && !iosLimitation);
 
     if (browserSupports && !iosLimitation) {
@@ -85,23 +93,26 @@ export function usePushNotifications() {
   };
 
   const registerServiceWorker = async (): Promise<ServiceWorkerRegistration> => {
-    const registration = await navigator.serviceWorker.register('/sw.js', {
-      scope: '/'
-    });
-    
-    // Wait for the service worker to be ready
+    const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
     await navigator.serviceWorker.ready;
-    
     return registration;
   };
 
   const subscribe = useCallback(async () => {
     if (!isSupported) {
-      toast({
-        title: 'غير مدعوم',
-        description: 'المتصفح لا يدعم الإشعارات',
-        variant: 'destructive'
-      });
+      if (isIOS() && !isPWA()) {
+        toast({
+          title: 'مطلوب تثبيت التطبيق',
+          description: 'على iOS، يجب تثبيت التطبيق أولاً من خلال: مشاركة ← إضافة إلى الشاشة الرئيسية',
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'غير مدعوم',
+          description: 'المتصفح لا يدعم الإشعارات',
+          variant: 'destructive'
+        });
+      }
       return;
     }
 
@@ -115,20 +126,23 @@ export function usePushNotifications() {
       if (result !== 'granted') {
         toast({
           title: 'تم الرفض',
-          description: 'يجب السماح بالإشعارات لتفعيل هذه الميزة',
+          description: 'يجب السماح بالإشعارات من إعدادات الجهاز',
           variant: 'destructive'
         });
         return;
       }
 
+      // Fetch VAPID public key from server
+      const vapidPublicKey = await fetchVapidPublicKey();
+
       // Register service worker
       const registration = await registerServiceWorker();
 
-      // Subscribe to push notifications
-      const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      // Subscribe to push notifications with the server's VAPID key
+      const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: applicationServerKey as BufferSource
+        applicationServerKey: applicationServerKey as BufferSource,
       });
 
       // Get the subscription keys
@@ -141,7 +155,7 @@ export function usePushNotifications() {
 
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         toast({
           title: 'خطأ',
@@ -158,7 +172,7 @@ export function usePushNotifications() {
           user_id: user.id,
           endpoint: subscription.endpoint,
           p256dh: keys.p256dh,
-          auth: keys.auth
+          auth: keys.auth,
         }, {
           onConflict: 'user_id,endpoint'
         });
@@ -167,14 +181,14 @@ export function usePushNotifications() {
 
       setIsSubscribed(true);
       toast({
-        title: 'تم التفعيل',
+        title: 'تم التفعيل ✅',
         description: 'سيتم إعلامك عند وصول طلب جديد'
       });
     } catch (error) {
       console.error('Error subscribing to push notifications:', error);
       toast({
         title: 'خطأ',
-        description: 'حدث خطأ أثناء تفعيل الإشعارات',
+        description: 'حدث خطأ أثناء تفعيل الإشعارات. تأكد من تثبيت التطبيق كـ PWA.',
         variant: 'destructive'
       });
     } finally {
@@ -192,11 +206,9 @@ export function usePushNotifications() {
       if (subscription) {
         await subscription.unsubscribe();
 
-        // Get current user
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (user) {
-          // Remove subscription from database
           await supabase
             .from('push_subscriptions')
             .delete()

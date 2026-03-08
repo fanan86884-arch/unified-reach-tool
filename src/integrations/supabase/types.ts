@@ -463,6 +463,24 @@ export type Database = {
         }
         Relationships: []
       }
+      system_config: {
+        Row: {
+          created_at: string | null
+          key: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string | null
+          key: string
+          value: Json
+        }
+        Update: {
+          created_at?: string | null
+          key?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       whatsapp_templates: {
         Row: {
           content: string

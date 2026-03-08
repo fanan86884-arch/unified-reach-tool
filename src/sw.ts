@@ -16,7 +16,7 @@ precacheAndRoute(self.__WB_MANIFEST);
 const navigationHandler = createHandlerBoundToURL("/index.html");
 registerRoute(
   new NavigationRoute(navigationHandler, {
-    denylist: [/^\/api\//, /\.(?:json|png|jpg|jpeg|svg|ico|css|js|map|txt|woff2?)$/],
+    denylist: [/^\/~oauth/, /^\/api\//, /\.(?:json|png|jpg|jpeg|svg|ico|css|js|map|txt|woff2?)$/],
   })
 );
 
