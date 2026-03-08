@@ -682,6 +682,7 @@ export const Notifications = ({ stats }: NotificationsProps) => {
           supabase.from('diet_requests')
             .update({ status: 'dismissed' })
             .in('id', pendingDietRequests.map(n => n.dietRequest!.id))
+            .then()
         );
       }
 
