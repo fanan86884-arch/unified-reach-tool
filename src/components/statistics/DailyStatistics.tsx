@@ -3,7 +3,7 @@ import { Subscriber } from '@/types/subscriber';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { MessageCircle, UserPlus, Clock, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { MessageCircle, UserPlus, Clock, XCircle, AlertTriangle, Loader2, CalendarDays } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { parseISO, differenceInDays, isToday, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
