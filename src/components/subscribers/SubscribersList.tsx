@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subscriber';
 import { SubscriberCardCompact } from './SubscriberCardCompact';
 import { SubscriberForm } from './SubscriberForm';
