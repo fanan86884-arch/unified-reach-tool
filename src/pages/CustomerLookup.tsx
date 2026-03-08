@@ -241,8 +241,35 @@ export const CustomerLookup = () => {
                       </p>
                     </div>
                   </div>
+
+                  {/* VIP Progress */}
+                  <div className="p-4 bg-muted rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Crown className="w-4 h-4 text-yellow-500" />
+                      <span className="text-sm text-muted-foreground">
+                        {renewalCount >= VIP_THRESHOLD ? 'عميل مميز ⭐' : 'حالة التميز'}
+                      </span>
+                    </div>
+                    {renewalCount >= VIP_THRESHOLD ? (
+                      <p className="font-bold text-yellow-600 dark:text-yellow-400">
+                        مبروك! أنت عميل مميز ({renewalCount} تجديد متتالي)
+                      </p>
+                    ) : (
+                      <>
+                        <div className="w-full h-3 bg-background rounded-full overflow-hidden mb-2">
+                          <div 
+                            className="h-full bg-yellow-500 rounded-full transition-all duration-500"
+                            style={{ width: `${(renewalCount / VIP_THRESHOLD) * 100}%` }}
+                          />
+                        </div>
+                        <p className="text-sm">
+                          <span className="font-bold">{VIP_THRESHOLD - renewalCount}</span>
+                          <span className="text-muted-foreground"> شهور متبقية لتصبح عميل مميز</span>
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </Card>
             ) : (
               <Card className="p-8 text-center card-shadow">
                 <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
