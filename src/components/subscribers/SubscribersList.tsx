@@ -227,8 +227,8 @@ export const SubscribersList = ({
       {subscribers.length === 0 ? (
         <div className="text-center py-12">
           <Users className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-          <p className="text-muted-foreground text-lg">لا يوجد مشتركين</p>
-          <p className="text-sm text-muted-foreground">أضف مشتركاً جديداً للبدء</p>
+          <p className="text-muted-foreground text-lg">{t.subscribers.noSubscribers}</p>
+          <p className="text-sm text-muted-foreground">{t.subscribers.addFirst}</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
