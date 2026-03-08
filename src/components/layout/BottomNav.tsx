@@ -46,10 +46,10 @@ export const BottomNav = ({
               key={tab.id}
               onClick={handleClick}
               className={cn(
-                'flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative rounded-2xl mx-0.5 select-none',
+                'flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative rounded-2xl mx-0.5 select-none active:scale-90',
                 isActive
                   ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground active:scale-95'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <div className={cn(
