@@ -28,18 +28,12 @@ import { ContactSettings } from './ContactSettings';
 import { PaymentSettings } from './PaymentSettings';
 import { PushNotificationSettings } from './PushNotificationSettings';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
+import { useLanguage } from '@/i18n/LanguageContext';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-
-const subscriptionLabels = {
-  monthly: 'شهري',
-  quarterly: 'ربع سنوي',
-  'semi-annual': 'نصف سنوي',
-  annual: 'سنوي',
-};
 
 interface SettingsSectionProps {
   title: string;
@@ -82,6 +76,7 @@ export const Settings = () => {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   useEffect(() => {
     setLocalPrices(prices);
@@ -104,13 +99,12 @@ export const Settings = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Save templates and prices to backend
       await Promise.all(localTemplates.map((template) => updateGlobalTemplate(template.id, template.content)));
       await savePrices(localPrices);
-      toast({ title: 'تم حفظ الإعدادات بنجاح' });
+      toast({ title: t.settings.savedSuccess });
     } catch (err) {
       console.error('Error saving settings:', err);
-      toast({ title: 'حدث خطأ أثناء الحفظ', variant: 'destructive' });
+      toast({ title: t.settings.saveError, variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
@@ -146,15 +140,14 @@ export const Settings = () => {
     <div className="space-y-4 pb-20">
       <h2 className="text-xl font-bold flex items-center gap-2">
         <SettingsIcon className="w-5 h-5 text-primary" />
-        الإعدادات
+        {t.settings.title}
       </h2>
 
-      {/* Subscription Prices */}
-      <SettingsSection title="أسعار الاشتراكات" icon={DollarSign} defaultOpen={false}>
+      <SettingsSection title={t.settings.prices} icon={DollarSign} defaultOpen={false}>
         <div className="grid grid-cols-2 gap-4 mt-4">
-          {(Object.keys(subscriptionLabels) as Array<keyof typeof subscriptionLabels>).map((type) => (
+          {(Object.keys(t.subscriptionTypes) as Array<keyof typeof t.subscriptionTypes>).map((type) => (
             <div key={type} className="space-y-2">
-              <Label>{subscriptionLabels[type]}</Label>
+              <Label>{t.subscriptionTypes[type]}</Label>
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
@@ -163,18 +156,17 @@ export const Settings = () => {
                   min={0}
                   dir="ltr"
                 />
-                <span className="text-sm text-muted-foreground">جنيه</span>
+                <span className="text-sm text-muted-foreground">{t.common.currency}</span>
               </div>
             </div>
           ))}
         </div>
       </SettingsSection>
 
-      {/* WhatsApp Templates */}
-      <SettingsSection title="نماذج رسائل واتساب" icon={MessageSquare}>
+      <SettingsSection title={t.settings.whatsappTemplates} icon={MessageSquare}>
         <div className="mt-4">
           <p className="text-sm text-muted-foreground mb-4">
-            المتغيرات: {'{الاسم}'}, {'{تاريخ_الاشتراك}'}, {'{تاريخ_الانتهاء}'}, {'{المبلغ_المدفوع}'}, {'{المبلغ_المتبقي}'}, {'{المدة_المحددة}'}
+            {t.settings.templateVariables}: {'{الاسم}'}, {'{تاريخ_الاشتراك}'}, {'{تاريخ_الانتهاء}'}, {'{المبلغ_المدفوع}'}, {'{المبلغ_المتبقي}'}, {'{المدة_المحددة}'}
           </p>
           <div className="space-y-4">
             {localTemplates.map((template) => (
@@ -192,47 +184,40 @@ export const Settings = () => {
         </div>
       </SettingsSection>
 
-      {/* Excel Export/Import */}
-      <SettingsSection title="تصدير واستيراد البيانات" icon={FileSpreadsheet}>
+      <SettingsSection title={t.settings.exportImport} icon={FileSpreadsheet}>
         <div className="mt-4">
           <ExcelExportImport subscribers={allSubscribers} onImport={addSubscriber} />
         </div>
       </SettingsSection>
 
-      {/* Contact Settings */}
-      <SettingsSection title="بيانات التواصل" icon={Phone}>
+      <SettingsSection title={t.settings.contactInfo} icon={Phone}>
         <ContactSettings />
       </SettingsSection>
 
-      {/* Payment Settings */}
-      <SettingsSection title="بيانات الدفع والمتجر" icon={CreditCard}>
+      <SettingsSection title={t.settings.paymentInfo} icon={CreditCard}>
         <PaymentSettings />
       </SettingsSection>
 
-      {/* Push Notifications */}
-      <SettingsSection title="إشعارات Push" icon={Bell}>
+      <SettingsSection title={t.settings.pushNotifications} icon={Bell}>
         <div className="mt-4">
           <PushNotificationSettings />
         </div>
       </SettingsSection>
 
-
-      {/* Save Button */}
       <Button onClick={handleSave} className="w-full" disabled={isSaving}>
         {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-        حفظ الإعدادات
+        {t.settings.saveSettings}
       </Button>
 
-      {/* Account Section */}
-      <SettingsSection title="الحساب" icon={User}>
+      <SettingsSection title={t.settings.account} icon={User}>
         <div className="flex items-center justify-between mt-4">
           <div>
-            <p className="font-medium">البريد الإلكتروني</p>
+            <p className="font-medium">{t.settings.email}</p>
             <p className="text-sm text-muted-foreground">{user?.email}</p>
           </div>
           <Button variant="destructive" onClick={handleSignOut} disabled={isSigningOut}>
             {isSigningOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-            تسجيل الخروج
+            {t.settings.signOut}
           </Button>
         </div>
       </SettingsSection>
