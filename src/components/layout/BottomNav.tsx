@@ -1,5 +1,6 @@
 import { Users, Bell, BarChart3, Settings, UserPlus, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface BottomNavProps {
   activeTab: string;
@@ -14,12 +15,14 @@ export const BottomNav = ({
   onAddSubscriber,
   notificationCount = 0
 }: BottomNavProps) => {
+  const { t } = useLanguage();
+
   const tabs = [
-    { id: 'subscribers', label: 'المشتركين', icon: Users },
-    { id: 'statistics', label: 'الإحصائيات', icon: BarChart3 },
-    { id: 'archive', label: 'الأرشيف', icon: Archive },
-    { id: 'notifications', label: 'الإشعارات', icon: Bell, showBadge: true },
-    { id: 'settings', label: 'الإعدادات', icon: Settings },
+    { id: 'subscribers', label: t.nav.subscribers, icon: Users },
+    { id: 'statistics', label: t.nav.statistics, icon: BarChart3 },
+    { id: 'archive', label: t.nav.archive, icon: Archive },
+    { id: 'notifications', label: t.nav.notifications, icon: Bell, showBadge: true },
+    { id: 'settings', label: t.nav.settings, icon: Settings },
   ];
 
   return (
@@ -29,9 +32,8 @@ export const BottomNav = ({
           const isActive = activeTab === tab.id;
           const isSubscribersTabActive = tab.id === 'subscribers' && activeTab === 'subscribers';
           
-          // Dynamic icon and label for subscribers tab
           const Icon = isSubscribersTabActive ? UserPlus : tab.icon;
-          const label = isSubscribersTabActive ? 'التسجيل' : tab.label;
+          const label = isSubscribersTabActive ? t.nav.register : tab.label;
           
           const handleClick = () => {
             if (isSubscribersTabActive && onAddSubscriber) {
