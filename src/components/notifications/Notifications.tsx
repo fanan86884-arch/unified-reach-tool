@@ -634,17 +634,61 @@ export const Notifications = ({ stats }: NotificationsProps) => {
     return groups;
   }, {} as Record<string, Notification[]>);
 
-  const handleDeleteOne = (id: string) => {
+  const handleDeleteOne = async (id: string, notif?: Notification) => {
+    // Add to local deleted set
     const allIds = new Set([...deletedIds, id]);
     setDeletedIds(allIds);
     saveDeletedIds(allIds);
+
+    // For DB-backed notifications, update status to dismissed so they don't reappear
+    if (notif) {
+      try {
+        if (notif.type === 'request' && notif.request) {
+          await supabase.from('subscription_requests').update({ status: 'dismissed' }).eq('id', notif.request.id);
+        } else if (notif.type === 'diet' && notif.dietRequest) {
+          await supabase.from('diet_requests').update({ status: 'dismissed' }).eq('id', notif.dietRequest.id);
+        } else if (notif.type === 'workout' && notif.workoutRequest) {
+          await supabase.from('workout_requests').update({ status: 'dismissed' }).eq('id', notif.workoutRequest.id);
+        }
+      } catch (e) {
+        console.error('Error dismissing notification in DB:', e);
+      }
+    }
   };
 
-  const handleClearAll = () => {
-    const nonRequestNotifs = sortedNotifications.filter(n => n.type !== 'request' && n.type !== 'diet' && n.type !== 'workout');
-    const allIds = new Set([...deletedIds, ...nonRequestNotifs.map(n => n.id)]);
+  const handleClearAll = async () => {
+    // Delete ALL visible notifications (including requests, diet, workout)
+    const allIds = new Set([...deletedIds, ...filteredNotifications.map(n => n.id)]);
     setDeletedIds(allIds);
     saveDeletedIds(allIds);
+
+    // Dismiss all pending requests in DB
+    try {
+      const pendingSubRequests = filteredNotifications.filter(n => n.type === 'request' && n.request);
+      if (pendingSubRequests.length > 0) {
+        await supabase.from('subscription_requests')
+          .update({ status: 'dismissed' })
+          .in('id', pendingSubRequests.map(n => n.request!.id));
+      }
+
+      const pendingDietRequests = filteredNotifications.filter(n => n.type === 'diet' && n.dietRequest);
+      if (pendingDietRequests.length > 0) {
+        await supabase.from('diet_requests')
+          .update({ status: 'dismissed' })
+          .in('id', pendingDietRequests.map(n => n.dietRequest!.id));
+      }
+
+      const pendingWorkoutRequests = filteredNotifications.filter(n => n.type === 'workout' && n.workoutRequest);
+      if (pendingWorkoutRequests.length > 0) {
+        await supabase.from('workout_requests')
+          .update({ status: 'dismissed' })
+          .in('id', pendingWorkoutRequests.map(n => n.workoutRequest!.id));
+      }
+    } catch (e) {
+      console.error('Error dismissing all notifications:', e);
+    }
+
+    toast({ title: 'تم حذف جميع الإشعارات' });
   };
 
   const filterLabels: Record<FilterType, string> = {
@@ -715,7 +759,7 @@ export const Notifications = ({ stats }: NotificationsProps) => {
               {notifs.map((notif, index) => {
                 const Icon = notif.icon;
                 return (
-                  <SwipeableItem key={notif.id} onDelete={() => handleDeleteOne(notif.id)}>
+                  <SwipeableItem key={notif.id} onDelete={() => handleDeleteOne(notif.id, notif)}>
                   <Card
                     className={`p-4 border ${variantStyles[notif.variant]} animate-slide-up`}
                     style={{ animationDelay: `${index * 50}ms` }}
