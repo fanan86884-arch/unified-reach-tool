@@ -15,7 +15,6 @@ import {
   User,
   Phone,
   CreditCard,
-  Brain,
   Bell
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
