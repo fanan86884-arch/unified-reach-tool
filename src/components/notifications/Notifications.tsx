@@ -759,7 +759,7 @@ export const Notifications = ({ stats }: NotificationsProps) => {
               {notifs.map((notif, index) => {
                 const Icon = notif.icon;
                 return (
-                  <SwipeableItem key={notif.id} onDelete={() => handleDeleteOne(notif.id)}>
+                  <SwipeableItem key={notif.id} onDelete={() => handleDeleteOne(notif.id, notif)}>
                   <Card
                     className={`p-4 border ${variantStyles[notif.variant]} animate-slide-up`}
                     style={{ animationDelay: `${index * 50}ms` }}
