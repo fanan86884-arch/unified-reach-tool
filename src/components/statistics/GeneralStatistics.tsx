@@ -72,7 +72,7 @@ const getMessageFromTemplate = (templateId: string, sub: Subscriber, defaultMsg:
   return defaultMsg;
 };
 
-export const GeneralStatistics = ({ stats }: GeneralStatisticsProps) => {
+export const GeneralStatistics = ({ stats, allSubscribers = [] }: GeneralStatisticsProps) => {
   const { toast } = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
   const [queues, setQueues] = useState<Record<string, number>>({});
