@@ -20,6 +20,7 @@ export const Archive = ({
 }: ArchiveProps) => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   const [whatsAppSubscriber, setWhatsAppSubscriber] = useState<Subscriber | null>(null);
   const [restoreConfirmSubscriber, setRestoreConfirmSubscriber] = useState<Subscriber | null>(null);
 
