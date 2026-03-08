@@ -7,6 +7,7 @@ import { Users, Clock, XCircle, AlertTriangle, Pause, MessageCircle, ChevronDown
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { VipClients } from './VipClients';
 
 interface GeneralStatisticsProps {
   stats: {
@@ -18,6 +19,7 @@ interface GeneralStatisticsProps {
     byCaptain: Record<string, Subscriber[]>;
     captains: string[];
   };
+  allSubscribers?: Subscriber[];
 }
 
 const WHATSAPP_QUEUE_PREFIX = 'whatsapp_queue_';
