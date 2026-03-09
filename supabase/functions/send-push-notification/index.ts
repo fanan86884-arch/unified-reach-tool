@@ -9,7 +9,7 @@ import {
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 function base64urlEncode(data: Uint8Array): string {
@@ -62,6 +62,8 @@ serve(async (req) => {
 
     const { title, body, type, data: notifData } = await req.json();
 
+    console.log('Received push notification request:', { title, body, type });
+
     // Auto-generate VAPID keys if not configured
     const vapidConfig = await getOrCreateVapidKeys(supabase);
 
@@ -76,7 +78,12 @@ serve(async (req) => {
       .from('push_subscriptions')
       .select('*');
 
-    if (subError) throw subError;
+    if (subError) {
+      console.error('Error fetching subscriptions:', subError);
+      throw subError;
+    }
+
+    console.log(`Found ${subscriptions?.length || 0} push subscriptions`);
 
     if (!subscriptions || subscriptions.length === 0) {
       return new Response(
@@ -116,16 +123,15 @@ serve(async (req) => {
           },
         };
 
-        // buildPushPayload returns a Request with properly encrypted payload
         const pushRequest = await buildPushPayload(message, pushSubscription, vapidKeys);
         const response = await fetch(pushRequest);
 
         if (response.ok || response.status === 201) {
           sentCount++;
+          console.log(`Push sent successfully to ${sub.endpoint.substring(0, 50)}...`);
         } else {
           const errText = await response.text();
           console.error(`Push failed for ${sub.endpoint}: ${response.status} ${errText}`);
-          // 404 or 410 means subscription is expired
           if (response.status === 404 || response.status === 410) {
             failedEndpoints.push(sub.endpoint);
           }
@@ -138,11 +144,14 @@ serve(async (req) => {
 
     // Clean up expired subscriptions
     if (failedEndpoints.length > 0) {
+      console.log(`Cleaning up ${failedEndpoints.length} expired subscriptions`);
       await supabase
         .from('push_subscriptions')
         .delete()
         .in('endpoint', failedEndpoints);
     }
+
+    console.log(`Push notifications result: sent=${sentCount}, failed=${failedEndpoints.length}`);
 
     return new Response(
       JSON.stringify({
