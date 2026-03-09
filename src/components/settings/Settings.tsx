@@ -45,7 +45,7 @@ interface SettingsSectionProps {
   defaultOpen?: boolean;
 }
 
-const SettingsSection = React.forwardRef<HTMLDivElement, SettingsSectionProps>(
+const SettingsSection = forwardRef<HTMLDivElement, SettingsSectionProps>(
   ({ title, icon: Icon, children, defaultOpen = false }, ref) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
 
