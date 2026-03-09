@@ -62,7 +62,7 @@ export const useOfflineQueue = () => {
           // Templates are saved per-template, data contains the upsert payload
           const { error } = await supabase
             .from('whatsapp_templates')
-            .upsert(change.data, { onConflict: 'id' });
+            .upsert(change.data as any, { onConflict: 'id' });
           if (error) throw error;
         }
 
