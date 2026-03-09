@@ -37,6 +37,7 @@ export const BottomNav = ({
           const label = isSubscribersTabActive ? t.nav.register : tab.label;
           
           const handleClick = () => {
+            hapticFeedback('light');
             if (isSubscribersTabActive && onAddSubscriber) {
               onAddSubscriber();
             } else {
