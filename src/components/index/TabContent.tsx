@@ -51,24 +51,32 @@ const LoadingFallback = () => (
 // Animated wrapper for tab transitions
 const TabTransition = ({ tabKey, children }: { tabKey: string; children: React.ReactNode }) => {
   const [visible, setVisible] = useState(false);
+  const [renderKey, setRenderKey] = useState(tabKey);
   const prevKey = useRef(tabKey);
 
   useEffect(() => {
     if (prevKey.current !== tabKey) {
       setVisible(false);
-      prevKey.current = tabKey;
+      // Wait for exit animation, then swap content and enter
+      const exitTimer = setTimeout(() => {
+        setRenderKey(tabKey);
+        prevKey.current = tabKey;
+        requestAnimationFrame(() => setVisible(true));
+      }, 150);
+      return () => clearTimeout(exitTimer);
     }
-    // Small delay to trigger enter animation
-    const t = requestAnimationFrame(() => setVisible(true));
-    return () => cancelAnimationFrame(t);
+    // Initial mount
+    requestAnimationFrame(() => setVisible(true));
   }, [tabKey]);
 
   return (
     <div
-      className="transition-all duration-300 ease-out"
+      key={renderKey}
+      className="will-change-transform"
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(12px)',
+        transform: visible ? 'scale(1) translateY(0)' : 'scale(0.97) translateY(8px)',
+        transition: 'opacity 200ms ease-out, transform 200ms ease-out',
       }}
     >
       {children}
