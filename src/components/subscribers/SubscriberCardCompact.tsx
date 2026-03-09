@@ -115,7 +115,7 @@ export const SubscriberCardCompact = ({
   return (
     <Card className={cn(
       "card-shadow hover:card-shadow-hover transition-all duration-300 overflow-hidden active:scale-[0.98]",
-      subscriber.isArchived && "border-dashed border-warning/50 bg-warning/5"
+      subscriber.isArchived && "border-dashed border-warning/20 bg-warning/[0.02]"
     )}>
       <div 
         className="p-4 cursor-pointer flex items-center justify-between"
