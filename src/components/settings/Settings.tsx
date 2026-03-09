@@ -15,7 +15,10 @@ import {
   User,
   Phone,
   CreditCard,
-  Bell
+  Bell,
+  Moon,
+  Sun,
+  Palette
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
