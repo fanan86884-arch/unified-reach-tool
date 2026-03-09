@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 function base64urlEncode(data: Uint8Array): string {
@@ -13,7 +13,6 @@ function base64urlEncode(data: Uint8Array): string {
 }
 
 async function getOrCreateVapidKeys(supabase: any) {
-  // Try to read existing keys
   const { data } = await supabase
     .from('system_config')
     .select('value')
@@ -22,7 +21,6 @@ async function getOrCreateVapidKeys(supabase: any) {
 
   if (data?.value) return data.value;
 
-  // Generate new VAPID keys using Web Crypto API
   const keyPair = await crypto.subtle.generateKey(
     { name: 'ECDSA', namedCurve: 'P-256' },
     true,
@@ -39,7 +37,6 @@ async function getOrCreateVapidKeys(supabase: any) {
     privateKey: privateKeyJwk.d,
   };
 
-  // Store in database (only accessible via service role)
   await supabase
     .from('system_config')
     .upsert({ key: 'vapid_keys', value: keys });
