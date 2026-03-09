@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client.runtime';
 import { useAuth } from './useAuth';
+import { useOnlineStatus } from './useOnlineStatus';
+import { getCachedTemplates, setCachedTemplates } from '@/lib/offlineStore';
 
 export interface WhatsAppTemplate {
   id: string;
@@ -47,12 +49,28 @@ const templateBaseId = (id: string) => id.replace(/_user_[a-z0-9-]+$/i, '');
 
 export const useWhatsAppTemplates = () => {
   const { user } = useAuth();
+  const isOnline = useOnlineStatus();
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>(defaultTemplates);
   const [loading, setLoading] = useState(true);
+
+  // Load from IndexedDB cache on mount
+  useEffect(() => {
+    (async () => {
+      const cached = await getCachedTemplates();
+      if (cached && cached.length > 0) {
+        setTemplates(cached);
+      }
+    })();
+  }, []);
 
   const fetchTemplates = useCallback(async () => {
     if (!user) {
       setTemplates(defaultTemplates);
+      setLoading(false);
+      return;
+    }
+
+    if (!isOnline) {
       setLoading(false);
       return;
     }
@@ -100,12 +118,14 @@ export const useWhatsAppTemplates = () => {
       }
 
       setTemplates(merged);
+      // Cache to IndexedDB
+      await setCachedTemplates(merged);
     } catch (err) {
       console.error('Error:', err);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isOnline]);
 
   useEffect(() => {
     fetchTemplates();
@@ -137,9 +157,31 @@ export const useWhatsAppTemplates = () => {
     if (!user) return { success: false, error: 'غير مصرح' };
 
     const previous = templates;
-    setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, content } : t)));
+    const updated = templates.map((t) => (t.id === id ? { ...t, content } : t));
+    setTemplates(updated);
+    // Cache immediately
+    await setCachedTemplates(updated);
 
     const fallbackName = defaultTemplates.find((t) => t.id === id)?.name || templates.find((t) => t.id === id)?.name || 'رسالة';
+
+    if (!isOnline) {
+      // Will be synced when back online via the settings queue
+      // For templates, we save each template individually
+      const { addPendingSettingsChange } = await import('@/lib/offlineStore');
+      await addPendingSettingsChange({
+        id: crypto.randomUUID(),
+        entity: 'templates',
+        data: {
+          id: `${id}_user_${user.id}`,
+          name: fallbackName,
+          content,
+          user_id: user.id,
+          is_global: false,
+        },
+        timestamp: Date.now(),
+      });
+      return { success: true };
+    }
 
     const { error } = await supabase
       .from('whatsapp_templates')
@@ -159,11 +201,12 @@ export const useWhatsAppTemplates = () => {
     if (error) {
       console.error('Error updating template:', error);
       setTemplates(previous);
+      await setCachedTemplates(previous);
       return { success: false, error: 'حدث خطأ' };
     }
 
     return { success: true };
-  }, [user, templates]);
+  }, [user, templates, isOnline]);
 
   // Kept for backwards compatibility in settings; persists per user and syncs on all user devices
   const updateGlobalTemplate = useCallback(async (id: string, content: string) => {

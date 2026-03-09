@@ -3,6 +3,7 @@ import { SubscriptionType } from '@/types/subscriber';
 import { supabase } from '@/integrations/supabase/client.runtime';
 import { useAuth } from './useAuth';
 import { useOnlineStatus } from './useOnlineStatus';
+import { getCachedSettings, setCachedSettings, addPendingSettingsChange } from '@/lib/offlineStore';
 
 export interface SubscriptionPrices {
   monthly: number;
@@ -20,7 +21,8 @@ const defaultPrices: SubscriptionPrices = {
   annual: 1500,
 };
 
-const getCachedPrices = (): SubscriptionPrices | null => {
+// Legacy localStorage cache for instant startup
+const getLegacyCachedPrices = (): SubscriptionPrices | null => {
   try {
     const raw = localStorage.getItem(SETTINGS_CACHE_KEY);
     return raw ? JSON.parse(raw) : null;
@@ -29,15 +31,25 @@ const getCachedPrices = (): SubscriptionPrices | null => {
   }
 };
 
-const cachePrices = (prices: SubscriptionPrices) => {
+const cachePricesLegacy = (prices: SubscriptionPrices) => {
   localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(prices));
 };
 
 export const useCloudSettings = () => {
   const { user } = useAuth();
   const isOnline = useOnlineStatus();
-  const [prices, setPrices] = useState<SubscriptionPrices>(() => getCachedPrices() || defaultPrices);
+  const [prices, setPrices] = useState<SubscriptionPrices>(() => getLegacyCachedPrices() || defaultPrices);
   const [loading, setLoading] = useState(true);
+
+  // Load from IndexedDB on mount (more reliable than localStorage for long-term)
+  useEffect(() => {
+    (async () => {
+      const cached = await getCachedSettings();
+      if (cached?.prices) {
+        setPrices(cached.prices);
+      }
+    })();
+  }, []);
 
   const fetchSettings = useCallback(async () => {
     if (!user) {
@@ -47,8 +59,6 @@ export const useCloudSettings = () => {
 
     // If offline, use cached prices immediately
     if (!isOnline) {
-      const cached = getCachedPrices();
-      if (cached) setPrices(cached);
       setLoading(false);
       return;
     }
@@ -74,7 +84,8 @@ export const useCloudSettings = () => {
           annual: Number(data.annual_price),
         };
         setPrices(fetched);
-        cachePrices(fetched);
+        cachePricesLegacy(fetched);
+        await setCachedSettings({ prices: fetched });
       } else {
         // Create default settings for new user
         const { error: insertError } = await supabase
@@ -90,7 +101,8 @@ export const useCloudSettings = () => {
         if (insertError) {
           console.error('Error creating settings:', insertError);
         }
-        cachePrices(defaultPrices);
+        cachePricesLegacy(defaultPrices);
+        await setCachedSettings({ prices: defaultPrices });
       }
     } catch (err) {
       console.error('Error:', err);
@@ -105,18 +117,32 @@ export const useCloudSettings = () => {
 
   const savePrices = useCallback(async (newPrices: SubscriptionPrices) => {
     setPrices(newPrices);
-    cachePrices(newPrices);
+    cachePricesLegacy(newPrices);
+    await setCachedSettings({ prices: newPrices });
 
-    if (!user || !isOnline) return;
+    if (!user) return;
+
+    const updateData = {
+      monthly_price: newPrices.monthly,
+      quarterly_price: newPrices.quarterly,
+      semi_annual_price: newPrices['semi-annual'],
+      annual_price: newPrices.annual,
+    };
+
+    if (!isOnline) {
+      // Queue for later sync
+      await addPendingSettingsChange({
+        id: crypto.randomUUID(),
+        entity: 'settings',
+        data: updateData,
+        timestamp: Date.now(),
+      });
+      return;
+    }
 
     const { error } = await supabase
       .from('settings')
-      .update({
-        monthly_price: newPrices.monthly,
-        quarterly_price: newPrices.quarterly,
-        semi_annual_price: newPrices['semi-annual'],
-        annual_price: newPrices.annual,
-      })
+      .update(updateData)
       .eq('user_id', user.id);
 
     if (error) {

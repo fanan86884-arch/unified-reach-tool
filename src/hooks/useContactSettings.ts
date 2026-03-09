@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client.runtime';
 import { buildCallLink, buildWhatsAppLink } from '@/lib/phone';
+import { useOnlineStatus } from './useOnlineStatus';
+import { getCachedContacts, setCachedContacts, addPendingSettingsChange } from '@/lib/offlineStore';
+
 export interface ContactInfo {
   facebookUrl: string;
   instagramUrl: string;
@@ -22,9 +25,25 @@ const defaultContactInfo: ContactInfo = {
 export const useContactSettings = () => {
   const [contactInfo, setContactInfo] = useState<ContactInfo>(defaultContactInfo);
   const [loading, setLoading] = useState(true);
+  const isOnline = useOnlineStatus();
+
+  // Load from IndexedDB cache on mount
+  useEffect(() => {
+    (async () => {
+      const cached = await getCachedContacts();
+      if (cached) {
+        setContactInfo(cached as ContactInfo);
+      }
+    })();
+  }, []);
 
   // Fetch contact settings from Supabase
   const fetchContactSettings = useCallback(async () => {
+    if (!isOnline) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('contact_settings')
@@ -38,18 +57,20 @@ export const useContactSettings = () => {
       }
 
       if (data) {
-        setContactInfo({
+        const info: ContactInfo = {
           facebookUrl: data.facebook_url || '',
           instagramUrl: data.instagram_url || '',
           captains: (data.captains as { name: string; phone: string }[]) || [],
-        });
+        };
+        setContactInfo(info);
+        await setCachedContacts(info);
       }
     } catch (e) {
       console.error('Error loading contact settings:', e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isOnline]);
 
   useEffect(() => {
     fetchContactSettings();
@@ -78,6 +99,27 @@ export const useContactSettings = () => {
   }, [fetchContactSettings]);
 
   const saveContactInfo = useCallback(async (newInfo: ContactInfo) => {
+    // Always update local state and cache immediately
+    setContactInfo(newInfo);
+    await setCachedContacts(newInfo);
+
+    const dbData = {
+      facebook_url: newInfo.facebookUrl,
+      instagram_url: newInfo.instagramUrl,
+      captains: newInfo.captains,
+    };
+
+    if (!isOnline) {
+      // Queue for later sync
+      await addPendingSettingsChange({
+        id: crypto.randomUUID(),
+        entity: 'contacts',
+        data: dbData,
+        timestamp: Date.now(),
+      });
+      return true;
+    }
+
     try {
       // Check if record exists
       const { data: existing } = await supabase
@@ -87,37 +129,24 @@ export const useContactSettings = () => {
         .maybeSingle();
 
       if (existing) {
-        // Update existing record
         const { error } = await supabase
           .from('contact_settings')
-          .update({
-            facebook_url: newInfo.facebookUrl,
-            instagram_url: newInfo.instagramUrl,
-            captains: newInfo.captains,
-          })
+          .update(dbData)
           .eq('id', existing.id);
-
         if (error) throw error;
       } else {
-        // Insert new record
         const { error } = await supabase
           .from('contact_settings')
-          .insert({
-            facebook_url: newInfo.facebookUrl,
-            instagram_url: newInfo.instagramUrl,
-            captains: newInfo.captains,
-          });
-
+          .insert(dbData);
         if (error) throw error;
       }
 
-      setContactInfo(newInfo);
       return true;
     } catch (e) {
       console.error('Error saving contact settings:', e);
       return false;
     }
-  }, []);
+  }, [isOnline]);
 
   const getWhatsAppLink = useCallback((phone: string): string => {
     return buildWhatsAppLink(phone);
