@@ -65,7 +65,7 @@ export const useAuth = () => {
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         const currentUser = session?.user ?? null;
 
         // Keep cached auth while offline even if runtime session is missing
@@ -78,6 +78,22 @@ export const useAuth = () => {
             setLoading(false);
           }
           return;
+        }
+
+        // Ignore transient null-session events (e.g. during HMR / token refresh)
+        // Only clear user on explicit SIGNED_OUT
+        if (!currentUser && event !== 'SIGNED_OUT') {
+          const cached = getCachedUser();
+          if (cached) {
+            // Keep the cached user alive — session will recover
+            setUser(cached);
+            setSession(null);
+            if (!settled) {
+              settled = true;
+              setLoading(false);
+            }
+            return;
+          }
         }
 
         setUser(currentUser);
