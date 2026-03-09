@@ -1,6 +1,7 @@
 import { Users, Bell, BarChart3, Settings, UserPlus, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { hapticFeedback } from '@/lib/haptics';
 
 interface BottomNavProps {
   activeTab: string;
@@ -36,6 +37,7 @@ export const BottomNav = ({
           const label = isSubscribersTabActive ? t.nav.register : tab.label;
           
           const handleClick = () => {
+            hapticFeedback('light');
             if (isSubscribersTabActive && onAddSubscriber) {
               onAddSubscriber();
             } else {
