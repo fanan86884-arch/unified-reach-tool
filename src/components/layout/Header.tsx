@@ -19,7 +19,7 @@ export const Header = ({ onOpenActivityLog, isRefreshing = false }: HeaderProps)
     <>
       <header className="sticky top-0 z-40 pt-safe-top">
         {/* Frosted glass background */}
-        <div className="absolute inset-0 bg-background/80 dark:bg-[hsl(0_0%_4%)]/85 backdrop-blur-2xl border-b border-border/30" />
+        <div className="absolute inset-0 bg-background/80 dark:bg-[hsl(0_0%_4%)]/85 backdrop-blur-2xl" />
         
         <div className="relative container flex items-center justify-center h-12 px-4">
           <div className="flex items-center gap-1 absolute left-4">
