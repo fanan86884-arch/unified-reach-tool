@@ -135,7 +135,7 @@ export const SubscriberCardCompact = ({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-3 shrink-0 mr-2">
+          <div className="flex items-center gap-2 shrink-0 mr-2">
             {hasRemainingAmount && (
               <AlertCircle className="w-4 h-4 text-destructive" />
             )}
