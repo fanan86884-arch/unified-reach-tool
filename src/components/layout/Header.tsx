@@ -1,6 +1,6 @@
-import { Moon, Sun, History, Sparkles } from 'lucide-react';
+import { History, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
 import { AIChatInterface } from '@/components/ai/AIChatInterface';
@@ -12,37 +12,14 @@ interface HeaderProps {
 }
 
 export const Header = ({ onOpenActivityLog, isRefreshing = false }: HeaderProps) => {
-  const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    return saved ? saved === 'dark' : true;
-  });
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const isOnline = useOnlineStatus();
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    if (isDark) {
-      root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDark]);
 
   return (
     <>
       <header className="sticky top-0 z-40 bg-background/95 dark:bg-[hsl(0_0%_7%)]/95 backdrop-blur-xl pt-safe-top">
         <div className="container flex items-center justify-center h-14 px-4 relative">
           <div className="flex items-center gap-1 absolute left-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsDark(!isDark)}
-              className="rounded-full w-10 h-10 bg-card/50 hover:bg-card select-none"
-            >
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </Button>
             <Button
               variant="ghost"
               size="icon"

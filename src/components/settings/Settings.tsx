@@ -15,7 +15,10 @@ import {
   User,
   Phone,
   CreditCard,
-  Bell
+  Bell,
+  Moon,
+  Sun,
+  Palette
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -208,6 +211,34 @@ export const Settings = () => {
         {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
         {t.settings.saveSettings}
       </Button>
+
+      <SettingsSection title={t.settings.appearance} icon={Palette}>
+        <div className="flex items-center justify-between mt-4">
+          <div className="flex items-center gap-2">
+            {document.documentElement.classList.contains('dark') ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            <span className="font-medium">{t.settings.darkMode}</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const root = document.documentElement;
+              const isDark = root.classList.contains('dark');
+              if (isDark) {
+                root.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+              } else {
+                root.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+              }
+              // Force re-render
+              window.dispatchEvent(new Event('themechange'));
+            }}
+          >
+            {document.documentElement.classList.contains('dark') ? t.settings.lightMode : t.settings.darkMode}
+          </Button>
+        </div>
+      </SettingsSection>
 
       <SettingsSection title={t.settings.account} icon={User}>
         <div className="flex items-center justify-between mt-4">
