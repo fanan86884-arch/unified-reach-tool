@@ -664,14 +664,42 @@ export const useCloudSubscribers = () => {
     currentEndDate.setDate(currentEndDate.getDate() + pauseDays);
     const newEndDate = currentEndDate.toISOString().split('T')[0];
 
+    const updatePatch = {
+      is_paused: true,
+      paused_until: pauseUntil,
+      status: 'paused' as const,
+      end_date: newEndDate,
+    };
+
+    // Update local state immediately
+    setSubscribers(prev => {
+      const updated = prev.map(s => s.id === id ? {
+        ...s,
+        isPaused: true,
+        pausedUntil: pauseUntil,
+        status: 'paused' as SubscriptionStatus,
+        endDate: newEndDate,
+        updatedAt: new Date().toISOString(),
+      } : s);
+      void setCachedSubscribers(updated);
+      return updated;
+    });
+
+    if (!isOnline) {
+      await addPendingChange({
+        id: crypto.randomUUID(),
+        entity: 'subscriber',
+        op: 'update',
+        subscriberId: id,
+        patch: updatePatch,
+        timestamp: Date.now(),
+      });
+      return;
+    }
+
     const { error } = await supabase
       .from('subscribers')
-      .update({
-        is_paused: true,
-        paused_until: pauseUntil,
-        status: 'paused',
-        end_date: newEndDate,
-      })
+      .update(updatePatch)
       .eq('id', id);
 
     if (error) {
@@ -684,7 +712,7 @@ export const useCloudSubscribers = () => {
         newEndDate 
       }, subscriber);
     }
-  }, [user, subscribers]);
+  }, [user, subscribers, isOnline]);
 
   const resumeSubscription = useCallback(async (id: string) => {
     if (!user) return;
@@ -705,14 +733,42 @@ export const useCloudSubscribers = () => {
 
     const status = calculateStatus(newEndDate, subscriber.remainingAmount, false);
 
+    const updatePatch = {
+      is_paused: false,
+      paused_until: null,
+      status,
+      end_date: newEndDate,
+    };
+
+    // Update local state immediately
+    setSubscribers(prev => {
+      const updated = prev.map(s => s.id === id ? {
+        ...s,
+        isPaused: false,
+        pausedUntil: null,
+        status,
+        endDate: newEndDate,
+        updatedAt: new Date().toISOString(),
+      } : s);
+      void setCachedSubscribers(updated);
+      return updated;
+    });
+
+    if (!isOnline) {
+      await addPendingChange({
+        id: crypto.randomUUID(),
+        entity: 'subscriber',
+        op: 'update',
+        subscriberId: id,
+        patch: updatePatch,
+        timestamp: Date.now(),
+      });
+      return;
+    }
+
     const { error } = await supabase
       .from('subscribers')
-      .update({
-        is_paused: false,
-        paused_until: null,
-        status,
-        end_date: newEndDate,
-      })
+      .update(updatePatch)
       .eq('id', id);
 
     if (error) {
@@ -724,7 +780,7 @@ export const useCloudSubscribers = () => {
         daysAdjusted: -daysRemaining,
       }, subscriber);
     }
-  }, [user, subscribers]);
+  }, [user, subscribers, isOnline]);
 
   const activeSubscribers = useMemo(
     () => subscribers.filter((s) => !s.isArchived),
