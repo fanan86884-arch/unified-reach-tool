@@ -45,28 +45,31 @@ interface SettingsSectionProps {
   defaultOpen?: boolean;
 }
 
-const SettingsSection = ({ title, icon: Icon, children, defaultOpen = false }: SettingsSectionProps) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+const SettingsSection = React.forwardRef<HTMLDivElement, SettingsSectionProps>(
+  ({ title, icon: Icon, children, defaultOpen = false }, ref) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
 
-  return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <Card className="card-shadow overflow-hidden">
-        <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
-          <div className="flex items-center gap-2">
-            <Icon className="w-5 h-5 text-primary" />
-            <h3 className="font-bold">{title}</h3>
-          </div>
-          <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="p-4 pt-0 border-t">
-            {children}
-          </div>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
-  );
-};
+    return (
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <Card ref={ref} className="card-shadow overflow-hidden">
+          <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors active:scale-[0.98] active:opacity-80">
+            <div className="flex items-center gap-2">
+              <Icon className="w-5 h-5 text-primary" />
+              <h3 className="font-bold">{title}</h3>
+            </div>
+            <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="p-4 pt-0 border-t">
+              {children}
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+    );
+  }
+);
+SettingsSection.displayName = 'SettingsSection';
 
 export const Settings = () => {
   const { templates, loading: templatesLoading, updateGlobalTemplate } = useWhatsAppTemplates();
