@@ -27,8 +27,11 @@ export const BottomNav = ({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background/95 dark:bg-[hsl(0_0%_7%)]/95 backdrop-blur-xl z-50 pb-safe select-none">
-      <div className="flex justify-around items-center h-16 max-w-lg mx-auto px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 pb-safe select-none">
+      {/* Frosted glass background */}
+      <div className="absolute inset-0 bg-background/80 dark:bg-[hsl(0_0%_4%)]/85 backdrop-blur-2xl border-t border-border/40" />
+      
+      <div className="relative flex justify-around items-center h-[60px] max-w-lg mx-auto px-1">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const isSubscribersTabActive = tab.id === 'subscribers' && activeTab === 'subscribers';
@@ -50,32 +53,41 @@ export const BottomNav = ({
               key={tab.id}
               onClick={handleClick}
               className={cn(
-                'flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative rounded-2xl mx-0.5 select-none active:scale-90',
+                'flex flex-col items-center justify-center flex-1 h-full transition-all duration-200 relative select-none active:scale-90 active:opacity-70',
                 isActive
                   ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground'
               )}
             >
-              <div className={cn(
-                "relative p-2 rounded-2xl transition-all duration-300",
-                isActive && "bg-primary/15"
-              )}>
-                <Icon
-                  className={cn(
-                    'w-6 h-6 transition-all duration-300',
-                    isActive && 'scale-110'
-                  )}
-                />
+              <div className="relative">
+                <div className={cn(
+                  "p-1.5 rounded-2xl transition-all duration-300",
+                  isActive && "bg-primary/12"
+                )}>
+                  <Icon
+                    className={cn(
+                      'w-[22px] h-[22px] transition-all duration-300',
+                      isActive && 'scale-105'
+                    )}
+                    strokeWidth={isActive ? 2.5 : 1.8}
+                  />
+                </div>
                 {tab.showBadge && notificationCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                  <span className="absolute -top-1 -right-1.5 min-w-[18px] h-[18px] bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-sm">
                     {notificationCount > 99 ? '99+' : notificationCount}
                   </span>
                 )}
               </div>
               <span className={cn(
-                "text-[10px] font-medium mt-0.5 transition-all",
-                isActive && "font-bold"
+                "text-[10px] mt-0.5 transition-all duration-200 leading-tight",
+                isActive ? "font-semibold text-primary" : "font-normal"
               )}>{label}</span>
+              
+              {/* Active indicator dot */}
+              <div className={cn(
+                "absolute bottom-1 w-1 h-1 rounded-full bg-primary transition-all duration-300",
+                isActive ? "opacity-100 scale-100" : "opacity-0 scale-0"
+              )} />
             </button>
           );
         })}
