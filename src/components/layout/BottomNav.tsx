@@ -83,11 +83,6 @@ export const BottomNav = ({
                 isActive ? "font-semibold text-primary" : "font-normal"
               )}>{label}</span>
               
-              {/* Active indicator dot */}
-              <div className={cn(
-                "absolute bottom-1 w-1 h-1 rounded-full bg-primary transition-all duration-300",
-                isActive ? "opacity-100 scale-100" : "opacity-0 scale-0"
-              )} />
             </button>
           );
         })}
