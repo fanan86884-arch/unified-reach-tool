@@ -6,48 +6,64 @@ interface SplashScreenProps {
 }
 
 export const SplashScreen = ({ onComplete }: SplashScreenProps) => {
-  const [fadeOut, setFadeOut] = useState(false);
+  const [phase, setPhase] = useState<'enter' | 'hold' | 'exit'>('enter');
 
   useEffect(() => {
-    // Start fade out after 1.5 seconds
-    const fadeTimer = setTimeout(() => {
-      setFadeOut(true);
-    }, 1500);
-
-    // Complete splash after fade animation
-    const completeTimer = setTimeout(() => {
-      onComplete();
-    }, 2000);
+    const enterTimer = setTimeout(() => setPhase('hold'), 100);
+    const exitTimer = setTimeout(() => setPhase('exit'), 1600);
+    const completeTimer = setTimeout(() => onComplete(), 2100);
 
     return () => {
-      clearTimeout(fadeTimer);
+      clearTimeout(enterTimer);
+      clearTimeout(exitTimer);
       clearTimeout(completeTimer);
     };
   }, [onComplete]);
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background transition-opacity duration-500 ${
-        fadeOut ? 'opacity-0' : 'opacity-100'
-      }`}
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background"
+      style={{
+        opacity: phase === 'exit' ? 0 : 1,
+        transition: 'opacity 500ms ease-in-out',
+      }}
     >
-      {/* Logo with pulse animation */}
-      <div className="animate-pulse">
+      {/* Logo with smooth scale-in */}
+      <div
+        style={{
+          transform: phase === 'enter' ? 'scale(0.8)' : 'scale(1)',
+          opacity: phase === 'enter' ? 0 : 1,
+          transition: 'transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 400ms ease-out',
+        }}
+      >
         <img
           src={logo}
           alt="2B GYM"
-          className="w-32 h-32 object-contain drop-shadow-[0_0_30px_hsl(var(--primary)/0.5)]"
+          className="w-28 h-28 object-contain drop-shadow-[0_0_40px_hsl(var(--primary)/0.4)]"
         />
       </div>
 
-      {/* Brand name */}
-      <h1 className="mt-4 text-3xl font-bold text-primary">2B GYM</h1>
+      {/* Brand name with staggered fade */}
+      <h1
+        className="mt-3 text-2xl font-bold text-primary tracking-tight"
+        style={{
+          transform: phase === 'enter' ? 'translateY(10px)' : 'translateY(0)',
+          opacity: phase === 'enter' ? 0 : 1,
+          transition: 'transform 500ms ease-out 200ms, opacity 400ms ease-out 200ms',
+        }}
+      >
+        2B GYM
+      </h1>
 
-      {/* Loading dots */}
-      <div className="mt-8 flex gap-2">
-        <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
-        <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
-        <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
+      {/* Subtle loading bar */}
+      <div className="mt-8 w-16 h-0.5 rounded-full bg-muted overflow-hidden">
+        <div
+          className="h-full bg-primary rounded-full"
+          style={{
+            width: phase === 'enter' ? '0%' : '100%',
+            transition: 'width 1500ms ease-in-out',
+          }}
+        />
       </div>
     </div>
   );

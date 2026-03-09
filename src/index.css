@@ -36,6 +36,7 @@ textarea,
 /* Prevent pull-to-refresh on mobile */
 html {
   overscroll-behavior-y: contain;
+  overscroll-behavior-x: none;
 }
 
 /* Smooth scrolling & native feel */
@@ -54,9 +55,20 @@ img, a, button, [role="button"] {
   -webkit-touch-callout: none;
 }
 
-/* Smoother touch interactions */
+/* Smoother touch interactions - remove 300ms delay */
 button, a, [role="button"], [role="tab"] {
   touch-action: manipulation;
+}
+
+/* Native-like active states for all interactive elements */
+button:active, a:active, [role="button"]:active {
+  transition: transform 100ms ease-out, opacity 100ms ease-out;
+}
+
+/* Smooth momentum scrolling containers */
+.scroll-smooth-native {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 :root {
   --sat: env(safe-area-inset-top);
