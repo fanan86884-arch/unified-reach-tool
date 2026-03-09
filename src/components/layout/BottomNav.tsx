@@ -29,7 +29,7 @@ export const BottomNav = ({
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 pb-safe select-none">
       {/* Frosted glass background */}
-      <div className="absolute inset-0 bg-background/80 dark:bg-[hsl(0_0%_4%)]/85 backdrop-blur-2xl border-t border-border/40" />
+      <div className="absolute inset-0 bg-background/80 dark:bg-[hsl(0_0%_4%)]/85 backdrop-blur-2xl" />
       
       <div className="relative flex justify-around items-center h-[60px] max-w-lg mx-auto px-1">
         {tabs.map((tab) => {
