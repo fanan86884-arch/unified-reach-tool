@@ -81,8 +81,8 @@ export const MonthlyRevenue = ({ allSubscribers }: MonthlyRevenueProps) => {
 
   return (
     <Card className="p-4 card-shadow overflow-hidden">
-      <button onClick={() => setIsExpanded(!isExpanded)} className="w-full flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="w-full flex items-center justify-between">
+        <div className="flex items-center gap-3 flex-1 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
           <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
             <TrendingUp className="w-5 h-5 text-primary" />
           </div>
@@ -92,18 +92,20 @@ export const MonthlyRevenue = ({ allSubscribers }: MonthlyRevenueProps) => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="text-end">
+          <div className="text-end cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
             <p className="text-xl font-bold text-primary">{renderValue(totalRevenue)}</p>
             <p className="text-xs text-muted-foreground">{t.revenue.totalCurrency}</p>
           </div>
-          <button type="button" onClick={(e) => { e.stopPropagation(); handleReveal(); }}
+          <button type="button" onClick={handleReveal}
             className="w-9 h-9 rounded-xl flex items-center justify-center bg-muted/50 hover:bg-muted transition-colors active:scale-95">
             {isAuthenticating ? <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               : isRevealed ? <Eye className="w-4 h-4 text-primary" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
           </button>
-          {isExpanded ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+          <div className="cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+            {isExpanded ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+          </div>
         </div>
-      </button>
+      </div>
 
       {showPasscodeInput && (
         <div className="mt-4 pt-4 border-t border-border animate-fade-in">
