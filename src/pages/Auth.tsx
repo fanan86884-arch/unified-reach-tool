@@ -667,6 +667,10 @@ const Auth = () => {
                     <WorkoutRequestForm phone={memberResult.phone} name={memberResult.name} />
                   </CollapsibleSection>
 
+                  <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
+                    <ContactUsSection isEmbedded />
+                  </CollapsibleSection>
+
                   {/* Requests history */}
                   <CollapsibleSection title="طلباتي السابقة (غذائي)" icon={Salad}>
                     <DietRequestsHistory phone={memberResult.phone} />
@@ -674,10 +678,6 @@ const Auth = () => {
 
                   <CollapsibleSection title="طلباتي السابقة (تمرين)" icon={Dumbbell}>
                     <WorkoutRequestsHistory phone={memberResult.phone} />
-                  </CollapsibleSection>
-
-                  <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
-                    <ContactUsSection isEmbedded />
                   </CollapsibleSection>
 
                   {/* 2B Store Link */}
@@ -703,13 +703,13 @@ const Auth = () => {
                     />
                   </CollapsibleSection>
 
+                  <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
+                    <ContactUsSection isEmbedded />
+                  </CollapsibleSection>
+
                   {/* Diet requests history */}
                   <CollapsibleSection title="طلباتي السابقة" icon={Salad}>
                     <DietRequestsHistory phone={memberPhone} />
-                  </CollapsibleSection>
-
-                  <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
-                    <ContactUsSection isEmbedded />
                   </CollapsibleSection>
 
                   {/* 2B Store Link */}
