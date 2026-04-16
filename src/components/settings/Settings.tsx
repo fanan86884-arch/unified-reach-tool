@@ -18,18 +18,21 @@ import {
   Bell,
   Moon,
   Sun,
-  Palette
+  Palette,
+  Shield
 } from 'lucide-react';
 import { useState, useEffect, forwardRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useCloudSettings, SubscriptionPrices } from '@/hooks/useCloudSettings';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useWhatsAppTemplates } from '@/hooks/useWhatsAppTemplates';
 import { ExcelExportImport } from './ExcelExportImport';
 import { ContactSettings } from './ContactSettings';
 import { PaymentSettings } from './PaymentSettings';
 import { PushNotificationSettings } from './PushNotificationSettings';
+import { EmployeesManagement } from './EmployeesManagement';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import { useLanguage } from '@/i18n/LanguageContext';
 import {
@@ -76,6 +79,7 @@ export const Settings = () => {
   const [localTemplates, setLocalTemplates] = useState(templates);
   const { prices, loading, savePrices } = useCloudSettings();
   const { signOut, user } = useAuth();
+  const { isAdmin } = useUserRole();
   const { allSubscribers, addSubscriber } = useCloudSubscribers();
   const [localPrices, setLocalPrices] = useState<SubscriptionPrices>(prices);
   const [isSaving, setIsSaving] = useState(false);
@@ -149,60 +153,76 @@ export const Settings = () => {
         {t.settings.title}
       </h2>
 
-      <SettingsSection title={t.settings.prices} icon={DollarSign} defaultOpen={false}>
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          {(Object.keys(t.subscriptionTypes) as Array<keyof typeof t.subscriptionTypes>).map((type) => (
-            <div key={type} className="space-y-2">
-              <Label>{t.subscriptionTypes[type]}</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  value={localPrices[type]}
-                  onChange={(e) => handlePriceChange(type, Number(e.target.value))}
-                  min={0}
-                  dir="ltr"
-                />
-                <span className="text-sm text-muted-foreground">{t.common.currency}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </SettingsSection>
-
-      <SettingsSection title={t.settings.whatsappTemplates} icon={MessageSquare}>
-        <div className="mt-4">
-          <p className="text-sm text-muted-foreground mb-4">
-            {t.settings.templateVariables}: {'{الاسم}'}, {'{تاريخ_الاشتراك}'}, {'{تاريخ_الانتهاء}'}, {'{المبلغ_المدفوع}'}, {'{المبلغ_المتبقي}'}, {'{المدة_المحددة}'}
-          </p>
-          <div className="space-y-4">
-            {localTemplates.map((template) => (
-              <div key={template.id} className="space-y-2">
-                <Label>{template.name}</Label>
-                <Textarea
-                  value={template.content}
-                  onChange={(e) => handleTemplateChange(template.id, e.target.value)}
-                  rows={3}
-                  className="resize-none"
-                />
+      {isAdmin && (
+        <SettingsSection title={t.settings.prices} icon={DollarSign} defaultOpen={false}>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            {(Object.keys(t.subscriptionTypes) as Array<keyof typeof t.subscriptionTypes>).map((type) => (
+              <div key={type} className="space-y-2">
+                <Label>{t.subscriptionTypes[type]}</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={localPrices[type]}
+                    onChange={(e) => handlePriceChange(type, Number(e.target.value))}
+                    min={0}
+                    dir="ltr"
+                  />
+                  <span className="text-sm text-muted-foreground">{t.common.currency}</span>
+                </div>
               </div>
             ))}
           </div>
-        </div>
-      </SettingsSection>
+        </SettingsSection>
+      )}
 
-      <SettingsSection title={t.settings.exportImport} icon={FileSpreadsheet}>
-        <div className="mt-4">
-          <ExcelExportImport subscribers={allSubscribers} onImport={addSubscriber} />
-        </div>
-      </SettingsSection>
+      {isAdmin && (
+        <SettingsSection title="إدارة الموظفين" icon={Shield}>
+          <EmployeesManagement />
+        </SettingsSection>
+      )}
 
-      <SettingsSection title={t.settings.contactInfo} icon={Phone}>
-        <ContactSettings />
-      </SettingsSection>
+      {isAdmin && (
+        <SettingsSection title={t.settings.whatsappTemplates} icon={MessageSquare}>
+          <div className="mt-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              {t.settings.templateVariables}: {'{الاسم}'}, {'{تاريخ_الاشتراك}'}, {'{تاريخ_الانتهاء}'}, {'{المبلغ_المدفوع}'}, {'{المبلغ_المتبقي}'}, {'{المدة_المحددة}'}
+            </p>
+            <div className="space-y-4">
+              {localTemplates.map((template) => (
+                <div key={template.id} className="space-y-2">
+                  <Label>{template.name}</Label>
+                  <Textarea
+                    value={template.content}
+                    onChange={(e) => handleTemplateChange(template.id, e.target.value)}
+                    rows={3}
+                    className="resize-none"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </SettingsSection>
+      )}
 
-      <SettingsSection title={t.settings.paymentInfo} icon={CreditCard}>
-        <PaymentSettings />
-      </SettingsSection>
+      {isAdmin && (
+        <SettingsSection title={t.settings.exportImport} icon={FileSpreadsheet}>
+          <div className="mt-4">
+            <ExcelExportImport subscribers={allSubscribers} onImport={addSubscriber} />
+          </div>
+        </SettingsSection>
+      )}
+
+      {isAdmin && (
+        <SettingsSection title={t.settings.contactInfo} icon={Phone}>
+          <ContactSettings />
+        </SettingsSection>
+      )}
+
+      {isAdmin && (
+        <SettingsSection title={t.settings.paymentInfo} icon={CreditCard}>
+          <PaymentSettings />
+        </SettingsSection>
+      )}
 
       <SettingsSection title={t.settings.pushNotifications} icon={Bell}>
         <div className="mt-4">
@@ -210,10 +230,12 @@ export const Settings = () => {
         </div>
       </SettingsSection>
 
-      <Button onClick={handleSave} className="w-full" disabled={isSaving}>
-        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-        {t.settings.saveSettings}
-      </Button>
+      {isAdmin && (
+        <Button onClick={handleSave} className="w-full" disabled={isSaving}>
+          {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {t.settings.saveSettings}
+        </Button>
+      )}
 
       <SettingsSection title={t.settings.appearance} icon={Palette}>
         <div className="flex items-center justify-between mt-4">
