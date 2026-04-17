@@ -105,6 +105,8 @@ export const ExcelExportImport = ({ subscribers, onImport }: ExcelExportImportPr
                 startDate: parseDate(startVal), endDate: parseDate(endVal),
                 paidAmount: Number(paidVal) || 0, remainingAmount: Number(remainVal) || 0,
                 captain: captainVal || 'Captain',
+                gender: 'male',
+                subscriptionCategory: 'gym',
               };
 
               if (subscriberData.name && subscriberData.phone) {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Subscriber, SubscriberFormData, SubscriptionType } from '@/types/subscriber';
+import { Subscriber, SubscriberFormData, SubscriptionType, Gender, SubscriptionCategory } from '@/types/subscriber';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,7 +43,18 @@ const subscriptionDurations: Record<SubscriptionType, number> = {
   annual: 365,
 };
 
-const getInitialFormData = (editingSubscriber: Subscriber | null | undefined, defaultPrice: number, captain: string): SubscriberFormData => {
+const GENDER_LABEL: Record<Gender, string> = { male: 'ولد', female: 'بنت' };
+const CATEGORY_LABEL: Record<SubscriptionCategory, string> = {
+  gym: 'جيم فقط',
+  gym_walking: 'جيم + مشاية',
+  walking: 'مشاية فقط',
+};
+
+const getInitialFormData = (
+  editingSubscriber: Subscriber | null | undefined,
+  defaultPrice: number,
+  captain: string
+): SubscriberFormData => {
   if (editingSubscriber) {
     return {
       name: editingSubscriber.name,
@@ -54,9 +65,11 @@ const getInitialFormData = (editingSubscriber: Subscriber | null | undefined, de
       paidAmount: editingSubscriber.paidAmount,
       remainingAmount: editingSubscriber.remainingAmount,
       captain: editingSubscriber.captain,
+      gender: editingSubscriber.gender || 'male',
+      subscriptionCategory: editingSubscriber.subscriptionCategory || 'gym',
     };
   }
-  
+
   const today = new Date();
   const endDate = addDays(today, 30);
   return {
@@ -68,6 +81,8 @@ const getInitialFormData = (editingSubscriber: Subscriber | null | undefined, de
     paidAmount: 0,
     remainingAmount: defaultPrice,
     captain: captain,
+    gender: 'male',
+    subscriptionCategory: 'gym',
   };
 };
 
@@ -81,8 +96,8 @@ export const SubscriberForm = ({
   const { getPrice, calculateRemaining, loading: settingsLoading } = useCloudSettings();
   const { t } = useLanguage();
   const defaultCaptain = captains[0] || 'كابتن خالد';
-  
-  const [formData, setFormData] = useState<SubscriberFormData>(() => 
+
+  const [formData, setFormData] = useState<SubscriberFormData>(() =>
     getInitialFormData(editingSubscriber, 250, defaultCaptain)
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,31 +113,27 @@ export const SubscriberForm = ({
     if (isInitialized.current) return;
     isInitialized.current = true;
 
-    const price = getPrice('monthly');
-    const data = getInitialFormData(editingSubscriber, price, defaultCaptain);
-    setFormData(data);
+    const initial = getInitialFormData(editingSubscriber, 0, defaultCaptain);
+    const price = getPrice(initial.subscriptionType, initial.gender, initial.subscriptionCategory);
+    if (!editingSubscriber) {
+      initial.remainingAmount = price;
+    }
+    setFormData(initial);
   }, [isOpen, editingSubscriber, defaultCaptain, getPrice]);
 
-  const handleSubscriptionTypeChange = (type: SubscriptionType) => {
-    const startDate = new Date(formData.startDate);
-    const endDate = addDays(startDate, subscriptionDurations[type]);
-    const newRemaining = calculateRemaining(type, formData.paidAmount);
-    
-    setFormData({
-      ...formData,
-      subscriptionType: type,
-      endDate: format(endDate, 'yyyy-MM-dd'),
-      remainingAmount: newRemaining,
-    });
-  };
-
-  const handlePaidAmountChange = (value: number) => {
-    const remaining = calculateRemaining(formData.subscriptionType, value);
-    setFormData({
-      ...formData,
-      paidAmount: value,
-      remainingAmount: remaining,
-    });
+  const recalc = (updates: Partial<SubscriberFormData>) => {
+    const next: SubscriberFormData = { ...formData, ...updates };
+    if ('subscriptionType' in updates) {
+      const startDate = new Date(next.startDate);
+      next.endDate = format(addDays(startDate, subscriptionDurations[next.subscriptionType]), 'yyyy-MM-dd');
+    }
+    next.remainingAmount = calculateRemaining(
+      next.subscriptionType,
+      next.paidAmount,
+      next.gender,
+      next.subscriptionCategory
+    );
+    setFormData(next);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -174,11 +185,46 @@ export const SubscriberForm = ({
             <p className="text-xs text-muted-foreground">{t.form.phoneHint}</p>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>نوع المشترك</Label>
+              <Select
+                value={formData.gender}
+                onValueChange={(v) => recalc({ gender: v as Gender })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(['male', 'female'] as Gender[]).map((g) => (
+                    <SelectItem key={g} value={g}>{GENDER_LABEL[g]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>فئة الاشتراك</Label>
+              <Select
+                value={formData.subscriptionCategory}
+                onValueChange={(v) => recalc({ subscriptionCategory: v as SubscriptionCategory })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(['gym', 'gym_walking', 'walking'] as SubscriptionCategory[]).map((c) => (
+                    <SelectItem key={c} value={c}>{CATEGORY_LABEL[c]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>{t.form.subscriptionType}</Label>
             <Select
               value={formData.subscriptionType}
-              onValueChange={(value) => handleSubscriptionTypeChange(value as SubscriptionType)}
+              onValueChange={(value) => recalc({ subscriptionType: value as SubscriptionType })}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -186,7 +232,7 @@ export const SubscriberForm = ({
               <SelectContent>
                 {(Object.keys(subscriptionDurations) as SubscriptionType[]).map((value) => (
                   <SelectItem key={value} value={value}>
-                    {t.subscriptionTypes[value]} - {getPrice(value)} {t.common.currency}
+                    {t.subscriptionTypes[value]} - {getPrice(value, formData.gender, formData.subscriptionCategory)} {t.common.currency}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -284,7 +330,7 @@ export const SubscriberForm = ({
                 id="paidAmount"
                 type="number"
                 value={formData.paidAmount || ''}
-                onChange={(e) => handlePaidAmountChange(Number(e.target.value) || 0)}
+                onChange={(e) => recalc({ paidAmount: Number(e.target.value) || 0 })}
                 min={0}
                 dir="ltr"
                 placeholder="0"
