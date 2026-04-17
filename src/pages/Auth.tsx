@@ -19,12 +19,12 @@ import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
 import { ContactUsSection } from '@/components/auth/ContactUsSection';
-import { MemberSubscriptionRequest } from '@/components/auth/MemberSubscriptionRequest';
 import { StoreLink } from '@/components/auth/StoreLink';
 import { DietRequestForm } from '@/components/auth/DietRequestForm';
 import { DietRequestsHistory } from '@/components/auth/DietRequestsHistory';
 import { WorkoutRequestForm } from '@/components/auth/WorkoutRequestForm';
 import { WorkoutRequestsHistory } from '@/components/auth/WorkoutRequestsHistory';
+import { PublicDietRequest } from '@/components/auth/PublicDietRequest';
 import {
   Collapsible,
   CollapsibleContent,
@@ -456,92 +456,54 @@ const Auth = () => {
             </Card>
           )}
 
-          {/* Member - New/Existing Selection (before search) */}
+          {/* Member Section */}
           {userType === 'member' && !memberSearched && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant={memberMode === 'new' ? 'default' : 'outline'}
-                  onClick={() => {
-                    setMemberMode('new');
-                    setMemberSearched(false);
-                    setMemberResult(null);
-                    setMemberPhone('');
-                  }}
-                >
-                  عضو جديد
-                </Button>
-                <Button
-                  type="button"
-                  variant={memberMode === 'existing' ? 'default' : 'outline'}
-                  onClick={() => {
-                    setMemberMode('existing');
-                    setMemberSearched(false);
-                    setMemberResult(null);
-                    setMemberPhone('');
-                  }}
-                >
-                  عضو موجود بالفعل
-                </Button>
-              </div>
+              <Card className="p-8 card-shadow">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <Users className="w-8 h-8 text-primary" />
+                  </div>
+                  <h2 className="text-xl font-bold">استعلام عن الاشتراك</h2>
+                  <p className="text-sm text-muted-foreground mt-1">أدخل رقم هاتفك للاستعلام</p>
+                </div>
 
-              {memberMode === 'existing' ? (
-                <>
-                  <Card className="p-8 card-shadow">
-                    <div className="text-center mb-6">
-                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                        <Users className="w-8 h-8 text-primary" />
-                      </div>
-                      <h2 className="text-xl font-bold">استعلام عن الاشتراك</h2>
-                      <p className="text-sm text-muted-foreground mt-1">أدخل رقم هاتفك للاستعلام</p>
-                    </div>
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      value={memberPhone}
+                      onChange={(e) => setMemberPhone(e.target.value)}
+                      placeholder="أدخل رقم الهاتف..."
+                      className="pr-10"
+                      dir="ltr"
+                      onKeyDown={(e) => e.key === 'Enter' && handleMemberSearch()}
+                    />
+                  </div>
+                  <Button
+                    onClick={handleMemberSearch}
+                    className="w-full"
+                    disabled={!memberPhone.trim() || isMemberSearching}
+                  >
+                    {isMemberSearching ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'بحث'
+                    )}
+                  </Button>
+                </div>
+              </Card>
 
-                    <div className="space-y-4">
-                      <div className="relative">
-                        <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          value={memberPhone}
-                          onChange={(e) => setMemberPhone(e.target.value)}
-                          placeholder="أدخل رقم الهاتف..."
-                          className="pr-10"
-                          dir="ltr"
-                          onKeyDown={(e) => e.key === 'Enter' && handleMemberSearch()}
-                        />
-                      </div>
-                      <Button
-                        onClick={handleMemberSearch}
-                        className="w-full"
-                        disabled={!memberPhone.trim() || isMemberSearching}
-                      >
-                        {isMemberSearching ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          'بحث'
-                        )}
-                      </Button>
-                    </div>
-                  </Card>
+              {/* Diet request open to anyone (with their own phone) */}
+              <CollapsibleSection title="طلب نظام غذائي" icon={Salad}>
+                <PublicDietRequest />
+              </CollapsibleSection>
 
-                  <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
-                    <ContactUsSection isEmbedded />
-                  </CollapsibleSection>
+              <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
+                <ContactUsSection isEmbedded />
+              </CollapsibleSection>
 
-                  <StoreLink />
-                </>
-              ) : (
-                <>
-                  <CollapsibleSection title="تسجيل اشتراك جديد" icon={CreditCard} defaultOpen>
-                    <MemberSubscriptionRequest existingSubscriber={null} onClose={() => {}} />
-                  </CollapsibleSection>
-
-                  <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
-                    <ContactUsSection isEmbedded />
-                  </CollapsibleSection>
-
-                  <StoreLink />
-                </>
-              )}
+              <StoreLink />
             </div>
           )}
 
@@ -647,15 +609,8 @@ const Auth = () => {
                     </div>
                   </Card>
 
-                  {/* Show renewal only if expired */}
-                  {isExpired && (
-                    <CollapsibleSection title="تجديد الاشتراك" icon={CreditCard} defaultOpen>
-                      <MemberSubscriptionRequest 
-                        existingSubscriber={memberResult} 
-                        onClose={() => setShowSubscriptionRequest(false)} 
-                      />
-                    </CollapsibleSection>
-                  )}
+                  {/* Renewal request hidden - admin handles renewals manually */}
+
 
                   {/* Diet request section */}
                   <CollapsibleSection title="طلب نظام غذائي" icon={Salad}>
@@ -695,12 +650,9 @@ const Auth = () => {
                     </p>
                   </Card>
 
-                  {/* Show subscription request for not found members */}
-                  <CollapsibleSection title="طلب اشتراك جديد" icon={CreditCard} defaultOpen>
-                    <MemberSubscriptionRequest 
-                      existingSubscriber={null} 
-                      onClose={() => {}} 
-                    />
+                  {/* Subscription request hidden - members register at the gym */}
+                  <CollapsibleSection title="طلب نظام غذائي" icon={Salad} defaultOpen>
+                    <DietRequestForm phone={memberPhone} />
                   </CollapsibleSection>
 
                   <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>

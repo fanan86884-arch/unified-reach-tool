@@ -334,6 +334,7 @@ export type Database = {
           created_at: string
           id: string
           monthly_price: number
+          pricing_tiers: Json
           quarterly_price: number
           semi_annual_price: number
           updated_at: string
@@ -344,6 +345,7 @@ export type Database = {
           created_at?: string
           id?: string
           monthly_price?: number
+          pricing_tiers?: Json
           quarterly_price?: number
           semi_annual_price?: number
           updated_at?: string
@@ -354,6 +356,7 @@ export type Database = {
           created_at?: string
           id?: string
           monthly_price?: number
+          pricing_tiers?: Json
           quarterly_price?: number
           semi_annual_price?: number
           updated_at?: string
@@ -366,6 +369,7 @@ export type Database = {
           captain: string
           created_at: string
           end_date: string
+          gender: string
           id: string
           is_archived: boolean
           is_paused: boolean
@@ -376,6 +380,7 @@ export type Database = {
           remaining_amount: number
           start_date: string
           status: string
+          subscription_category: string
           subscription_type: string
           updated_at: string
           user_id: string
@@ -384,6 +389,7 @@ export type Database = {
           captain?: string
           created_at?: string
           end_date: string
+          gender?: string
           id?: string
           is_archived?: boolean
           is_paused?: boolean
@@ -394,6 +400,7 @@ export type Database = {
           remaining_amount?: number
           start_date?: string
           status?: string
+          subscription_category?: string
           subscription_type?: string
           updated_at?: string
           user_id: string
@@ -402,6 +409,7 @@ export type Database = {
           captain?: string
           created_at?: string
           end_date?: string
+          gender?: string
           id?: string
           is_archived?: boolean
           is_paused?: boolean
@@ -412,6 +420,7 @@ export type Database = {
           remaining_amount?: number
           start_date?: string
           status?: string
+          subscription_category?: string
           subscription_type?: string
           updated_at?: string
           user_id?: string

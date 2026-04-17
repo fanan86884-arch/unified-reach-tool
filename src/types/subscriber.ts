@@ -2,6 +2,10 @@ export type SubscriptionStatus = 'active' | 'expiring' | 'expired' | 'pending' |
 
 export type SubscriptionType = 'monthly' | 'quarterly' | 'semi-annual' | 'annual';
 
+export type Gender = 'male' | 'female';
+
+export type SubscriptionCategory = 'gym' | 'gym_walking' | 'walking';
+
 export interface Subscriber {
   id: string;
   name: string;
@@ -18,6 +22,8 @@ export interface Subscriber {
   pausedUntil: string | null;
   createdAt: string;
   updatedAt: string;
+  gender?: Gender;
+  subscriptionCategory?: SubscriptionCategory;
 }
 
 export interface SubscriberFormData {
@@ -29,6 +35,8 @@ export interface SubscriberFormData {
   paidAmount: number;
   remainingAmount: number;
   captain: string;
+  gender: Gender;
+  subscriptionCategory: SubscriptionCategory;
 }
 
 export interface WhatsAppTemplate {

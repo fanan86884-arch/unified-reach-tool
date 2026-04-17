@@ -67,6 +67,8 @@ const mapDbToSubscriber = (row: any): Subscriber => ({
   pausedUntil: row.paused_until || null,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  gender: (row.gender as Subscriber['gender']) || 'male',
+  subscriptionCategory: (row.subscription_category as Subscriber['subscriptionCategory']) || 'gym',
 });
 
 export const useCloudSubscribers = () => {
@@ -265,6 +267,8 @@ export const useCloudSubscribers = () => {
       pausedUntil: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      gender: data.gender,
+      subscriptionCategory: data.subscriptionCategory,
     };
 
     // Update local state immediately
@@ -295,6 +299,8 @@ export const useCloudSubscribers = () => {
           is_archived: false,
           is_paused: false,
           paused_until: null,
+          gender: data.gender,
+          subscription_category: data.subscriptionCategory,
         },
         timestamp: Date.now(),
       });
@@ -319,7 +325,9 @@ export const useCloudSubscribers = () => {
         is_archived: false,
         is_paused: false,
         paused_until: null,
-      })
+        gender: data.gender,
+        subscription_category: data.subscriptionCategory,
+      } as any)
       .select()
       .single();
 
@@ -394,6 +402,14 @@ export const useCloudSubscribers = () => {
     if (data.captain !== undefined) {
       updateData.captain = data.captain;
       localUpdate.captain = data.captain;
+    }
+    if (data.gender !== undefined) {
+      updateData.gender = data.gender;
+      localUpdate.gender = data.gender;
+    }
+    if (data.subscriptionCategory !== undefined) {
+      updateData.subscription_category = data.subscriptionCategory;
+      localUpdate.subscriptionCategory = data.subscriptionCategory;
     }
 
     // Recalculate status if relevant fields changed
