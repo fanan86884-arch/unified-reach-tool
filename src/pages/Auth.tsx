@@ -609,15 +609,8 @@ const Auth = () => {
                     </div>
                   </Card>
 
-                  {/* Show renewal only if expired */}
-                  {isExpired && (
-                    <CollapsibleSection title="تجديد الاشتراك" icon={CreditCard} defaultOpen>
-                      <MemberSubscriptionRequest 
-                        existingSubscriber={memberResult} 
-                        onClose={() => setShowSubscriptionRequest(false)} 
-                      />
-                    </CollapsibleSection>
-                  )}
+                  {/* Renewal request hidden - admin handles renewals manually */}
+
 
                   {/* Diet request section */}
                   <CollapsibleSection title="طلب نظام غذائي" icon={Salad}>
@@ -657,12 +650,9 @@ const Auth = () => {
                     </p>
                   </Card>
 
-                  {/* Show subscription request for not found members */}
-                  <CollapsibleSection title="طلب اشتراك جديد" icon={CreditCard} defaultOpen>
-                    <MemberSubscriptionRequest 
-                      existingSubscriber={null} 
-                      onClose={() => {}} 
-                    />
+                  {/* Subscription request hidden - members register at the gym */}
+                  <CollapsibleSection title="طلب نظام غذائي" icon={Salad} defaultOpen>
+                    <DietRequestForm phone={memberPhone} />
                   </CollapsibleSection>
 
                   <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
