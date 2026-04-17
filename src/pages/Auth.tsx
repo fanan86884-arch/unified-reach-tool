@@ -19,12 +19,12 @@ import { ar } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
 import { ContactUsSection } from '@/components/auth/ContactUsSection';
-import { MemberSubscriptionRequest } from '@/components/auth/MemberSubscriptionRequest';
 import { StoreLink } from '@/components/auth/StoreLink';
 import { DietRequestForm } from '@/components/auth/DietRequestForm';
 import { DietRequestsHistory } from '@/components/auth/DietRequestsHistory';
 import { WorkoutRequestForm } from '@/components/auth/WorkoutRequestForm';
 import { WorkoutRequestsHistory } from '@/components/auth/WorkoutRequestsHistory';
+import { PublicDietRequest } from '@/components/auth/PublicDietRequest';
 import {
   Collapsible,
   CollapsibleContent,
