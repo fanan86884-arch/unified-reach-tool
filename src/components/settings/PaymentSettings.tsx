@@ -193,7 +193,7 @@ export const PaymentSettings = () => {
         }).eq('id', existing.id);
         if (error) throw error;
       }
-      if (tiers) await savePricingTiers(tiers);
+      // pricing tiers have a dedicated save button
       toast({ title: t.settings.savedSuccess });
     } catch (e) {
       console.error('Error saving settings:', e);
