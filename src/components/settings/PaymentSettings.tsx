@@ -7,11 +7,14 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client.runtime';
 import {
   Loader2, Save, CreditCard, Store, DollarSign, Users,
-  Copy, RotateCcw, TrendingUp, TrendingDown, Dumbbell, Footprints, Activity,
+  Copy, RotateCcw, TrendingUp, TrendingDown, Dumbbell, Footprints, Activity, ChevronDown,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useCloudSettings, PricingTiers } from '@/hooks/useCloudSettings';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import {
+  Collapsible, CollapsibleContent, CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -68,6 +71,11 @@ export const PaymentSettings = () => {
   const [settings, setSettings] = useState({ instapayNumber: '', vodafoneCashNumber: '', storeUrl: '' });
   const [tiers, setTiers] = useState<PricingTiers | null>(null);
   const [bulkPercent, setBulkPercent] = useState<string>('');
+  // Each gender remembers which category panel is open (default: gym)
+  const [openCategory, setOpenCategory] = useState<Record<Gender, SubscriptionCategory>>({
+    male: 'gym',
+    female: 'gym',
+  });
 
   useEffect(() => {
     if (pricingTiers && !tiers) setTiers(pricingTiers);
@@ -113,6 +121,18 @@ export const PaymentSettings = () => {
     if (!tiers) return;
     setTiers({ ...tiers, [gender]: JSON.parse(JSON.stringify(DEFAULT_TIERS[gender])) });
     toast({ title: 'تم الإرجاع', description: `تم إرجاع أسعار ${GENDER_LABEL[gender]} للقيم الافتراضية` });
+  };
+
+  const resetCategory = (gender: Gender, category: SubscriptionCategory) => {
+    if (!tiers) return;
+    setTiers({
+      ...tiers,
+      [gender]: {
+        ...tiers[gender],
+        [category]: { ...DEFAULT_TIERS[gender][category] },
+      },
+    });
+    toast({ title: 'تم الإرجاع', description: `${CATEGORY_LABEL[category]} - ${GENDER_LABEL[gender]}` });
   };
 
   const applyBulkAdjust = (gender: Gender, sign: 1 | -1) => {
@@ -185,14 +205,13 @@ export const PaymentSettings = () => {
           </TabsList>
 
           {GENDERS.map((gender) => (
-            <TabsContent key={gender} value={gender} className="space-y-4 mt-4">
+            <TabsContent key={gender} value={gender} className="space-y-3 mt-4">
               {/* Quick actions toolbar */}
               <div className="rounded-lg border bg-card/50 p-3 space-y-3">
-                <p className="text-xs font-medium text-muted-foreground">أدوات سريعة</p>
+                <p className="text-xs font-medium text-muted-foreground">أدوات سريعة لأسعار {GENDER_LABEL[gender]}</p>
 
-                {/* Bulk adjust */}
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-1 flex-1 min-w-[140px]">
+                  <div className="flex items-center gap-1 flex-1 min-w-[120px]">
                     <Input
                       type="number"
                       min={0}
@@ -215,7 +234,6 @@ export const PaymentSettings = () => {
                   </Button>
                 </div>
 
-                {/* Copy + reset */}
                 <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
@@ -230,7 +248,7 @@ export const PaymentSettings = () => {
                     <AlertDialogTrigger asChild>
                       <Button size="sm" variant="ghost" className="h-8 text-xs text-destructive hover:text-destructive">
                         <RotateCcw className="w-3.5 h-3.5 ml-1" />
-                        افتراضي
+                        إرجاع الكل للافتراضي
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -249,56 +267,85 @@ export const PaymentSettings = () => {
                 </div>
               </div>
 
-              {/* Pricing cards per category */}
+              {/* Three collapsible category lists */}
               {CATEGORIES.map((category) => {
                 const Icon = CATEGORY_ICON[category];
                 const monthly = tiers[gender][category].monthly || 0;
+                const isOpen = openCategory[gender] === category;
                 return (
-                  <div key={category} className="space-y-3 p-3 rounded-lg border bg-muted/40">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-primary flex items-center gap-2">
-                        <Icon className="w-4 h-4" />
-                        {CATEGORY_LABEL[category]}
-                      </p>
-                      {monthly > 0 && (
-                        <span className="text-[10px] text-muted-foreground">
-                          {monthly} ج / شهر
-                        </span>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {DURATIONS.map((duration) => {
-                        const price = tiers[gender][category][duration] || 0;
-                        const perDay = price > 0 ? Math.round(price / DURATION_DAYS[duration]) : 0;
-                        return (
-                          <div key={duration} className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-xs">{DURATION_LABEL[duration]}</Label>
-                              {perDay > 0 && (
-                                <span className="text-[9px] text-muted-foreground" dir="ltr">
-                                  {perDay}/يوم
-                                </span>
-                              )}
-                            </div>
-                            <div className="relative">
-                              <Input
-                                type="number"
-                                min={0}
-                                dir="ltr"
-                                value={price || ''}
-                                onChange={(e) => updatePrice(gender, category, duration, Number(e.target.value) || 0)}
-                                placeholder="0"
-                                className="pr-8 text-center font-medium"
-                              />
-                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">
-                                ج
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  <Collapsible
+                    key={category}
+                    open={isOpen}
+                    onOpenChange={(open) => {
+                      if (open) setOpenCategory({ ...openCategory, [gender]: category });
+                      else setOpenCategory({ ...openCategory, [gender]: '' as any });
+                    }}
+                    className="rounded-lg border bg-muted/40 overflow-hidden"
+                  >
+                    <CollapsibleTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-between p-3 hover:bg-muted/60 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Icon className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-semibold">{CATEGORY_LABEL[category]}</span>
+                          {monthly > 0 && (
+                            <Badge variant="secondary" className="text-[10px] h-5">
+                              من {monthly} ج
+                            </Badge>
+                          )}
+                        </div>
+                        <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform', isOpen && 'rotate-180')} />
+                      </button>
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent>
+                      <div className="px-3 pb-3 space-y-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          {DURATIONS.map((duration) => {
+                            const price = tiers[gender][category][duration] || 0;
+                            const perDay = price > 0 ? Math.round(price / DURATION_DAYS[duration]) : 0;
+                            return (
+                              <div key={duration} className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-xs">{DURATION_LABEL[duration]}</Label>
+                                  {perDay > 0 && (
+                                    <span className="text-[9px] text-muted-foreground" dir="ltr">
+                                      {perDay}/يوم
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="relative">
+                                  <Input
+                                    type="number"
+                                    min={0}
+                                    dir="ltr"
+                                    value={price || ''}
+                                    onChange={(e) => updatePrice(gender, category, duration, Number(e.target.value) || 0)}
+                                    placeholder="0"
+                                    className="pr-8 text-center font-medium"
+                                  />
+                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">
+                                    ج
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="w-full h-7 text-[11px] text-muted-foreground"
+                          onClick={() => resetCategory(gender, category)}
+                        >
+                          <RotateCcw className="w-3 h-3 ml-1" />
+                          إرجاع هذه القائمة للافتراضي
+                        </Button>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 );
               })}
             </TabsContent>
@@ -333,3 +380,6 @@ export const PaymentSettings = () => {
     </div>
   );
 };
+
+// Inline cn import to avoid extra import line
+import { cn } from '@/lib/utils';
