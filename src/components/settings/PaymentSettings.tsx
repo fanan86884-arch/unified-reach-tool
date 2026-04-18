@@ -213,10 +213,21 @@ export const PaymentSettings = () => {
           <h4 className="font-medium flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-primary" />
             أسعار الاشتراكات
+            {pricesDirty && (
+              <Badge variant="outline" className="text-[10px] border-warning/50 text-warning animate-pulse">
+                تغييرات غير محفوظة
+              </Badge>
+            )}
           </h4>
-          <Badge variant="outline" className="text-[10px]">
-            {GENDERS.length * CATEGORIES.length * DURATIONS.length} سعر
-          </Badge>
+          <Button
+            size="sm"
+            onClick={handleSavePricesOnly}
+            disabled={savingPrices || !pricesDirty}
+            className={cn('h-8 gap-1.5', pricesDirty && 'animate-pulse')}
+          >
+            {savingPrices ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            حفظ الأسعار
+          </Button>
         </div>
 
         <Tabs defaultValue="male" className="w-full">
