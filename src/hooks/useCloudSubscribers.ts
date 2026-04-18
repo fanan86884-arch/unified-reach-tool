@@ -206,18 +206,26 @@ export const useCloudSubscribers = () => {
     const normalized = normalizeEgyptPhoneDigits(phone);
     if (!normalized) return false;
 
-    const { data, error } = await supabase
-      .from('subscribers')
-      .select('id, phone')
-      .eq('user_id', user.id);
-
-    if (error || !data) return false;
-
-    return data.some(sub => {
+    // Fast path: check in-memory cache first to avoid network round-trip
+    const localHit = subscribers.some(sub => {
       if (excludeId && sub.id === excludeId) return false;
       return normalizeEgyptPhoneDigits(sub.phone) === normalized;
     });
-  }, [user]);
+    if (localHit) return true;
+
+    // Targeted query: only fetch the matching phone (limit 1)
+    let query = supabase
+      .from('subscribers')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('phone', normalized)
+      .limit(1);
+    if (excludeId) query = query.neq('id', excludeId);
+
+    const { data, error } = await query;
+    if (error || !data) return false;
+    return data.length > 0;
+  }, [user, subscribers]);
 
   const addingRef = useRef(false);
 
@@ -307,8 +315,8 @@ export const useCloudSubscribers = () => {
       return { success: true, subscriber: newSubscriber };
     }
 
-    // If online, save to database
-    const { data: newData, error } = await supabase
+    // If online, save to database (no .select() — local state already updated, realtime will sync)
+    const { error } = await supabase
       .from('subscribers')
       .insert({
         id: newId,
@@ -327,9 +335,7 @@ export const useCloudSubscribers = () => {
         paused_until: null,
         gender: data.gender,
         subscription_category: data.subscriptionCategory,
-      } as any)
-      .select()
-      .single();
+      } as any);
 
     if (error) {
       console.error('Error adding subscriber:', error);
@@ -338,13 +344,13 @@ export const useCloudSubscribers = () => {
       return { success: false, error: 'حدث خطأ أثناء الإضافة' };
     }
 
-    // Log activity
-    await logActivity(user.id, newData.id, data.name, 'add', {
+    // Log activity in background (don't await - don't block UI)
+    void logActivity(user.id, newId, data.name, 'add', {
       subscriptionType: data.subscriptionType,
       paidAmount: data.paidAmount,
     });
 
-    return { success: true, subscriber: mapDbToSubscriber(newData) };
+    return { success: true, subscriber: newSubscriber };
   }, [user, checkPhoneExists, isOnline]);
 
   const updateSubscriber = useCallback(async (id: string, data: Partial<SubscriberFormData>): Promise<{ success: boolean; error?: string }> => {
