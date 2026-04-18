@@ -69,8 +69,10 @@ export const PaymentSettings = () => {
   const { pricingTiers, savePricingTiers, loading: tiersLoading } = useCloudSettings();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingPrices, setSavingPrices] = useState(false);
   const [settings, setSettings] = useState({ instapayNumber: '', vodafoneCashNumber: '', storeUrl: '' });
   const [tiers, setTiers] = useState<PricingTiers | null>(null);
+  const [pricesDirty, setPricesDirty] = useState(false);
   const [bulkPercent, setBulkPercent] = useState<string>('');
   // Each gender remembers which category panel is open (default: gym)
   const [openCategory, setOpenCategory] = useState<Record<Gender, SubscriptionCategory>>({
@@ -78,9 +80,10 @@ export const PaymentSettings = () => {
     female: 'gym',
   });
 
+  // Sync local tiers when global tiers change (realtime updates from other accounts)
   useEffect(() => {
-    if (pricingTiers && !tiers) setTiers(pricingTiers);
-  }, [pricingTiers, tiers]);
+    if (pricingTiers && !pricesDirty) setTiers(pricingTiers);
+  }, [pricingTiers, pricesDirty]);
 
   useEffect(() => {
     const fetchSettings = async () => {
