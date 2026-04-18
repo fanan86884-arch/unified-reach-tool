@@ -315,8 +315,8 @@ export const useCloudSubscribers = () => {
       return { success: true, subscriber: newSubscriber };
     }
 
-    // If online, save to database
-    const { data: newData, error } = await supabase
+    // If online, save to database (no .select() — local state already updated, realtime will sync)
+    const { error } = await supabase
       .from('subscribers')
       .insert({
         id: newId,
@@ -335,9 +335,7 @@ export const useCloudSubscribers = () => {
         paused_until: null,
         gender: data.gender,
         subscription_category: data.subscriptionCategory,
-      } as any)
-      .select()
-      .single();
+      } as any);
 
     if (error) {
       console.error('Error adding subscriber:', error);
@@ -346,13 +344,13 @@ export const useCloudSubscribers = () => {
       return { success: false, error: 'حدث خطأ أثناء الإضافة' };
     }
 
-    // Log activity
-    await logActivity(user.id, newData.id, data.name, 'add', {
+    // Log activity in background (don't await - don't block UI)
+    void logActivity(user.id, newId, data.name, 'add', {
       subscriptionType: data.subscriptionType,
       paidAmount: data.paidAmount,
     });
 
-    return { success: true, subscriber: mapDbToSubscriber(newData) };
+    return { success: true, subscriber: newSubscriber };
   }, [user, checkPhoneExists, isOnline]);
 
   const updateSubscriber = useCallback(async (id: string, data: Partial<SubscriberFormData>): Promise<{ success: boolean; error?: string }> => {
