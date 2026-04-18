@@ -140,6 +140,23 @@ export const useCloudSettings = () => {
     fetchSettings();
   }, [fetchSettings]);
 
+  // Realtime sync: any change to settings.pricing_tiers anywhere → update everyone
+  useEffect(() => {
+    if (!user || !isOnline) return;
+    const channel = supabase
+      .channel('settings-global-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, (payload: any) => {
+        const newTiers = payload?.new?.pricing_tiers as PricingTiers | undefined;
+        if (newTiers) {
+          setPricingTiers(newTiers);
+          cacheTiersLegacy(newTiers);
+          setCachedSettings({ prices, pricingTiers: newTiers } as any).catch(() => {});
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, isOnline, prices]);
+
   const savePrices = useCallback(async (newPrices: SubscriptionPrices) => {
     setPrices(newPrices);
     cachePricesLegacy(newPrices);
