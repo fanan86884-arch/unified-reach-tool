@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Gender, SubscriptionCategory, SubscriptionType } from '@/types/subscriber';
+import { cn } from '@/lib/utils';
 
 const GENDER_LABEL: Record<Gender, string> = { male: 'الأولاد', female: 'البنات' };
 const CATEGORY_LABEL: Record<SubscriptionCategory, string> = {
@@ -381,5 +382,3 @@ export const PaymentSettings = () => {
   );
 };
 
-// Inline cn import to avoid extra import line
-import { cn } from '@/lib/utils';
