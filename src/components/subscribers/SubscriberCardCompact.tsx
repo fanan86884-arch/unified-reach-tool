@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Edit, Trash2, Archive, RotateCcw, MessageCircle, RefreshCw, 
-  ChevronDown, ChevronUp, Pause, Play, Clock, AlertCircle, ArchiveRestore
+  ChevronDown, ChevronUp, Pause, Play, Clock, AlertCircle, ArchiveRestore,
+  Dumbbell, Footprints, Activity,
 } from 'lucide-react';
 import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -123,7 +124,36 @@ export const SubscriberCardCompact = ({
       >
         <div className="flex items-center justify-between gap-3 flex-1 min-w-0">
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-foreground truncate">{subscriber.name}</h3>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h3 className="font-bold text-foreground truncate">{subscriber.name}</h3>
+              {subscriber.gender && (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'text-[9px] h-4 px-1.5 leading-none border',
+                    subscriber.gender === 'female'
+                      ? 'bg-pink-500/10 text-pink-500 border-pink-500/30'
+                      : 'bg-blue-500/10 text-blue-500 border-blue-500/30'
+                  )}
+                >
+                  {subscriber.gender === 'female' ? 'بنت' : 'ولد'}
+                </Badge>
+              )}
+              {subscriber.subscriptionCategory && (() => {
+                const cat = subscriber.subscriptionCategory;
+                const Icon = cat === 'walking' ? Footprints : cat === 'gym_walking' ? Activity : Dumbbell;
+                const label = cat === 'walking' ? 'مشاية' : cat === 'gym_walking' ? 'جيم+مشاية' : 'جيم';
+                return (
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] h-4 px-1.5 leading-none gap-0.5 bg-primary/10 text-primary border-primary/30"
+                  >
+                    <Icon className="w-2.5 h-2.5" />
+                    {label}
+                  </Badge>
+                );
+              })()}
+            </div>
             <div className="text-sm text-muted-foreground">
               <span>{formatDateNumeric(subscriber.endDate)}</span>
               <span className="mx-1">-</span>

@@ -69,8 +69,10 @@ export const PaymentSettings = () => {
   const { pricingTiers, savePricingTiers, loading: tiersLoading } = useCloudSettings();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingPrices, setSavingPrices] = useState(false);
   const [settings, setSettings] = useState({ instapayNumber: '', vodafoneCashNumber: '', storeUrl: '' });
   const [tiers, setTiers] = useState<PricingTiers | null>(null);
+  const [pricesDirty, setPricesDirty] = useState(false);
   const [bulkPercent, setBulkPercent] = useState<string>('');
   // Each gender remembers which category panel is open (default: gym)
   const [openCategory, setOpenCategory] = useState<Record<Gender, SubscriptionCategory>>({
@@ -78,9 +80,10 @@ export const PaymentSettings = () => {
     female: 'gym',
   });
 
+  // Sync local tiers when global tiers change (realtime updates from other accounts)
   useEffect(() => {
-    if (pricingTiers && !tiers) setTiers(pricingTiers);
-  }, [pricingTiers, tiers]);
+    if (pricingTiers && !pricesDirty) setTiers(pricingTiers);
+  }, [pricingTiers, pricesDirty]);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -97,6 +100,7 @@ export const PaymentSettings = () => {
 
   const updatePrice = (gender: Gender, category: SubscriptionCategory, duration: SubscriptionType, value: number) => {
     if (!tiers) return;
+    setPricesDirty(true);
     setTiers({
       ...tiers,
       [gender]: {
@@ -108,24 +112,28 @@ export const PaymentSettings = () => {
 
   const copyMaleToFemale = () => {
     if (!tiers) return;
+    setPricesDirty(true);
     setTiers({ ...tiers, female: JSON.parse(JSON.stringify(tiers.male)) });
     toast({ title: 'تم النسخ', description: 'تم نسخ أسعار الأولاد إلى البنات' });
   };
 
   const copyFemaleToMale = () => {
     if (!tiers) return;
+    setPricesDirty(true);
     setTiers({ ...tiers, male: JSON.parse(JSON.stringify(tiers.female)) });
     toast({ title: 'تم النسخ', description: 'تم نسخ أسعار البنات إلى الأولاد' });
   };
 
   const resetGender = (gender: Gender) => {
     if (!tiers) return;
+    setPricesDirty(true);
     setTiers({ ...tiers, [gender]: JSON.parse(JSON.stringify(DEFAULT_TIERS[gender])) });
     toast({ title: 'تم الإرجاع', description: `تم إرجاع أسعار ${GENDER_LABEL[gender]} للقيم الافتراضية` });
   };
 
   const resetCategory = (gender: Gender, category: SubscriptionCategory) => {
     if (!tiers) return;
+    setPricesDirty(true);
     setTiers({
       ...tiers,
       [gender]: {
@@ -150,11 +158,27 @@ export const PaymentSettings = () => {
         newGender[cat][dur] = Math.max(0, Math.round(tiers[gender][cat][dur] * factor));
       }
     }
+    setPricesDirty(true);
     setTiers({ ...tiers, [gender]: newGender });
     toast({
       title: sign > 0 ? 'تمت الزيادة' : 'تم الخصم',
       description: `${pct}% على أسعار ${GENDER_LABEL[gender]}`,
     });
+  };
+
+  const handleSavePricesOnly = async () => {
+    if (!tiers) return;
+    setSavingPrices(true);
+    try {
+      await savePricingTiers(tiers);
+      setPricesDirty(false);
+      toast({ title: '✓ تم حفظ الأسعار', description: 'تم تحديث الأسعار لجميع الحسابات' });
+    } catch (e) {
+      console.error(e);
+      toast({ title: t.common.error, description: t.settings.saveError, variant: 'destructive' });
+    } finally {
+      setSavingPrices(false);
+    }
   };
 
   const handleSave = async () => {
@@ -169,7 +193,7 @@ export const PaymentSettings = () => {
         }).eq('id', existing.id);
         if (error) throw error;
       }
-      if (tiers) await savePricingTiers(tiers);
+      // pricing tiers have a dedicated save button
       toast({ title: t.settings.savedSuccess });
     } catch (e) {
       console.error('Error saving settings:', e);
@@ -189,10 +213,21 @@ export const PaymentSettings = () => {
           <h4 className="font-medium flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-primary" />
             أسعار الاشتراكات
+            {pricesDirty && (
+              <Badge variant="outline" className="text-[10px] border-warning/50 text-warning animate-pulse">
+                تغييرات غير محفوظة
+              </Badge>
+            )}
           </h4>
-          <Badge variant="outline" className="text-[10px]">
-            {GENDERS.length * CATEGORIES.length * DURATIONS.length} سعر
-          </Badge>
+          <Button
+            size="sm"
+            onClick={handleSavePricesOnly}
+            disabled={savingPrices || !pricesDirty}
+            className={cn('h-8 gap-1.5', pricesDirty && 'animate-pulse')}
+          >
+            {savingPrices ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            حفظ الأسعار
+          </Button>
         </div>
 
         <Tabs defaultValue="male" className="w-full">

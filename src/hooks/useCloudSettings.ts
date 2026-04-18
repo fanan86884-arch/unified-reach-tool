@@ -90,17 +90,15 @@ export const useCloudSettings = () => {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Read GLOBAL pricing tiers from any settings row (shared across all accounts)
+      // Prefer current user's row for prices, but pricing_tiers are shared
+      const [{ data: ownData }, { data: anyData }] = await Promise.all([
+        supabase.from('settings').select('*').eq('user_id', user.id).maybeSingle(),
+        supabase.from('settings').select('pricing_tiers, updated_at').order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+      ]);
 
-      if (error) {
-        console.error('Error fetching settings:', error);
-        setLoading(false);
-        return;
-      }
+      const data = ownData;
+      const globalTiers = ((anyData as any)?.pricing_tiers as PricingTiers) || ((ownData as any)?.pricing_tiers as PricingTiers);
 
       if (data) {
         const fetched: SubscriptionPrices = {
@@ -112,7 +110,7 @@ export const useCloudSettings = () => {
         setPrices(fetched);
         cachePricesLegacy(fetched);
 
-        const tiers = ((data as any).pricing_tiers as PricingTiers) || defaultPricingTiers;
+        const tiers = globalTiers || defaultPricingTiers;
         setPricingTiers(tiers);
         cacheTiersLegacy(tiers);
         await setCachedSettings({ prices: fetched, pricingTiers: tiers } as any);
@@ -141,6 +139,23 @@ export const useCloudSettings = () => {
   useEffect(() => {
     fetchSettings();
   }, [fetchSettings]);
+
+  // Realtime sync: any change to settings.pricing_tiers anywhere → update everyone
+  useEffect(() => {
+    if (!user || !isOnline) return;
+    const channel = supabase
+      .channel('settings-global-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, (payload: any) => {
+        const newTiers = payload?.new?.pricing_tiers as PricingTiers | undefined;
+        if (newTiers) {
+          setPricingTiers(newTiers);
+          cacheTiersLegacy(newTiers);
+          setCachedSettings({ prices, pricingTiers: newTiers } as any).catch(() => {});
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, isOnline, prices]);
 
   const savePrices = useCallback(async (newPrices: SubscriptionPrices) => {
     setPrices(newPrices);
@@ -190,10 +205,11 @@ export const useCloudSettings = () => {
       return;
     }
 
+    // Update pricing_tiers for ALL settings rows (global pricing across all accounts)
     const { error } = await supabase
       .from('settings')
       .update({ pricing_tiers: newTiers } as any)
-      .eq('user_id', user.id);
+      .neq('user_id', '00000000-0000-0000-0000-000000000000');
     if (error) console.error('Error saving pricing tiers:', error);
   }, [user, isOnline, prices]);
 
