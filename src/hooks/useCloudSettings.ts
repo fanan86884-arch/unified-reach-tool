@@ -205,10 +205,11 @@ export const useCloudSettings = () => {
       return;
     }
 
+    // Update pricing_tiers for ALL settings rows (global pricing across all accounts)
     const { error } = await supabase
       .from('settings')
       .update({ pricing_tiers: newTiers } as any)
-      .eq('user_id', user.id);
+      .neq('user_id', '00000000-0000-0000-0000-000000000000');
     if (error) console.error('Error saving pricing tiers:', error);
   }, [user, isOnline, prices]);
 
