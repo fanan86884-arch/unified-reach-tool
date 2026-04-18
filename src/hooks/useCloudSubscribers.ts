@@ -206,18 +206,26 @@ export const useCloudSubscribers = () => {
     const normalized = normalizeEgyptPhoneDigits(phone);
     if (!normalized) return false;
 
-    const { data, error } = await supabase
-      .from('subscribers')
-      .select('id, phone')
-      .eq('user_id', user.id);
-
-    if (error || !data) return false;
-
-    return data.some(sub => {
+    // Fast path: check in-memory cache first to avoid network round-trip
+    const localHit = subscribers.some(sub => {
       if (excludeId && sub.id === excludeId) return false;
       return normalizeEgyptPhoneDigits(sub.phone) === normalized;
     });
-  }, [user]);
+    if (localHit) return true;
+
+    // Targeted query: only fetch the matching phone (limit 1)
+    let query = supabase
+      .from('subscribers')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('phone', normalized)
+      .limit(1);
+    if (excludeId) query = query.neq('id', excludeId);
+
+    const { data, error } = await query;
+    if (error || !data) return false;
+    return data.length > 0;
+  }, [user, subscribers]);
 
   const addingRef = useRef(false);
 
