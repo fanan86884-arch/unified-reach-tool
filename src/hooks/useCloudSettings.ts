@@ -90,17 +90,15 @@ export const useCloudSettings = () => {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Read GLOBAL pricing tiers from any settings row (shared across all accounts)
+      // Prefer current user's row for prices, but pricing_tiers are shared
+      const [{ data: ownData }, { data: anyData }] = await Promise.all([
+        supabase.from('settings').select('*').eq('user_id', user.id).maybeSingle(),
+        supabase.from('settings').select('pricing_tiers, updated_at').order('updated_at', { ascending: false }).limit(1).maybeSingle(),
+      ]);
 
-      if (error) {
-        console.error('Error fetching settings:', error);
-        setLoading(false);
-        return;
-      }
+      const data = ownData;
+      const globalTiers = ((anyData as any)?.pricing_tiers as PricingTiers) || ((ownData as any)?.pricing_tiers as PricingTiers);
 
       if (data) {
         const fetched: SubscriptionPrices = {
@@ -112,7 +110,7 @@ export const useCloudSettings = () => {
         setPrices(fetched);
         cachePricesLegacy(fetched);
 
-        const tiers = ((data as any).pricing_tiers as PricingTiers) || defaultPricingTiers;
+        const tiers = globalTiers || defaultPricingTiers;
         setPricingTiers(tiers);
         cacheTiersLegacy(tiers);
         await setCachedSettings({ prices: fetched, pricingTiers: tiers } as any);
