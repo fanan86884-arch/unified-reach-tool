@@ -826,10 +826,11 @@ export const useCloudSubscribers = () => {
         sub.phone.includes(searchQuery);
       const matchesStatus = filterStatus === 'all' || sub.status === filterStatus;
       const matchesCaptain = filterCaptain === 'all' || sub.captain === filterCaptain;
+      const matchesGender = filterGender === 'all' || sub.gender === filterGender;
       
-      return matchesSearch && matchesStatus && matchesCaptain;
+      return matchesSearch && matchesStatus && matchesCaptain && matchesGender;
     });
-  }, [subscribers, activeSubscribers, searchQuery, filterStatus, filterCaptain]);
+  }, [subscribers, activeSubscribers, searchQuery, filterStatus, filterCaptain, filterGender]);
 
   const stats = useMemo(() => {
     // الاشتراكات النشطة: نشط + قارب على الانتهاء (لأنهم لم ينتهوا بعد)
