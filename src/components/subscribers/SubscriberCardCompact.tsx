@@ -126,32 +126,6 @@ export const SubscriberCardCompact = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <h3 className="font-bold text-foreground truncate">{subscriber.name}</h3>
-              {subscriber.gender && (
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'h-5 w-5 p-0 flex items-center justify-center border-0',
-                    subscriber.gender === 'female'
-                      ? 'bg-pink-500 text-white'
-                      : 'bg-blue-500 text-white'
-                  )}
-                >
-                  <User className="w-3 h-3" />
-                </Badge>
-              )}
-              {subscriber.subscriptionCategory && (() => {
-                const cat = subscriber.subscriptionCategory;
-                const Icon = cat === 'walking' ? Footprints : cat === 'gym_walking' ? Activity : Dumbbell;
-                const bgClass = cat === 'walking' ? 'bg-orange-500' : cat === 'gym_walking' ? 'bg-purple-500' : 'bg-green-500';
-                return (
-                  <Badge
-                    variant="outline"
-                    className={cn('h-5 w-5 p-0 flex items-center justify-center border-0 text-white', bgClass)}
-                  >
-                    <Icon className="w-3 h-3" />
-                  </Badge>
-                );
-              })()}
             </div>
             <div className="text-sm text-muted-foreground">
               <span>{formatDateNumeric(subscriber.endDate)}</span>
