@@ -880,6 +880,8 @@ export const useCloudSubscribers = () => {
     setFilterCaptain,
     filterDateRange,
     setFilterDateRange,
+    filterGender,
+    setFilterGender,
     addSubscriber,
     updateSubscriber,
     deleteSubscriber,
