@@ -177,6 +177,8 @@ const Index = () => {
           setFilterCaptain={setFilterCaptain}
           filterDateRange={filterDateRange}
           setFilterDateRange={setFilterDateRange}
+          filterGender={filterGender}
+          setFilterGender={setFilterGender}
           addSubscriber={addSubscriber}
           updateSubscriber={updateSubscriber}
           deleteSubscriber={deleteSubscriber}
