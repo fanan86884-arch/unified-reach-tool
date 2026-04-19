@@ -148,6 +148,23 @@ export const SubscriberCardCompact = ({
             {subscriber.isPaused && (
               <Pause className="w-4 h-4 text-muted-foreground" />
             )}
+            {subscriber.subscriptionCategory && (() => {
+              const cat = subscriber.subscriptionCategory;
+              const CatIcon = cat === 'walking' ? Footprints : cat === 'gym_walking' ? Activity : Dumbbell;
+              const colorClass = cat === 'walking'
+                ? 'bg-orange-500/15 text-orange-500 border-orange-500/30'
+                : cat === 'gym_walking'
+                ? 'bg-purple-500/15 text-purple-500 border-purple-500/30'
+                : 'bg-green-500/15 text-green-500 border-green-500/30';
+              return (
+                <Badge
+                  variant="outline"
+                  className={cn('h-7 w-7 p-0 flex items-center justify-center border rounded-md', colorClass)}
+                >
+                  <CatIcon className="w-3.5 h-3.5" />
+                </Badge>
+              );
+            })()}
             {!subscriber.isArchived && (
               <Badge className={cn('border flex flex-col items-center leading-tight py-1 px-2', displayStatus.className)}>
                 <span>{displayStatus.label}</span>
