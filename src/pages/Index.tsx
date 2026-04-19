@@ -54,6 +54,8 @@ const Index = () => {
     setFilterCaptain,
     filterDateRange,
     setFilterDateRange,
+    filterGender,
+    setFilterGender,
     addSubscriber,
     updateSubscriber,
     deleteSubscriber,
