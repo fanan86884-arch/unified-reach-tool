@@ -130,13 +130,13 @@ export const SubscriberCardCompact = ({
                 <Badge
                   variant="outline"
                   className={cn(
-                    'text-[9px] h-4 px-1.5 leading-none border',
+                    'h-5 w-5 p-0 flex items-center justify-center border-0',
                     subscriber.gender === 'female'
-                      ? 'bg-pink-500/10 text-pink-500 border-pink-500/30'
-                      : 'bg-blue-500/10 text-blue-500 border-blue-500/30'
+                      ? 'bg-pink-500 text-white'
+                      : 'bg-blue-500 text-white'
                   )}
                 >
-                  {subscriber.gender === 'female' ? 'بنت' : 'ولد'}
+                  <User className="w-3 h-3" />
                 </Badge>
               )}
               {subscriber.subscriptionCategory && (() => {
