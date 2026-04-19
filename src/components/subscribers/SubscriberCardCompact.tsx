@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Edit, Trash2, Archive, RotateCcw, MessageCircle, RefreshCw, 
   ChevronDown, ChevronUp, Pause, Play, Clock, AlertCircle, ArchiveRestore,
-  Dumbbell, Footprints, Activity, User,
+  Dumbbell, Footprints, Activity,
 } from 'lucide-react';
 import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
