@@ -31,6 +31,8 @@ interface SubscribersListProps {
   setFilterCaptain: (captain: string) => void;
   filterDateRange: string;
   setFilterDateRange: (range: string) => void;
+  filterGender?: string;
+  setFilterGender?: (gender: string) => void;
   addSubscriber: (data: SubscriberFormData) => Promise<{ success: boolean; subscriber?: Subscriber; error?: string }> | { success: boolean; subscriber?: Subscriber; error?: string };
   updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => Promise<{ success: boolean; error?: string }>;
   deleteSubscriber: (id: string) => void | Promise<void>;
@@ -51,6 +53,8 @@ export const SubscribersList = ({
   setFilterStatus,
   filterCaptain,
   setFilterCaptain,
+  filterGender,
+  setFilterGender,
   addSubscriber,
   updateSubscriber,
   deleteSubscriber,
