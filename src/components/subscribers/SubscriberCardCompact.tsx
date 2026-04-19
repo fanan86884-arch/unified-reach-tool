@@ -142,14 +142,13 @@ export const SubscriberCardCompact = ({
               {subscriber.subscriptionCategory && (() => {
                 const cat = subscriber.subscriptionCategory;
                 const Icon = cat === 'walking' ? Footprints : cat === 'gym_walking' ? Activity : Dumbbell;
-                const label = cat === 'walking' ? 'مشاية' : cat === 'gym_walking' ? 'جيم+مشاية' : 'جيم';
+                const bgClass = cat === 'walking' ? 'bg-orange-500' : cat === 'gym_walking' ? 'bg-purple-500' : 'bg-green-500';
                 return (
                   <Badge
                     variant="outline"
-                    className="text-[9px] h-4 px-1.5 leading-none gap-0.5 bg-primary/10 text-primary border-primary/30"
+                    className={cn('h-5 w-5 p-0 flex items-center justify-center border-0 text-white', bgClass)}
                   >
-                    <Icon className="w-2.5 h-2.5" />
-                    {label}
+                    <Icon className="w-3 h-3" />
                   </Badge>
                 );
               })()}
