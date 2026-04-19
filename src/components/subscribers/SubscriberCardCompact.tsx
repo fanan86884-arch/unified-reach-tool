@@ -139,43 +139,39 @@ export const SubscriberCardCompact = ({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0 mr-2">
+            {hasRemainingAmount && (
+              <AlertCircle className="w-4 h-4 text-destructive" />
+            )}
+            {displayStatus.isExpiring && (
+              <Clock className="w-4 h-4 text-warning" />
+            )}
+            {subscriber.isPaused && (
+              <Pause className="w-4 h-4 text-muted-foreground" />
+            )}
             {subscriber.subscriptionCategory && (() => {
               const cat = subscriber.subscriptionCategory;
               const CatIcon = cat === 'walking' ? Footprints : cat === 'gym_walking' ? Activity : Dumbbell;
               const colorClass = cat === 'walking'
-                ? 'bg-orange-500 text-white'
+                ? 'bg-orange-500/15 text-orange-500 border-orange-500/30'
                 : cat === 'gym_walking'
-                ? 'bg-purple-500 text-white'
-                : 'bg-green-500 text-white';
+                ? 'bg-purple-500/15 text-purple-500 border-purple-500/30'
+                : 'bg-green-500/15 text-green-500 border-green-500/30';
               return (
-                <div
-                  className={cn('h-6 w-6 rounded-full flex items-center justify-center', colorClass)}
+                <Badge
+                  variant="outline"
+                  className={cn('h-7 w-7 p-0 flex items-center justify-center border rounded-md', colorClass)}
                 >
-                  <CatIcon className="w-3 h-3" />
-                </div>
+                  <CatIcon className="w-3.5 h-3.5" />
+                </Badge>
               );
             })()}
-            {!subscriber.isArchived && !subscriber.isPaused && (
-              <div className={cn(
-                'h-6 min-w-[1.5rem] px-1.5 rounded-full flex items-center justify-center text-xs font-bold',
-                daysDiff < 0 
-                  ? 'bg-destructive text-destructive-foreground' 
-                  : daysRemaining <= 3 
-                  ? 'bg-warning text-warning-foreground' 
-                  : 'bg-success text-success-foreground'
-              )}>
-                {daysDiff < 0 ? '0' : daysRemaining}
-              </div>
-            )}
-            {subscriber.isPaused && (
-              <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
-                <Pause className="w-3 h-3 text-muted-foreground" />
-              </div>
-            )}
-            {hasRemainingAmount && (
-              <div className="h-6 w-6 rounded-full bg-destructive/10 flex items-center justify-center">
-                <AlertCircle className="w-3.5 h-3.5 text-destructive" />
-              </div>
+            {!subscriber.isArchived && (
+              <Badge className={cn('border flex flex-col items-center leading-tight py-1 px-2', displayStatus.className)}>
+                <span>{displayStatus.label}</span>
+                {displayStatus.showDays && (
+                  <span className="text-[10px]">{displayStatus.daysCount} {displayStatus.daysLabel}</span>
+                )}
+              </Badge>
             )}
           </div>
         </div>
