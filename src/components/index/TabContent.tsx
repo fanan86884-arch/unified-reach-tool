@@ -32,6 +32,8 @@ interface TabContentProps {
   setFilterCaptain: (captain: string) => void;
   filterDateRange: string;
   setFilterDateRange: (range: string) => void;
+  filterGender: string;
+  setFilterGender: (gender: string) => void;
   addSubscriber: (data: SubscriberFormData) => Promise<{ success: boolean; subscriber?: Subscriber; error?: string }>;
   updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => Promise<{ success: boolean; error?: string }>;
   deleteSubscriber: (id: string) => Promise<void>;
@@ -97,6 +99,8 @@ export const TabContent = memo(({
   setFilterCaptain,
   filterDateRange,
   setFilterDateRange,
+  filterGender,
+  setFilterGender,
   addSubscriber,
   updateSubscriber,
   deleteSubscriber,
@@ -120,6 +124,8 @@ export const TabContent = memo(({
             setFilterCaptain={setFilterCaptain}
             filterDateRange={filterDateRange}
             setFilterDateRange={setFilterDateRange}
+            filterGender={filterGender}
+            setFilterGender={setFilterGender}
             addSubscriber={addSubscriber}
             updateSubscriber={updateSubscriber}
             deleteSubscriber={deleteSubscriber}

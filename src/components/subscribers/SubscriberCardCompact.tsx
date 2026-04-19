@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Edit, Trash2, Archive, RotateCcw, MessageCircle, RefreshCw, 
   ChevronDown, ChevronUp, Pause, Play, Clock, AlertCircle, ArchiveRestore,
-  Dumbbell, Footprints, Activity, User,
+  Dumbbell, Footprints, Activity,
 } from 'lucide-react';
 import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -126,32 +126,6 @@ export const SubscriberCardCompact = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <h3 className="font-bold text-foreground truncate">{subscriber.name}</h3>
-              {subscriber.gender && (
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'h-5 w-5 p-0 flex items-center justify-center border-0',
-                    subscriber.gender === 'female'
-                      ? 'bg-pink-500 text-white'
-                      : 'bg-blue-500 text-white'
-                  )}
-                >
-                  <User className="w-3 h-3" />
-                </Badge>
-              )}
-              {subscriber.subscriptionCategory && (() => {
-                const cat = subscriber.subscriptionCategory;
-                const Icon = cat === 'walking' ? Footprints : cat === 'gym_walking' ? Activity : Dumbbell;
-                const bgClass = cat === 'walking' ? 'bg-orange-500' : cat === 'gym_walking' ? 'bg-purple-500' : 'bg-green-500';
-                return (
-                  <Badge
-                    variant="outline"
-                    className={cn('h-5 w-5 p-0 flex items-center justify-center border-0 text-white', bgClass)}
-                  >
-                    <Icon className="w-3 h-3" />
-                  </Badge>
-                );
-              })()}
             </div>
             <div className="text-sm text-muted-foreground">
               <span>{formatDateNumeric(subscriber.endDate)}</span>
@@ -174,6 +148,23 @@ export const SubscriberCardCompact = ({
             {subscriber.isPaused && (
               <Pause className="w-4 h-4 text-muted-foreground" />
             )}
+            {subscriber.subscriptionCategory && (() => {
+              const cat = subscriber.subscriptionCategory;
+              const CatIcon = cat === 'walking' ? Footprints : cat === 'gym_walking' ? Activity : Dumbbell;
+              const colorClass = cat === 'walking'
+                ? 'bg-orange-500/15 text-orange-500 border-orange-500/30'
+                : cat === 'gym_walking'
+                ? 'bg-purple-500/15 text-purple-500 border-purple-500/30'
+                : 'bg-green-500/15 text-green-500 border-green-500/30';
+              return (
+                <Badge
+                  variant="outline"
+                  className={cn('h-7 w-7 p-0 flex items-center justify-center border rounded-md', colorClass)}
+                >
+                  <CatIcon className="w-3.5 h-3.5" />
+                </Badge>
+              );
+            })()}
             {!subscriber.isArchived && (
               <Badge className={cn('border flex flex-col items-center leading-tight py-1 px-2', displayStatus.className)}>
                 <span>{displayStatus.label}</span>

@@ -80,6 +80,7 @@ export const useCloudSubscribers = () => {
   const [filterStatus, setFilterStatus] = useState<SubscriptionStatus | 'all'>('all');
   const [filterCaptain, setFilterCaptain] = useState<string>('all');
   const [filterDateRange, setFilterDateRange] = useState<string>('all');
+  const [filterGender, setFilterGender] = useState<string>('all');
 
   // Load cached subscribers on mount
   useEffect(() => {
@@ -825,10 +826,11 @@ export const useCloudSubscribers = () => {
         sub.phone.includes(searchQuery);
       const matchesStatus = filterStatus === 'all' || sub.status === filterStatus;
       const matchesCaptain = filterCaptain === 'all' || sub.captain === filterCaptain;
+      const matchesGender = filterGender === 'all' || sub.gender === filterGender;
       
-      return matchesSearch && matchesStatus && matchesCaptain;
+      return matchesSearch && matchesStatus && matchesCaptain && matchesGender;
     });
-  }, [subscribers, activeSubscribers, searchQuery, filterStatus, filterCaptain]);
+  }, [subscribers, activeSubscribers, searchQuery, filterStatus, filterCaptain, filterGender]);
 
   const stats = useMemo(() => {
     // الاشتراكات النشطة: نشط + قارب على الانتهاء (لأنهم لم ينتهوا بعد)
@@ -878,6 +880,8 @@ export const useCloudSubscribers = () => {
     setFilterCaptain,
     filterDateRange,
     setFilterDateRange,
+    filterGender,
+    setFilterGender,
     addSubscriber,
     updateSubscriber,
     deleteSubscriber,

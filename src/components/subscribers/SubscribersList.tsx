@@ -31,6 +31,8 @@ interface SubscribersListProps {
   setFilterCaptain: (captain: string) => void;
   filterDateRange: string;
   setFilterDateRange: (range: string) => void;
+  filterGender?: string;
+  setFilterGender?: (gender: string) => void;
   addSubscriber: (data: SubscriberFormData) => Promise<{ success: boolean; subscriber?: Subscriber; error?: string }> | { success: boolean; subscriber?: Subscriber; error?: string };
   updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => Promise<{ success: boolean; error?: string }>;
   deleteSubscriber: (id: string) => void | Promise<void>;
@@ -51,6 +53,8 @@ export const SubscribersList = ({
   setFilterStatus,
   filterCaptain,
   setFilterCaptain,
+  filterGender,
+  setFilterGender,
   addSubscriber,
   updateSubscriber,
   deleteSubscriber,
@@ -220,6 +224,18 @@ export const SubscribersList = ({
                 ))}
               </SelectContent>
             </Select>
+            {setFilterGender && (
+              <Select value={filterGender ?? 'all'} onValueChange={setFilterGender}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder={t.genders.male + ' / ' + t.genders.female} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t.filters.allStatuses}</SelectItem>
+                  <SelectItem value="male">{t.genders.male}</SelectItem>
+                  <SelectItem value="female">{t.genders.female}</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
       </div>
