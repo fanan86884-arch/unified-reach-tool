@@ -224,6 +224,18 @@ export const SubscribersList = ({
                 ))}
               </SelectContent>
             </Select>
+            {setFilterGender && (
+              <Select value={filterGender ?? 'all'} onValueChange={setFilterGender}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder={t.subscribers.gender} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t.filters.allStatuses}</SelectItem>
+                  <SelectItem value="male">{t.genders.male}</SelectItem>
+                  <SelectItem value="female">{t.genders.female}</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
       </div>
