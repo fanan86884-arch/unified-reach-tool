@@ -224,18 +224,19 @@ export const useCloudSubscribers = () => {
     if (localHit) return true;
 
     // Targeted query: only fetch the matching phone (limit 1)
+    // Admins check across all subscribers; employees only their own
     let query = supabase
       .from('subscribers')
       .select('id')
-      .eq('user_id', user.id)
       .eq('phone', normalized)
       .limit(1);
+    if (!isAdmin) query = query.eq('user_id', user.id);
     if (excludeId) query = query.neq('id', excludeId);
 
     const { data, error } = await query;
     if (error || !data) return false;
     return data.length > 0;
-  }, [user, subscribers]);
+  }, [user, subscribers, isAdmin]);
 
   const addingRef = useRef(false);
 
