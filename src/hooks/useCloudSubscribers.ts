@@ -84,6 +84,7 @@ export const useCloudSubscribers = () => {
   const [filterCaptain, setFilterCaptain] = useState<string>('all');
   const [filterDateRange, setFilterDateRange] = useState<string>('all');
   const [filterGender, setFilterGender] = useState<string>('all');
+  const [showAdminSubscribers, setShowAdminSubscribers] = useState<boolean>(false);
 
   // Load cached subscribers on mount
   useEffect(() => {
