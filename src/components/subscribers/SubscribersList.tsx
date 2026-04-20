@@ -175,6 +175,17 @@ export const SubscribersList = ({
           {t.subscribers.title}
         </h2>
         <div className="flex items-center gap-2">
+          {isAdmin && setShowAdminSubscribers && (
+            <Button
+              variant={showAdminSubscribers ? 'default' : 'ghost'}
+              size="icon"
+              onClick={() => setShowAdminSubscribers(!showAdminSubscribers)}
+              className="rounded-full w-9 h-9"
+              title={showAdminSubscribers ? 'إخفاء مشتركين الإدارة' : 'إظهار مشتركين الإدارة'}
+            >
+              {showAdminSubscribers ? <UserCog className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
