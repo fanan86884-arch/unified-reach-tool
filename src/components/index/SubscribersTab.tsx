@@ -74,6 +74,7 @@ export const SubscribersTab = memo(({
       setFilterGender={setFilterGender}
       showAdminSubscribers={showAdminSubscribers}
       setShowAdminSubscribers={setShowAdminSubscribers}
+      hiddenAdminCount={hiddenAdminCount}
       isAdmin={isAdmin}
       addSubscriber={addSubscriber}
       updateSubscriber={updateSubscriber}
