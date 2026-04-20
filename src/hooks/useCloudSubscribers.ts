@@ -178,7 +178,7 @@ export const useCloudSubscribers = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, isOnline, autoArchiveExpired]);
+  }, [user, isOnline, autoArchiveExpired, isAdmin]);
 
   useEffect(() => {
     fetchSubscribers();
@@ -196,7 +196,8 @@ export const useCloudSubscribers = () => {
           event: '*',
           schema: 'public',
           table: 'subscribers',
-          filter: `user_id=eq.${user.id}`,
+          // Admins listen to all changes; employees only their own
+          ...(isAdmin ? {} : { filter: `user_id=eq.${user.id}` }),
         },
         () => {
           fetchSubscribers();
@@ -207,7 +208,7 @@ export const useCloudSubscribers = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchSubscribers]);
+  }, [user, fetchSubscribers, isAdmin]);
 
   const checkPhoneExists = useCallback(async (phone: string, excludeId?: string): Promise<boolean> => {
     if (!user) return false;
