@@ -3,6 +3,7 @@ import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subs
 import { supabase } from '@/integrations/supabase/client.runtime';
 import { differenceInDays, parseISO, startOfDay } from 'date-fns';
 import { useAuth } from './useAuth';
+import { useUserRole } from './useUserRole';
 import { normalizeEgyptPhoneDigits } from '@/lib/phone';
 import { useOnlineStatus } from './useOnlineStatus';
 import { addPendingChange, setCachedSubscribers, getCachedSubscribers } from '@/lib/offlineStore';
@@ -73,6 +74,7 @@ const mapDbToSubscriber = (row: any): Subscriber => ({
 
 export const useCloudSubscribers = () => {
   const { user } = useAuth();
+  const { isAdmin } = useUserRole();
   const isOnline = useOnlineStatus();
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,11 +128,17 @@ export const useCloudSubscribers = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('subscribers')
         .select('*')
-        .eq('user_id', user.id)
-        .order('start_date', { ascending: false }); // ترتيب حسب تاريخ الاشتراك
+        .order('start_date', { ascending: false });
+
+      // Admins see all subscribers; shift employees only their own (RLS enforces this anyway)
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching subscribers:', error);
@@ -170,7 +178,7 @@ export const useCloudSubscribers = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, isOnline, autoArchiveExpired]);
+  }, [user, isOnline, autoArchiveExpired, isAdmin]);
 
   useEffect(() => {
     fetchSubscribers();
@@ -188,7 +196,8 @@ export const useCloudSubscribers = () => {
           event: '*',
           schema: 'public',
           table: 'subscribers',
-          filter: `user_id=eq.${user.id}`,
+          // Admins listen to all changes; employees only their own
+          ...(isAdmin ? {} : { filter: `user_id=eq.${user.id}` }),
         },
         () => {
           fetchSubscribers();
@@ -199,7 +208,7 @@ export const useCloudSubscribers = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchSubscribers]);
+  }, [user, fetchSubscribers, isAdmin]);
 
   const checkPhoneExists = useCallback(async (phone: string, excludeId?: string): Promise<boolean> => {
     if (!user) return false;
@@ -215,18 +224,19 @@ export const useCloudSubscribers = () => {
     if (localHit) return true;
 
     // Targeted query: only fetch the matching phone (limit 1)
+    // Admins check across all subscribers; employees only their own
     let query = supabase
       .from('subscribers')
       .select('id')
-      .eq('user_id', user.id)
       .eq('phone', normalized)
       .limit(1);
+    if (!isAdmin) query = query.eq('user_id', user.id);
     if (excludeId) query = query.neq('id', excludeId);
 
     const { data, error } = await query;
     if (error || !data) return false;
     return data.length > 0;
-  }, [user, subscribers]);
+  }, [user, subscribers, isAdmin]);
 
   const addingRef = useRef(false);
 

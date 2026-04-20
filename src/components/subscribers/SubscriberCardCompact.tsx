@@ -139,9 +139,6 @@ export const SubscriberCardCompact = ({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0 mr-2">
-            {hasRemainingAmount && (
-              <AlertCircle className="w-4 h-4 text-destructive" />
-            )}
             {displayStatus.isExpiring && (
               <Clock className="w-4 h-4 text-warning" />
             )}
@@ -157,14 +154,27 @@ export const SubscriberCardCompact = ({
                 ? 'bg-purple-500/15 text-purple-500 border-purple-500/30'
                 : 'bg-green-500/15 text-green-500 border-green-500/30';
               return (
-                <Badge
-                  variant="outline"
-                  className={cn('h-7 w-7 p-0 flex items-center justify-center border rounded-md', colorClass)}
-                >
-                  <CatIcon className="w-3.5 h-3.5" />
-                </Badge>
+                <div className="relative">
+                  <Badge
+                    variant="outline"
+                    className={cn('h-7 w-7 p-0 flex items-center justify-center border rounded-md', colorClass)}
+                  >
+                    <CatIcon className="w-3.5 h-3.5" />
+                  </Badge>
+                  {hasRemainingAmount && (
+                    <span
+                      className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-destructive text-destructive-foreground border border-background flex items-center justify-center text-[9px] font-bold leading-none"
+                      title="يوجد مبلغ متبقي"
+                    >
+                      !
+                    </span>
+                  )}
+                </div>
               );
             })()}
+            {!subscriber.subscriptionCategory && hasRemainingAmount && (
+              <AlertCircle className="w-4 h-4 text-destructive" />
+            )}
             {!subscriber.isArchived && (
               <Badge className={cn('border flex flex-col items-center leading-tight py-1 px-2', displayStatus.className)}>
                 <span>{displayStatus.label}</span>
