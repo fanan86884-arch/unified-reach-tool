@@ -58,6 +58,7 @@ const Index = () => {
     setFilterGender,
     showAdminSubscribers,
     setShowAdminSubscribers,
+    hiddenAdminCount,
     isAdmin,
     addSubscriber,
     updateSubscriber,
@@ -184,6 +185,7 @@ const Index = () => {
           setFilterGender={setFilterGender}
           showAdminSubscribers={showAdminSubscribers}
           setShowAdminSubscribers={setShowAdminSubscribers}
+          hiddenAdminCount={hiddenAdminCount}
           isAdmin={isAdmin}
           addSubscriber={addSubscriber}
           updateSubscriber={updateSubscriber}
