@@ -839,10 +839,14 @@ export const useCloudSubscribers = () => {
       const matchesStatus = filterStatus === 'all' || sub.status === filterStatus;
       const matchesCaptain = filterCaptain === 'all' || sub.captain === filterCaptain;
       const matchesGender = filterGender === 'all' || sub.gender === filterGender;
+      // Admin viewing: hide subscribers added by the admin themselves unless toggle is on
+      const matchesAdminFilter = !isAdmin || showAdminSubscribers
+        ? true
+        : sub.addedByUserId !== user?.id;
       
-      return matchesSearch && matchesStatus && matchesCaptain && matchesGender;
+      return matchesSearch && matchesStatus && matchesCaptain && matchesGender && matchesAdminFilter;
     });
-  }, [subscribers, activeSubscribers, searchQuery, filterStatus, filterCaptain, filterGender]);
+  }, [subscribers, activeSubscribers, searchQuery, filterStatus, filterCaptain, filterGender, isAdmin, showAdminSubscribers, user?.id]);
 
   const stats = useMemo(() => {
     // الاشتراكات النشطة: نشط + قارب على الانتهاء (لأنهم لم ينتهوا بعد)
