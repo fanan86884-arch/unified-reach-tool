@@ -142,31 +142,41 @@ export const SubscriberCardCompact = ({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0 mr-2">
-            {displayStatus.isExpiring && (
-              <Clock className="w-4 h-4 text-warning" />
-            )}
             {subscriber.isPaused && (
               <Pause className="w-4 h-4 text-muted-foreground" />
             )}
-            {subscriber.subscriptionCategory && (() => {
+            {!subscriber.isArchived && (() => {
               const cat = subscriber.subscriptionCategory;
               const CatIcon = cat === 'walking' ? Footprints : cat === 'gym_walking' ? Activity : Dumbbell;
-              const colorClass = cat === 'walking'
-                ? 'bg-orange-500/15 text-orange-500 border-orange-500/30'
+              const catColorClass = cat === 'walking'
+                ? 'bg-orange-500/20 text-orange-500'
                 : cat === 'gym_walking'
-                ? 'bg-purple-500/15 text-purple-500 border-purple-500/30'
-                : 'bg-green-500/15 text-green-500 border-green-500/30';
+                ? 'bg-purple-500/20 text-purple-500'
+                : 'bg-green-500/20 text-green-500';
               return (
-                <div className="relative">
-                  <Badge
-                    variant="outline"
-                    className={cn('h-7 w-7 p-0 flex items-center justify-center border rounded-md', colorClass)}
-                  >
-                    <CatIcon className="w-3.5 h-3.5" />
-                  </Badge>
+                <div className={cn(
+                  'relative flex items-center gap-1.5 border rounded-md py-1 pr-1 pl-2 leading-tight',
+                  displayStatus.className
+                )}>
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs font-semibold">{displayStatus.label}</span>
+                    {displayStatus.showDays && (
+                      <span className="text-[10px] opacity-90">
+                        {displayStatus.daysCount} {displayStatus.daysLabel}
+                      </span>
+                    )}
+                  </div>
+                  {cat && (
+                    <span className={cn(
+                      'h-6 w-6 rounded flex items-center justify-center shrink-0',
+                      catColorClass
+                    )}>
+                      <CatIcon className="w-3.5 h-3.5" />
+                    </span>
+                  )}
                   {hasRemainingAmount && (
                     <span
-                      className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-destructive text-destructive-foreground border border-background flex items-center justify-center text-[9px] font-bold leading-none"
+                      className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground border border-background flex items-center justify-center text-[10px] font-bold leading-none"
                       title="يوجد مبلغ متبقي"
                     >
                       !
@@ -175,17 +185,6 @@ export const SubscriberCardCompact = ({
                 </div>
               );
             })()}
-            {!subscriber.subscriptionCategory && hasRemainingAmount && (
-              <AlertCircle className="w-4 h-4 text-destructive" />
-            )}
-            {!subscriber.isArchived && (
-              <Badge className={cn('border flex flex-col items-center leading-tight py-1 px-2', displayStatus.className)}>
-                <span>{displayStatus.label}</span>
-                {displayStatus.showDays && (
-                  <span className="text-[10px]">{displayStatus.daysCount} {displayStatus.daysLabel}</span>
-                )}
-              </Badge>
-            )}
           </div>
         </div>
         {subscriber.isArchived && (() => {
