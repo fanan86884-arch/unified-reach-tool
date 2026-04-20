@@ -70,6 +70,7 @@ const mapDbToSubscriber = (row: any): Subscriber => ({
   updatedAt: row.updated_at,
   gender: (row.gender as Subscriber['gender']) || 'male',
   subscriptionCategory: (row.subscription_category as Subscriber['subscriptionCategory']) || 'gym',
+  addedByUserId: row.user_id,
 });
 
 export const useCloudSubscribers = () => {
@@ -83,6 +84,7 @@ export const useCloudSubscribers = () => {
   const [filterCaptain, setFilterCaptain] = useState<string>('all');
   const [filterDateRange, setFilterDateRange] = useState<string>('all');
   const [filterGender, setFilterGender] = useState<string>('all');
+  const [showAdminSubscribers, setShowAdminSubscribers] = useState<boolean>(false);
 
   // Load cached subscribers on mount
   useEffect(() => {
@@ -837,10 +839,14 @@ export const useCloudSubscribers = () => {
       const matchesStatus = filterStatus === 'all' || sub.status === filterStatus;
       const matchesCaptain = filterCaptain === 'all' || sub.captain === filterCaptain;
       const matchesGender = filterGender === 'all' || sub.gender === filterGender;
+      // Admin viewing: hide subscribers added by the admin themselves unless toggle is on
+      const matchesAdminFilter = !isAdmin || showAdminSubscribers
+        ? true
+        : sub.addedByUserId !== user?.id;
       
-      return matchesSearch && matchesStatus && matchesCaptain && matchesGender;
+      return matchesSearch && matchesStatus && matchesCaptain && matchesGender && matchesAdminFilter;
     });
-  }, [subscribers, activeSubscribers, searchQuery, filterStatus, filterCaptain, filterGender]);
+  }, [subscribers, activeSubscribers, searchQuery, filterStatus, filterCaptain, filterGender, isAdmin, showAdminSubscribers, user?.id]);
 
   const stats = useMemo(() => {
     // الاشتراكات النشطة: نشط + قارب على الانتهاء (لأنهم لم ينتهوا بعد)
@@ -892,6 +898,9 @@ export const useCloudSubscribers = () => {
     setFilterDateRange,
     filterGender,
     setFilterGender,
+    showAdminSubscribers,
+    setShowAdminSubscribers,
+    isAdmin,
     addSubscriber,
     updateSubscriber,
     deleteSubscriber,

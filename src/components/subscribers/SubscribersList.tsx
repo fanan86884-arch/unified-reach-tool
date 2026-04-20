@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Search, Filter, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Search, Filter, Users, ChevronDown, ChevronUp, UserCog, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/i18n/LanguageContext';
 
@@ -33,6 +33,9 @@ interface SubscribersListProps {
   setFilterDateRange: (range: string) => void;
   filterGender?: string;
   setFilterGender?: (gender: string) => void;
+  showAdminSubscribers?: boolean;
+  setShowAdminSubscribers?: (show: boolean) => void;
+  isAdmin?: boolean;
   addSubscriber: (data: SubscriberFormData) => Promise<{ success: boolean; subscriber?: Subscriber; error?: string }> | { success: boolean; subscriber?: Subscriber; error?: string };
   updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => Promise<{ success: boolean; error?: string }>;
   deleteSubscriber: (id: string) => void | Promise<void>;
@@ -55,6 +58,9 @@ export const SubscribersList = ({
   setFilterCaptain,
   filterGender,
   setFilterGender,
+  showAdminSubscribers,
+  setShowAdminSubscribers,
+  isAdmin,
   addSubscriber,
   updateSubscriber,
   deleteSubscriber,
@@ -169,6 +175,17 @@ export const SubscribersList = ({
           {t.subscribers.title}
         </h2>
         <div className="flex items-center gap-2">
+          {isAdmin && setShowAdminSubscribers && (
+            <Button
+              variant={showAdminSubscribers ? 'default' : 'ghost'}
+              size="icon"
+              onClick={() => setShowAdminSubscribers(!showAdminSubscribers)}
+              className="rounded-full w-9 h-9"
+              title={showAdminSubscribers ? 'إخفاء مشتركين الإدارة' : 'إظهار مشتركين الإدارة'}
+            >
+              {showAdminSubscribers ? <UserCog className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
