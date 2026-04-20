@@ -104,6 +104,9 @@ export const TabContent = memo(({
   setFilterDateRange,
   filterGender,
   setFilterGender,
+  showAdminSubscribers,
+  setShowAdminSubscribers,
+  isAdmin,
   addSubscriber,
   updateSubscriber,
   deleteSubscriber,
@@ -129,6 +132,9 @@ export const TabContent = memo(({
             setFilterDateRange={setFilterDateRange}
             filterGender={filterGender}
             setFilterGender={setFilterGender}
+            showAdminSubscribers={showAdminSubscribers}
+            setShowAdminSubscribers={setShowAdminSubscribers}
+            isAdmin={isAdmin}
             addSubscriber={addSubscriber}
             updateSubscriber={updateSubscriber}
             deleteSubscriber={deleteSubscriber}
