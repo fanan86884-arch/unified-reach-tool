@@ -74,6 +74,7 @@ const mapDbToSubscriber = (row: any): Subscriber => ({
 
 export const useCloudSubscribers = () => {
   const { user } = useAuth();
+  const { isAdmin } = useUserRole();
   const isOnline = useOnlineStatus();
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [loading, setLoading] = useState(true);
