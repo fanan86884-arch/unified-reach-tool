@@ -128,11 +128,17 @@ export const useCloudSubscribers = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('subscribers')
         .select('*')
-        .eq('user_id', user.id)
-        .order('start_date', { ascending: false }); // ترتيب حسب تاريخ الاشتراك
+        .order('start_date', { ascending: false });
+
+      // Admins see all subscribers; shift employees only their own (RLS enforces this anyway)
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching subscribers:', error);
