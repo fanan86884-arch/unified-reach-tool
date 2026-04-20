@@ -16,6 +16,7 @@ interface SubscribersTabProps {
   setFilterGender: (gender: string) => void;
   showAdminSubscribers?: boolean;
   setShowAdminSubscribers?: (show: boolean) => void;
+  hiddenAdminCount?: number;
   isAdmin?: boolean;
   addSubscriber: (data: SubscriberFormData) => Promise<{ success: boolean; subscriber?: Subscriber; error?: string }>;
   updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => Promise<{ success: boolean; error?: string }>;
@@ -41,6 +42,7 @@ export const SubscribersTab = memo(({
   setFilterGender,
   showAdminSubscribers,
   setShowAdminSubscribers,
+  hiddenAdminCount,
   isAdmin,
   addSubscriber,
   updateSubscriber,
@@ -72,6 +74,7 @@ export const SubscribersTab = memo(({
       setFilterGender={setFilterGender}
       showAdminSubscribers={showAdminSubscribers}
       setShowAdminSubscribers={setShowAdminSubscribers}
+      hiddenAdminCount={hiddenAdminCount}
       isAdmin={isAdmin}
       addSubscriber={addSubscriber}
       updateSubscriber={updateSubscriber}

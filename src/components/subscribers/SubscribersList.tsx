@@ -35,6 +35,7 @@ interface SubscribersListProps {
   setFilterGender?: (gender: string) => void;
   showAdminSubscribers?: boolean;
   setShowAdminSubscribers?: (show: boolean) => void;
+  hiddenAdminCount?: number;
   isAdmin?: boolean;
   addSubscriber: (data: SubscriberFormData) => Promise<{ success: boolean; subscriber?: Subscriber; error?: string }> | { success: boolean; subscriber?: Subscriber; error?: string };
   updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => Promise<{ success: boolean; error?: string }>;
@@ -60,6 +61,7 @@ export const SubscribersList = ({
   setFilterGender,
   showAdminSubscribers,
   setShowAdminSubscribers,
+  hiddenAdminCount,
   isAdmin,
   addSubscriber,
   updateSubscriber,
@@ -180,10 +182,15 @@ export const SubscribersList = ({
               variant={showAdminSubscribers ? 'default' : 'ghost'}
               size="icon"
               onClick={() => setShowAdminSubscribers(!showAdminSubscribers)}
-              className="rounded-full w-9 h-9"
+              className="rounded-full w-9 h-9 relative"
               title={showAdminSubscribers ? 'إخفاء مشتركين الإدارة' : 'إظهار مشتركين الإدارة'}
             >
               {showAdminSubscribers ? <UserCog className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+              {!showAdminSubscribers && hiddenAdminCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                  {hiddenAdminCount > 9 ? '9+' : hiddenAdminCount}
+                </span>
+              )}
             </Button>
           )}
           <Button

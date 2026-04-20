@@ -827,6 +827,12 @@ export const useCloudSubscribers = () => {
     [subscribers]
   );
 
+  // Count admin subscribers that are currently hidden (for badge display)
+  const hiddenAdminCount = useMemo(() => {
+    if (!isAdmin || showAdminSubscribers) return 0;
+    return subscribers.filter((s) => !s.isArchived && s.addedByUserId === user?.id).length;
+  }, [subscribers, isAdmin, showAdminSubscribers, user?.id]);
+
   // Include archived subscribers in search results
   const filteredSubscribers = useMemo(() => {
     // If there's a search query, search in all subscribers (including archived)
@@ -900,6 +906,7 @@ export const useCloudSubscribers = () => {
     setFilterGender,
     showAdminSubscribers,
     setShowAdminSubscribers,
+    hiddenAdminCount,
     isAdmin,
     addSubscriber,
     updateSubscriber,
