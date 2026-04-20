@@ -24,6 +24,7 @@ export interface Subscriber {
   updatedAt: string;
   gender?: Gender;
   subscriptionCategory?: SubscriptionCategory;
+  addedByUserId?: string;
 }
 
 export interface SubscriberFormData {

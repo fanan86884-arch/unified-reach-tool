@@ -70,6 +70,7 @@ const mapDbToSubscriber = (row: any): Subscriber => ({
   updatedAt: row.updated_at,
   gender: (row.gender as Subscriber['gender']) || 'male',
   subscriptionCategory: (row.subscription_category as Subscriber['subscriptionCategory']) || 'gym',
+  addedByUserId: row.user_id,
 });
 
 export const useCloudSubscribers = () => {
