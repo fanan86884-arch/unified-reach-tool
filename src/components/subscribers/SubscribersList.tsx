@@ -35,6 +35,7 @@ interface SubscribersListProps {
   setFilterGender?: (gender: string) => void;
   showAdminSubscribers?: boolean;
   setShowAdminSubscribers?: (show: boolean) => void;
+  hiddenAdminCount?: number;
   isAdmin?: boolean;
   addSubscriber: (data: SubscriberFormData) => Promise<{ success: boolean; subscriber?: Subscriber; error?: string }> | { success: boolean; subscriber?: Subscriber; error?: string };
   updateSubscriber: (id: string, data: Partial<SubscriberFormData>) => Promise<{ success: boolean; error?: string }>;
@@ -60,6 +61,7 @@ export const SubscribersList = ({
   setFilterGender,
   showAdminSubscribers,
   setShowAdminSubscribers,
+  hiddenAdminCount,
   isAdmin,
   addSubscriber,
   updateSubscriber,
