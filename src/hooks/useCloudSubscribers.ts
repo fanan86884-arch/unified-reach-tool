@@ -3,6 +3,7 @@ import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subs
 import { supabase } from '@/integrations/supabase/client.runtime';
 import { differenceInDays, parseISO, startOfDay } from 'date-fns';
 import { useAuth } from './useAuth';
+import { useUserRole } from './useUserRole';
 import { normalizeEgyptPhoneDigits } from '@/lib/phone';
 import { useOnlineStatus } from './useOnlineStatus';
 import { addPendingChange, setCachedSubscribers, getCachedSubscribers } from '@/lib/offlineStore';
