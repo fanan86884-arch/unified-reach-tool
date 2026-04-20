@@ -113,10 +113,13 @@ export const SubscriberCardCompact = ({
     return format(parseISO(dateStr), 'dd/MM/yyyy');
   };
 
+  const isFemale = subscriber.gender === 'female';
+
   return (
     <Card className={cn(
       "card-shadow hover:card-shadow-hover transition-all duration-300 overflow-hidden active:scale-[0.98]",
-      subscriber.isArchived && "border-dashed border-warning/20 bg-warning/[0.02]"
+      subscriber.isArchived && "border-dashed border-warning/20 bg-warning/[0.02]",
+      isFemale && !subscriber.isArchived && "bg-pink-500/[0.06] border-pink-500/20"
     )}>
       <div 
         className="p-4 cursor-pointer flex items-center justify-between"
