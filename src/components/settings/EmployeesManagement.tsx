@@ -14,7 +14,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, UserPlus, Trash2, Mail, Lock, Shield, User as UserIcon } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Loader2, UserPlus, Trash2, Mail, Lock, Shield, User as UserIcon, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client.runtime';
 
@@ -34,6 +42,9 @@ export const EmployeesManagement = () => {
   const [creating, setCreating] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Employee | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pwdTarget, setPwdTarget] = useState<Employee | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [savingPwd, setSavingPwd] = useState(false);
 
   const loadEmployees = async () => {
     setLoading(true);
@@ -102,6 +113,29 @@ export const EmployeesManagement = () => {
       toast({ title: err?.message || 'فشل الحذف', variant: 'destructive' });
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!pwdTarget) return;
+    if (newPassword.length < 6) {
+      toast({ title: 'كلمة المرور 6 أحرف على الأقل', variant: 'destructive' });
+      return;
+    }
+    setSavingPwd(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('update-employee-password', {
+        body: { user_id: pwdTarget.user_id, password: newPassword },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: 'تم تغيير كلمة المرور بنجاح' });
+      setPwdTarget(null);
+      setNewPassword('');
+    } catch (err: any) {
+      toast({ title: err?.message || 'فشل تغيير كلمة المرور', variant: 'destructive' });
+    } finally {
+      setSavingPwd(false);
     }
   };
 
@@ -174,21 +208,34 @@ export const EmployeesManagement = () => {
                     </Badge>
                   </div>
                 </div>
-                {emp.role !== 'admin' && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
-                    onClick={() => setPendingDelete(emp)}
-                    disabled={deletingId === emp.user_id}
-                  >
-                    {deletingId === emp.user_id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                  </Button>
-                )}
+                <div className="flex items-center gap-1 shrink-0">
+                  {emp.role !== 'admin' && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-primary hover:text-primary hover:bg-primary/10"
+                      onClick={() => { setPwdTarget(emp); setNewPassword(''); }}
+                      title="تغيير كلمة المرور"
+                    >
+                      <KeyRound className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {emp.role !== 'admin' && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => setPendingDelete(emp)}
+                      disabled={deletingId === emp.user_id}
+                    >
+                      {deletingId === emp.user_id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                    </Button>
+                  )}
+                </div>
               </Card>
             ))}
           </div>
@@ -211,6 +258,41 @@ export const EmployeesManagement = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!pwdTarget} onOpenChange={(open) => { if (!open) { setPwdTarget(null); setNewPassword(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>تغيير كلمة المرور</DialogTitle>
+            <DialogDescription>
+              تعيين كلمة مرور جديدة لـ <span dir="ltr" className="font-semibold">{pwdTarget?.email}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>كلمة المرور الجديدة</Label>
+            <div className="relative">
+              <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+                dir="ltr"
+                className="pr-10"
+                minLength={6}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setPwdTarget(null); setNewPassword(''); }}>
+              إلغاء
+            </Button>
+            <Button onClick={handleChangePassword} disabled={savingPwd || newPassword.length < 6}>
+              {savingPwd ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+              حفظ
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
