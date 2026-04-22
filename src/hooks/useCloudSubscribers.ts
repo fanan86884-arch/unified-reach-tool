@@ -827,11 +827,11 @@ export const useCloudSubscribers = () => {
     [subscribers]
   );
 
-  // Count admin subscribers that are currently hidden (for badge display)
+  // Count subscribers added by the admin themselves (badge shows this count)
   const hiddenAdminCount = useMemo(() => {
-    if (!isAdmin || showAdminSubscribers) return 0;
+    if (!isAdmin) return 0;
     return subscribers.filter((s) => !s.isArchived && s.addedByUserId === user?.id).length;
-  }, [subscribers, isAdmin, showAdminSubscribers, user?.id]);
+  }, [subscribers, isAdmin, user?.id]);
 
   // Include archived subscribers in search results
   const filteredSubscribers = useMemo(() => {
@@ -845,10 +845,10 @@ export const useCloudSubscribers = () => {
       const matchesStatus = filterStatus === 'all' || sub.status === filterStatus;
       const matchesCaptain = filterCaptain === 'all' || sub.captain === filterCaptain;
       const matchesGender = filterGender === 'all' || sub.gender === filterGender;
-      // Admin viewing: hide subscribers added by the admin themselves unless toggle is on
-      const matchesAdminFilter = !isAdmin || showAdminSubscribers
+      // Admin viewing: when toggle is ON, show ONLY admin-added subscribers; otherwise show all
+      const matchesAdminFilter = !isAdmin || !showAdminSubscribers
         ? true
-        : sub.addedByUserId !== user?.id;
+        : sub.addedByUserId === user?.id;
       
       return matchesSearch && matchesStatus && matchesCaptain && matchesGender && matchesAdminFilter;
     });
