@@ -166,9 +166,9 @@ export const SubscriberCardCompact = ({
                       </span>
                     )}
                   </div>
-                  {cat && (
+                  {cat && isExpanded && (
                     <span className={cn(
-                      'h-6 w-6 rounded flex items-center justify-center shrink-0',
+                      'h-6 w-6 rounded flex items-center justify-center shrink-0 animate-fade-in',
                       catColorClass
                     )}>
                       <CatIcon className="w-3.5 h-3.5" />
