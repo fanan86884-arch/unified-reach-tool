@@ -183,10 +183,10 @@ export const SubscribersList = ({
               size="icon"
               onClick={() => setShowAdminSubscribers(!showAdminSubscribers)}
               className="rounded-full w-9 h-9 relative"
-              title={showAdminSubscribers ? 'إخفاء مشتركين الإدارة' : 'إظهار مشتركين الإدارة'}
+              title={showAdminSubscribers ? 'عرض كل المشتركين' : 'عرض مشتركين الإدارة فقط'}
             >
-              {showAdminSubscribers ? <UserCog className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-              {!showAdminSubscribers && hiddenAdminCount > 0 && (
+              <UserCog className="w-5 h-5" />
+              {hiddenAdminCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                   {hiddenAdminCount > 9 ? '9+' : hiddenAdminCount}
                 </span>
