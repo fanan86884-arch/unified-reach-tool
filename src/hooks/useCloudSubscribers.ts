@@ -845,11 +845,13 @@ export const useCloudSubscribers = () => {
     [subscribers]
   );
 
-  // Count subscribers added by the admin themselves (badge shows this count)
+  // Count subscribers added by accounts OTHER than the main admin (123@2bgym.com)
   const hiddenAdminCount = useMemo(() => {
-    if (!isAdmin) return 0;
-    return subscribers.filter((s) => !s.isArchived && s.addedByUserId === user?.id).length;
-  }, [subscribers, isAdmin, user?.id]);
+    if (!isAdmin || !mainAdminUserId) return 0;
+    return subscribers.filter(
+      (s) => !s.isArchived && s.addedByUserId && s.addedByUserId !== mainAdminUserId
+    ).length;
+  }, [subscribers, isAdmin, mainAdminUserId]);
 
   // Include archived subscribers in search results
   const filteredSubscribers = useMemo(() => {
@@ -863,14 +865,14 @@ export const useCloudSubscribers = () => {
       const matchesStatus = filterStatus === 'all' || sub.status === filterStatus;
       const matchesCaptain = filterCaptain === 'all' || sub.captain === filterCaptain;
       const matchesGender = filterGender === 'all' || sub.gender === filterGender;
-      // Admin viewing: when toggle is ON, show ONLY admin-added subscribers; otherwise show all
+      // Admin viewing: when toggle is ON, show ONLY subscribers added by accounts other than main admin
       const matchesAdminFilter = !isAdmin || !showAdminSubscribers
         ? true
-        : sub.addedByUserId === user?.id;
+        : (!!sub.addedByUserId && sub.addedByUserId !== mainAdminUserId);
       
       return matchesSearch && matchesStatus && matchesCaptain && matchesGender && matchesAdminFilter;
     });
-  }, [subscribers, activeSubscribers, searchQuery, filterStatus, filterCaptain, filterGender, isAdmin, showAdminSubscribers, user?.id]);
+  }, [subscribers, activeSubscribers, searchQuery, filterStatus, filterCaptain, filterGender, isAdmin, showAdminSubscribers, mainAdminUserId]);
 
   const stats = useMemo(() => {
     // الاشتراكات النشطة: نشط + قارب على الانتهاء (لأنهم لم ينتهوا بعد)
