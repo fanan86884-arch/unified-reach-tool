@@ -346,40 +346,42 @@ export const useCloudSubscribers = () => {
       return { success: true, subscriber: newSubscriber };
     }
 
-    // If online, save to database (no .select() — local state already updated, realtime will sync)
-    const { error } = await supabase
-      .from('subscribers')
-      .insert({
-        id: newId,
-        user_id: user.id,
-        name: data.name,
-        phone: normalizedPhone,
-        subscription_type: data.subscriptionType,
-        start_date: data.startDate,
-        end_date: data.endDate,
-        paid_amount: data.paidAmount,
-        remaining_amount: data.remainingAmount,
-        captain: data.captain,
-        status,
-        is_archived: false,
-        is_paused: false,
-        paused_until: null,
-        gender: data.gender,
-        subscription_category: data.subscriptionCategory,
-      } as any);
+    // If online, save to database in background — local state already updated, realtime will sync
+    void (async () => {
+      const { error } = await supabase
+        .from('subscribers')
+        .insert({
+          id: newId,
+          user_id: user.id,
+          name: data.name,
+          phone: normalizedPhone,
+          subscription_type: data.subscriptionType,
+          start_date: data.startDate,
+          end_date: data.endDate,
+          paid_amount: data.paidAmount,
+          remaining_amount: data.remainingAmount,
+          captain: data.captain,
+          status,
+          is_archived: false,
+          is_paused: false,
+          paused_until: null,
+          gender: data.gender,
+          subscription_category: data.subscriptionCategory,
+        } as any);
 
-    if (error) {
-      console.error('Error adding subscriber:', error);
-      // Revert local change on error
-      setSubscribers(prev => prev.filter(s => s.id !== newId));
-      return { success: false, error: 'حدث خطأ أثناء الإضافة' };
-    }
+      if (error) {
+        console.error('Error adding subscriber:', error);
+        // Revert local change on error
+        setSubscribers(prev => prev.filter(s => s.id !== newId));
+        return;
+      }
 
-    // Log activity in background (don't await - don't block UI)
-    void logActivity(user.id, newId, data.name, 'add', {
-      subscriptionType: data.subscriptionType,
-      paidAmount: data.paidAmount,
-    });
+      // Log activity in background (don't await - don't block UI)
+      void logActivity(user.id, newId, data.name, 'add', {
+        subscriptionType: data.subscriptionType,
+        paidAmount: data.paidAmount,
+      });
+    })();
 
     return { success: true, subscriber: newSubscriber };
   }, [user, checkPhoneExists, isOnline]);
