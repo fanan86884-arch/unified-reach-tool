@@ -85,6 +85,24 @@ export const useCloudSubscribers = () => {
   const [filterDateRange, setFilterDateRange] = useState<string>('all');
   const [filterGender, setFilterGender] = useState<string>('all');
   const [showAdminSubscribers, setShowAdminSubscribers] = useState<boolean>(false);
+  const [mainAdminUserId, setMainAdminUserId] = useState<string | null>(null);
+
+  // Fetch the user_id of the main admin (123@2bgym.com) once
+  useEffect(() => {
+    if (!isAdmin || !user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('list-employees');
+        if (cancelled || error || !data?.employees) return;
+        const main = data.employees.find((e: any) => e.email === '123@2bgym.com');
+        if (main) setMainAdminUserId(main.user_id);
+      } catch (err) {
+        console.error('Error fetching main admin id:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isAdmin, user]);
 
   // Load cached subscribers on mount
   useEffect(() => {
@@ -328,40 +346,42 @@ export const useCloudSubscribers = () => {
       return { success: true, subscriber: newSubscriber };
     }
 
-    // If online, save to database (no .select() — local state already updated, realtime will sync)
-    const { error } = await supabase
-      .from('subscribers')
-      .insert({
-        id: newId,
-        user_id: user.id,
-        name: data.name,
-        phone: normalizedPhone,
-        subscription_type: data.subscriptionType,
-        start_date: data.startDate,
-        end_date: data.endDate,
-        paid_amount: data.paidAmount,
-        remaining_amount: data.remainingAmount,
-        captain: data.captain,
-        status,
-        is_archived: false,
-        is_paused: false,
-        paused_until: null,
-        gender: data.gender,
-        subscription_category: data.subscriptionCategory,
-      } as any);
+    // If online, save to database in background — local state already updated, realtime will sync
+    void (async () => {
+      const { error } = await supabase
+        .from('subscribers')
+        .insert({
+          id: newId,
+          user_id: user.id,
+          name: data.name,
+          phone: normalizedPhone,
+          subscription_type: data.subscriptionType,
+          start_date: data.startDate,
+          end_date: data.endDate,
+          paid_amount: data.paidAmount,
+          remaining_amount: data.remainingAmount,
+          captain: data.captain,
+          status,
+          is_archived: false,
+          is_paused: false,
+          paused_until: null,
+          gender: data.gender,
+          subscription_category: data.subscriptionCategory,
+        } as any);
 
-    if (error) {
-      console.error('Error adding subscriber:', error);
-      // Revert local change on error
-      setSubscribers(prev => prev.filter(s => s.id !== newId));
-      return { success: false, error: 'حدث خطأ أثناء الإضافة' };
-    }
+      if (error) {
+        console.error('Error adding subscriber:', error);
+        // Revert local change on error
+        setSubscribers(prev => prev.filter(s => s.id !== newId));
+        return;
+      }
 
-    // Log activity in background (don't await - don't block UI)
-    void logActivity(user.id, newId, data.name, 'add', {
-      subscriptionType: data.subscriptionType,
-      paidAmount: data.paidAmount,
-    });
+      // Log activity in background (don't await - don't block UI)
+      void logActivity(user.id, newId, data.name, 'add', {
+        subscriptionType: data.subscriptionType,
+        paidAmount: data.paidAmount,
+      });
+    })();
 
     return { success: true, subscriber: newSubscriber };
   }, [user, checkPhoneExists, isOnline]);
@@ -827,11 +847,13 @@ export const useCloudSubscribers = () => {
     [subscribers]
   );
 
-  // Count subscribers added by the admin themselves (badge shows this count)
+  // Count subscribers added by accounts OTHER than the main admin (123@2bgym.com)
   const hiddenAdminCount = useMemo(() => {
-    if (!isAdmin) return 0;
-    return subscribers.filter((s) => !s.isArchived && s.addedByUserId === user?.id).length;
-  }, [subscribers, isAdmin, user?.id]);
+    if (!isAdmin || !mainAdminUserId) return 0;
+    return subscribers.filter(
+      (s) => !s.isArchived && s.addedByUserId && s.addedByUserId !== mainAdminUserId
+    ).length;
+  }, [subscribers, isAdmin, mainAdminUserId]);
 
   // Include archived subscribers in search results
   const filteredSubscribers = useMemo(() => {
@@ -845,14 +867,14 @@ export const useCloudSubscribers = () => {
       const matchesStatus = filterStatus === 'all' || sub.status === filterStatus;
       const matchesCaptain = filterCaptain === 'all' || sub.captain === filterCaptain;
       const matchesGender = filterGender === 'all' || sub.gender === filterGender;
-      // Admin viewing: when toggle is ON, show ONLY admin-added subscribers; otherwise show all
+      // Admin viewing: when toggle is ON, show ONLY subscribers added by accounts other than main admin
       const matchesAdminFilter = !isAdmin || !showAdminSubscribers
         ? true
-        : sub.addedByUserId === user?.id;
+        : (!!sub.addedByUserId && sub.addedByUserId !== mainAdminUserId);
       
       return matchesSearch && matchesStatus && matchesCaptain && matchesGender && matchesAdminFilter;
     });
-  }, [subscribers, activeSubscribers, searchQuery, filterStatus, filterCaptain, filterGender, isAdmin, showAdminSubscribers, user?.id]);
+  }, [subscribers, activeSubscribers, searchQuery, filterStatus, filterCaptain, filterGender, isAdmin, showAdminSubscribers, mainAdminUserId]);
 
   const stats = useMemo(() => {
     // الاشتراكات النشطة: نشط + قارب على الانتهاء (لأنهم لم ينتهوا بعد)

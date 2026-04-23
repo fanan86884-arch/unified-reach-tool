@@ -183,7 +183,7 @@ export const SubscribersList = ({
               size="icon"
               onClick={() => setShowAdminSubscribers(!showAdminSubscribers)}
               className="rounded-full w-9 h-9 relative"
-              title={showAdminSubscribers ? 'عرض كل المشتركين' : 'عرض مشتركين الإدارة فقط'}
+              title={showAdminSubscribers ? 'عرض كل المشتركين' : 'عرض المشتركين المسجلين من حسابات أخرى'}
             >
               <UserCog className="w-5 h-5" />
               {hiddenAdminCount > 0 && (
