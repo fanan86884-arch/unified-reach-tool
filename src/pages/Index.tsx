@@ -15,6 +15,7 @@ import { SubscriberFormData, Subscriber } from '@/types/subscriber';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client.runtime';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useCaptains } from '@/hooks/useCaptains';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('subscribers');
@@ -138,7 +139,7 @@ const Index = () => {
     setIsActivityLogOpen(true);
   }, []);
 
-  const captains = useMemo(() => ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'], []);
+  const { captains } = useCaptains();
 
   // Show loading only if we have no cached active or archived data
   const showLoading = loading && displaySubscribers.length === 0 && displayArchivedSubscribers.length === 0;
