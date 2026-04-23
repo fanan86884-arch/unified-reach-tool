@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Edit, Trash2, Archive, RotateCcw, MessageCircle, RefreshCw, 
   ChevronDown, ChevronUp, Pause, Play, Clock, AlertCircle, ArchiveRestore,
-  Dumbbell, Footprints, Activity,
+  Dumbbell, Footprints, Activity, Sparkles,
 } from 'lucide-react';
 import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -128,6 +128,9 @@ export const SubscriberCardCompact = ({
         <div className="flex items-center justify-between gap-3 flex-1 min-w-0">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
+              {isFemale && (
+                <Sparkles className="w-3.5 h-3.5 text-pink-400 shrink-0" aria-label="بنت" />
+              )}
               <h3 className="font-bold text-foreground truncate">{subscriber.name}</h3>
             </div>
             <div className="text-sm text-muted-foreground">
