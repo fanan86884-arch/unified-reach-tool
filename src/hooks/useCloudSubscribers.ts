@@ -85,6 +85,24 @@ export const useCloudSubscribers = () => {
   const [filterDateRange, setFilterDateRange] = useState<string>('all');
   const [filterGender, setFilterGender] = useState<string>('all');
   const [showAdminSubscribers, setShowAdminSubscribers] = useState<boolean>(false);
+  const [mainAdminUserId, setMainAdminUserId] = useState<string | null>(null);
+
+  // Fetch the user_id of the main admin (123@2bgym.com) once
+  useEffect(() => {
+    if (!isAdmin || !user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('list-employees');
+        if (cancelled || error || !data?.employees) return;
+        const main = data.employees.find((e: any) => e.email === '123@2bgym.com');
+        if (main) setMainAdminUserId(main.user_id);
+      } catch (err) {
+        console.error('Error fetching main admin id:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isAdmin, user]);
 
   // Load cached subscribers on mount
   useEffect(() => {
