@@ -33,6 +33,7 @@ import { ContactSettings } from './ContactSettings';
 import { PaymentSettings } from './PaymentSettings';
 import { PushNotificationSettings } from './PushNotificationSettings';
 import { EmployeesManagement } from './EmployeesManagement';
+import { CaptainsManagement } from './CaptainsManagement';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import { useLanguage } from '@/i18n/LanguageContext';
 import {
@@ -178,6 +179,9 @@ export const Settings = () => {
       {isAdmin && (
         <SettingsSection title="إدارة الموظفين" icon={Shield}>
           <EmployeesManagement />
+          <div className="mt-6 pt-6 border-t border-border">
+            <CaptainsManagement />
+          </div>
         </SettingsSection>
       )}
 

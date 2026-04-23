@@ -1,6 +1,7 @@
 import { memo, useMemo } from 'react';
 import { SubscribersList } from '@/components/subscribers/SubscribersList';
 import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subscriber';
+import { useCaptains } from '@/hooks/useCaptains';
 
 interface SubscribersTabProps {
   subscribers: Subscriber[];
@@ -53,10 +54,10 @@ export const SubscribersTab = memo(({
   pauseSubscription,
   resumeSubscription,
 }: SubscribersTabProps) => {
-  // Create stats object with captains for SubscribersList
+  const { captains } = useCaptains();
   const stats = useMemo(() => ({
-    captains: ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'],
-  }), []);
+    captains,
+  }), [captains]);
 
   return (
     <SubscribersList
