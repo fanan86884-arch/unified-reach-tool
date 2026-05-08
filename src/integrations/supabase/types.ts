@@ -88,6 +88,51 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance: {
+        Row: {
+          checked_in_at: string
+          client_user_id: string
+          id: string
+          qr_token: string | null
+          subscriber_id: string
+        }
+        Insert: {
+          checked_in_at?: string
+          client_user_id: string
+          id?: string
+          qr_token?: string | null
+          subscriber_id: string
+        }
+        Update: {
+          checked_in_at?: string
+          client_user_id?: string
+          id?: string
+          qr_token?: string | null
+          subscriber_id?: string
+        }
+        Relationships: []
+      }
+      captain_accounts: {
+        Row: {
+          captain_name: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          captain_name: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          captain_name?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       captains: {
         Row: {
           created_at: string
@@ -103,6 +148,84 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      client_accounts: {
+        Row: {
+          created_at: string
+          id: string
+          phone: string
+          subscriber_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          phone: string
+          subscriber_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          phone?: string
+          subscriber_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      client_notes: {
+        Row: {
+          captain_user_id: string
+          created_at: string
+          id: string
+          note: string
+          subscriber_id: string
+        }
+        Insert: {
+          captain_user_id: string
+          created_at?: string
+          id?: string
+          note: string
+          subscriber_id: string
+        }
+        Update: {
+          captain_user_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          subscriber_id?: string
+        }
+        Relationships: []
+      }
+      client_notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_read: boolean
+          subscriber_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          subscriber_id: string
+          title: string
+          type?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          subscriber_id?: string
+          title?: string
+          type?: string
         }
         Relationships: []
       }
@@ -275,6 +398,30 @@ export type Database = {
           updated_at?: string
           wake_time?: string
           weight?: number
+        }
+        Relationships: []
+      }
+      gym_qr_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string | null
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          token: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          token?: string
         }
         Relationships: []
       }
@@ -691,6 +838,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_my_captain_name: { Args: never; Returns: string }
+      get_my_subscriber_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
