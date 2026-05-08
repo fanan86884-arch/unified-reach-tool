@@ -14,6 +14,11 @@ import Auth from "./pages/Auth";
 import CustomerLookup from "./pages/CustomerLookup";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
+import ClientLogin from "./pages/ClientLogin";
+import ClientDashboard from "./pages/ClientDashboard";
+import CaptainLogin from "./pages/CaptainLogin";
+import CaptainDashboard from "./pages/CaptainDashboard";
+import CheckIn from "./pages/CheckIn";
 import { Loader2 } from "lucide-react";
 
 // Configure QueryClient — offline-friendly: don't retry when offline
@@ -98,6 +103,11 @@ const App = () => {
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/lookup" element={<CustomerLookup />} />
                 <Route path="/install" element={<Install />} />
+                <Route path="/portal/login" element={<ClientLogin />} />
+                <Route path="/portal" element={<ClientDashboard />} />
+                <Route path="/captain/login" element={<CaptainLogin />} />
+                <Route path="/captain" element={<CaptainDashboard />} />
+                <Route path="/checkin" element={<CheckIn />} />
                   <Route
                     path="/"
                     element={
