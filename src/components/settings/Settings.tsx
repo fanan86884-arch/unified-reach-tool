@@ -34,6 +34,7 @@ import { PaymentSettings } from './PaymentSettings';
 import { PushNotificationSettings } from './PushNotificationSettings';
 import { EmployeesManagement } from './EmployeesManagement';
 import { CaptainsManagement } from './CaptainsManagement';
+import { PortalAccountsManagement } from './PortalAccountsManagement';
 import { useCloudSubscribers } from '@/hooks/useCloudSubscribers';
 import { useLanguage } from '@/i18n/LanguageContext';
 import {
@@ -182,6 +183,12 @@ export const Settings = () => {
           <div className="mt-6 pt-6 border-t border-border">
             <CaptainsManagement />
           </div>
+        </SettingsSection>
+      )}
+
+      {isAdmin && (
+        <SettingsSection title="بوابة العملاء والكباتن" icon={User}>
+          <PortalAccountsManagement />
         </SettingsSection>
       )}
 
