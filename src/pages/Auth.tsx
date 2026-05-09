@@ -193,73 +193,37 @@ const Auth = () => {
     }
   };
 
-  const handleMemberSearch = async () => {
-    if (!memberPhone.trim()) return;
-    
-    setIsMemberSearching(true);
-    setMemberSearched(true);
-
-    try {
-      // Use the secure edge function for member lookup
-      const { data, error } = await supabase.functions.invoke('member-lookup', {
-        body: { phone: memberPhone.trim() }
+  const handleMemberLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!memberPhone.trim() || !memberPassword) return;
+    setIsMemberLogging(true);
+    const { error } = await signInClient(memberPhone.trim(), memberPassword);
+    setIsMemberLogging(false);
+    if (error) {
+      toast({
+        title: 'تعذر تسجيل الدخول',
+        description: error.message === 'Invalid login credentials'
+          ? 'رقم الموبايل أو كلمة السر غير صحيحة'
+          : (error as any).message ?? 'حدث خطأ',
+        variant: 'destructive',
       });
-
-      if (error) {
-        console.error('Member lookup error:', error);
-        throw error;
-      }
-
-      if (data?.found && data.subscriber) {
-        const sub = data.subscriber;
-        const subscriber: Subscriber = {
-          id: sub.id,
-          name: sub.name,
-          phone: sub.phone,
-          subscriptionType: sub.subscriptionType,
-          startDate: sub.startDate,
-          endDate: sub.endDate,
-          paidAmount: sub.paidAmount,
-          remainingAmount: sub.remainingAmount,
-          captain: '',
-          status: sub.status,
-          isArchived: false,
-          isPaused: sub.isPaused,
-          pausedUntil: sub.pausedUntil,
-          createdAt: '',
-          updatedAt: '',
-        };
-        setMemberResult(subscriber);
-      } else {
-        setMemberResult(null);
-      }
-    } catch (e) {
-      console.error('Search error:', e);
-      setMemberResult(null);
+      return;
     }
-    
-    setIsMemberSearching(false);
+    navigate('/portal');
   };
 
   const goBack = () => {
-    if (showSubscriptionRequest) {
-      setShowSubscriptionRequest(false);
-    } else if (userType === 'employee' && employeeStep === 'login') {
+    if (userType === 'employee' && employeeStep === 'login') {
       setEmployeeStep('pin');
       setPin('');
       setPinError('');
-    } else if (userType === 'member' && memberSearched) {
-      setMemberSearched(false);
-      setMemberResult(null);
-      setMemberPhone('');
     } else {
       setUserType('selection');
       setEmployeeStep('pin');
       setPin('');
       setPinError('');
-      setMemberSearched(false);
-      setMemberResult(null);
       setMemberPhone('');
+      setMemberPassword('');
     }
   };
 
