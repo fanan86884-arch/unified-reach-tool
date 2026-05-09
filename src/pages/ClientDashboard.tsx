@@ -6,10 +6,14 @@ import { signOutPortal } from "@/lib/portalAuth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, LogOut, Calendar, Wallet, MessageCircle, RefreshCw, ScanLine, Bell, History, StickyNote, AlertCircle } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Loader2, LogOut, Calendar, Wallet, MessageCircle, RefreshCw, ScanLine, Bell, History, StickyNote, AlertCircle, Salad, Dumbbell, MessagesSquare } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { ChatThread } from "@/components/portal/ChatThread";
+import { DietRequestForm } from "@/components/auth/DietRequestForm";
+import { WorkoutRequestForm } from "@/components/auth/WorkoutRequestForm";
 
 interface Subscriber {
   id: string;
@@ -188,29 +192,68 @@ export default function ClientDashboard() {
         <div className="grid grid-cols-3 gap-2">
           <Button variant="outline" className="flex-col h-auto py-3 gap-1" onClick={() => navigate("/checkin")}>
             <ScanLine className="h-5 w-5 text-primary" />
-            <span className="text-xs">تسجيل حضور</span>
+            <span className="text-xs">حضور</span>
           </Button>
           <Button variant="outline" className="flex-col h-auto py-3 gap-1" disabled={requesting} onClick={requestRenewal}>
             <RefreshCw className={`h-5 w-5 text-primary ${requesting ? "animate-spin" : ""}`} />
-            <span className="text-xs">طلب تجديد</span>
+            <span className="text-xs">تجديد</span>
           </Button>
           <Button variant="outline" className="flex-col h-auto py-3 gap-1" disabled={!contactPhone} onClick={() => {
             const num = contactPhone.replace(/\D/g, "").replace(/^0/, "20");
             window.open(`https://wa.me/${num}`, "_blank");
           }}>
             <MessageCircle className="h-5 w-5 text-green-500" />
-            <span className="text-xs">واتساب الجيم</span>
+            <span className="text-xs">واتساب</span>
           </Button>
         </div>
 
+        {/* Plan request sheets */}
+        <div className="grid grid-cols-2 gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="h-auto py-3 gap-2">
+                <Salad className="h-4 w-4 text-green-500" />
+                <span className="text-xs">طلب نظام غذائي</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[90vh] overflow-y-auto" dir="rtl">
+              <SheetHeader><SheetTitle>طلب نظام غذائي</SheetTitle></SheetHeader>
+              <div className="mt-4">
+                <DietRequestForm phone={sub.phone} name={sub.name} />
+              </div>
+            </SheetContent>
+          </Sheet>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="h-auto py-3 gap-2">
+                <Dumbbell className="h-4 w-4 text-orange-500" />
+                <span className="text-xs">طلب جدول تمرين</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[90vh] overflow-y-auto" dir="rtl">
+              <SheetHeader><SheetTitle>طلب جدول تمرين</SheetTitle></SheetHeader>
+              <div className="mt-4">
+                <WorkoutRequestForm phone={sub.phone} name={sub.name} />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+
         {/* Tabs */}
-        <Tabs defaultValue="notifications" className="w-full">
-          <TabsList className="grid grid-cols-4 w-full">
-            <TabsTrigger value="notifications" className="text-xs"><Bell className="h-3 w-3 ml-1" />إشعارات</TabsTrigger>
-            <TabsTrigger value="renewals" className="text-xs"><History className="h-3 w-3 ml-1" />سجل</TabsTrigger>
-            <TabsTrigger value="attendance" className="text-xs"><ScanLine className="h-3 w-3 ml-1" />حضور</TabsTrigger>
-            <TabsTrigger value="notes" className="text-xs"><StickyNote className="h-3 w-3 ml-1" />ملاحظات</TabsTrigger>
+        <Tabs defaultValue="chat" className="w-full">
+          <TabsList className="grid grid-cols-5 w-full">
+            <TabsTrigger value="chat" className="text-xs px-1"><MessagesSquare className="h-3 w-3" /></TabsTrigger>
+            <TabsTrigger value="notifications" className="text-xs px-1"><Bell className="h-3 w-3" /></TabsTrigger>
+            <TabsTrigger value="renewals" className="text-xs px-1"><History className="h-3 w-3" /></TabsTrigger>
+            <TabsTrigger value="attendance" className="text-xs px-1"><ScanLine className="h-3 w-3" /></TabsTrigger>
+            <TabsTrigger value="notes" className="text-xs px-1"><StickyNote className="h-3 w-3" /></TabsTrigger>
           </TabsList>
+
+          <TabsContent value="chat" className="mt-3">
+            {session.userId && (
+              <ChatThread subscriberId={sub.id} myUserId={session.userId} myRole="client" />
+            )}
+          </TabsContent>
 
           <TabsContent value="notifications" className="space-y-2 mt-3">
             {notifications.length === 0 && <EmptyHint text="لا توجد إشعارات" />}

@@ -15,6 +15,7 @@ import CustomerLookup from "./pages/CustomerLookup";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import ClientLogin from "./pages/ClientLogin";
+import ClientResetPassword from "./pages/ClientResetPassword";
 import ClientDashboard from "./pages/ClientDashboard";
 import CaptainLogin from "./pages/CaptainLogin";
 import CaptainDashboard from "./pages/CaptainDashboard";
@@ -104,6 +105,7 @@ const App = () => {
                 <Route path="/lookup" element={<CustomerLookup />} />
                 <Route path="/install" element={<Install />} />
                 <Route path="/portal/login" element={<ClientLogin />} />
+                <Route path="/portal/reset" element={<ClientResetPassword />} />
                 <Route path="/portal" element={<ClientDashboard />} />
                 <Route path="/captain/login" element={<CaptainLogin />} />
                 <Route path="/captain" element={<CaptainDashboard />} />

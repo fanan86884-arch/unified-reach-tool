@@ -175,6 +175,36 @@ export type Database = {
         }
         Relationships: []
       }
+      client_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean
+          sender_role: string
+          sender_user_id: string
+          subscriber_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          sender_role: string
+          sender_user_id: string
+          subscriber_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          sender_role?: string
+          sender_user_id?: string
+          subscriber_id?: string
+        }
+        Relationships: []
+      }
       client_notes: {
         Row: {
           captain_user_id: string
