@@ -13,6 +13,7 @@ import {
   MessageCircle, ShoppingBag, ExternalLink, Salad, Dumbbell 
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client.runtime';
+import { signInClient } from '@/lib/portalAuth';
 import { Subscriber } from '@/types/subscriber';
 import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { ar } from 'date-fns/locale';
