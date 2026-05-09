@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Loader2, LogOut, Search, Plus, Trash2, ChevronDown, ChevronUp, MessagesSquare, Salad, Dumbbell } from "lucide-react";
+import { Loader2, LogOut, Search, Plus, Trash2, ChevronDown, ChevronUp, MessagesSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { ChatThread } from "@/components/portal/ChatThread";
