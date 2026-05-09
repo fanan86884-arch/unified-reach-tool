@@ -7,9 +7,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, LogOut, Search, Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Loader2, LogOut, Search, Plus, Trash2, ChevronDown, ChevronUp, MessagesSquare, Salad, Dumbbell } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, differenceInDays } from "date-fns";
+import { ChatThread } from "@/components/portal/ChatThread";
 
 export default function CaptainDashboard() {
   const session = usePortalSession("captain");
@@ -120,6 +122,21 @@ export default function CaptainDashboard() {
                       <div><span className="text-muted-foreground">المدفوع:</span> {c.paid_amount} ج.م</div>
                       <div><span className="text-muted-foreground">المتبقي:</span> {c.remaining_amount} ج.م</div>
                     </div>
+
+                    <Sheet>
+                      <SheetTrigger asChild>
+                        <Button variant="outline" size="sm" className="w-full gap-2">
+                          <MessagesSquare className="h-4 w-4 text-primary" />
+                          محادثة مع العميل
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent side="bottom" className="h-[85vh] flex flex-col" dir="rtl">
+                        <SheetHeader><SheetTitle>{c.name}</SheetTitle></SheetHeader>
+                        <div className="mt-3 flex-1 min-h-0">
+                          {session.userId && <ChatThread subscriberId={c.id} myUserId={session.userId} myRole="captain" className="h-full" />}
+                        </div>
+                      </SheetContent>
+                    </Sheet>
 
                     <div className="space-y-2">
                       <div className="text-xs font-medium text-muted-foreground">الملاحظات</div>
