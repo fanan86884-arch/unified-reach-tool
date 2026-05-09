@@ -104,6 +104,8 @@ const Auth = () => {
   
   const [memberPhone, setMemberPhone] = useState('');
   const [memberPassword, setMemberPassword] = useState('');
+  const [memberPasswordConfirm, setMemberPasswordConfirm] = useState('');
+  const [memberMode, setMemberMode] = useState<'login' | 'signup'>('login');
   const [isMemberLogging, setIsMemberLogging] = useState(false);
   
   const { toast } = useToast();
@@ -193,10 +195,48 @@ const Auth = () => {
     }
   };
 
-  const handleMemberLogin = async (e: React.FormEvent) => {
+  const handleMemberSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!memberPhone.trim() || !memberPassword) return;
+
     setIsMemberLogging(true);
+
+    if (memberMode === 'signup') {
+      if (memberPassword.length < 6) {
+        setIsMemberLogging(false);
+        toast({ title: 'كلمة السر قصيرة', description: 'لازم تكون 6 أحرف على الأقل', variant: 'destructive' });
+        return;
+      }
+      if (memberPassword !== memberPasswordConfirm) {
+        setIsMemberLogging(false);
+        toast({ title: 'كلمتا السر غير متطابقتين', variant: 'destructive' });
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke('client-signup', {
+        body: { phone: memberPhone.trim(), password: memberPassword },
+      });
+      if (error || (data as any)?.error) {
+        setIsMemberLogging(false);
+        toast({
+          title: 'تعذر إنشاء الحساب',
+          description: (data as any)?.error ?? error?.message ?? 'حدث خطأ',
+          variant: 'destructive',
+        });
+        return;
+      }
+      // Auto-login after signup
+      const { error: loginErr } = await signInClient(memberPhone.trim(), memberPassword);
+      setIsMemberLogging(false);
+      if (loginErr) {
+        toast({ title: 'تم إنشاء الحساب', description: 'سجل دخول دلوقتي' });
+        setMemberMode('login');
+        return;
+      }
+      toast({ title: 'تم إنشاء الحساب وتسجيل الدخول' });
+      navigate('/portal');
+      return;
+    }
+
     const { error } = await signInClient(memberPhone.trim(), memberPassword);
     setIsMemberLogging(false);
     if (error) {
@@ -412,13 +452,17 @@ const Auth = () => {
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                     <Users className="w-8 h-8 text-primary" />
                   </div>
-                  <h2 className="text-xl font-bold">دخول العميل</h2>
+                  <h2 className="text-xl font-bold">
+                    {memberMode === 'login' ? 'دخول العميل' : 'إنشاء حساب جديد'}
+                  </h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    سجّل الدخول بحسابك لمتابعة اشتراكك
+                    {memberMode === 'login'
+                      ? 'سجّل الدخول بحسابك لمتابعة اشتراكك'
+                      : 'اعمل حساب برقم موبايلك المسجل في الجيم'}
                   </p>
                 </div>
 
-                <form onSubmit={handleMemberLogin} className="space-y-4">
+                <form onSubmit={handleMemberSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label>رقم الموبايل</Label>
                     <div className="relative">
@@ -444,13 +488,33 @@ const Auth = () => {
                         value={memberPassword}
                         onChange={(e) => setMemberPassword(e.target.value)}
                         type="password"
-                        placeholder="••••••••"
+                        placeholder={memberMode === 'signup' ? '6 أحرف على الأقل' : '••••••••'}
                         className="pr-10"
                         dir="ltr"
                         required
+                        minLength={memberMode === 'signup' ? 6 : undefined}
                       />
                     </div>
                   </div>
+
+                  {memberMode === 'signup' && (
+                    <div className="space-y-2">
+                      <Label>تأكيد كلمة السر</Label>
+                      <div className="relative">
+                        <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          value={memberPasswordConfirm}
+                          onChange={(e) => setMemberPasswordConfirm(e.target.value)}
+                          type="password"
+                          placeholder="••••••••"
+                          className="pr-10"
+                          dir="ltr"
+                          required
+                          minLength={6}
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   <Button
                     type="submit"
@@ -459,14 +523,26 @@ const Auth = () => {
                   >
                     {isMemberLogging ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
+                    ) : memberMode === 'login' ? (
                       'دخول'
+                    ) : (
+                      'إنشاء حساب'
                     )}
                   </Button>
 
-                  <p className="text-xs text-muted-foreground text-center">
-                    لو معندكش حساب، تواصل مع إدارة الجيم لإنشاء حسابك
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMemberMode(memberMode === 'login' ? 'signup' : 'login');
+                      setMemberPassword('');
+                      setMemberPasswordConfirm('');
+                    }}
+                    className="block w-full text-center text-sm text-primary hover:underline"
+                  >
+                    {memberMode === 'login'
+                      ? 'معندكش حساب؟ اعمل حساب جديد'
+                      : 'عندك حساب؟ سجّل دخول'}
+                  </button>
                 </form>
               </Card>
 
