@@ -103,11 +103,8 @@ const Auth = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [memberPhone, setMemberPhone] = useState('');
-  const [memberResult, setMemberResult] = useState<Subscriber | null>(null);
-  const [memberSearched, setMemberSearched] = useState(false);
-  const [isMemberSearching, setIsMemberSearching] = useState(false);
-  const [memberMode, setMemberMode] = useState<'new' | 'existing'>('existing');
-  const [showSubscriptionRequest, setShowSubscriptionRequest] = useState(false);
+  const [memberPassword, setMemberPassword] = useState('');
+  const [isMemberLogging, setIsMemberLogging] = useState(false);
   
   const { toast } = useToast();
   const { signIn, signUp, user, loading } = useAuth();
