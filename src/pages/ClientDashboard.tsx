@@ -6,10 +6,14 @@ import { signOutPortal } from "@/lib/portalAuth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, LogOut, Calendar, Wallet, MessageCircle, RefreshCw, ScanLine, Bell, History, StickyNote, AlertCircle } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Loader2, LogOut, Calendar, Wallet, MessageCircle, RefreshCw, ScanLine, Bell, History, StickyNote, AlertCircle, Salad, Dumbbell, MessagesSquare } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { ChatThread } from "@/components/portal/ChatThread";
+import { DietRequestForm } from "@/components/auth/DietRequestForm";
+import { WorkoutRequestForm } from "@/components/auth/WorkoutRequestForm";
 
 interface Subscriber {
   id: string;
