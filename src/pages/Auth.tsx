@@ -195,10 +195,48 @@ const Auth = () => {
     }
   };
 
-  const handleMemberLogin = async (e: React.FormEvent) => {
+  const handleMemberSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!memberPhone.trim() || !memberPassword) return;
+
     setIsMemberLogging(true);
+
+    if (memberMode === 'signup') {
+      if (memberPassword.length < 6) {
+        setIsMemberLogging(false);
+        toast({ title: 'كلمة السر قصيرة', description: 'لازم تكون 6 أحرف على الأقل', variant: 'destructive' });
+        return;
+      }
+      if (memberPassword !== memberPasswordConfirm) {
+        setIsMemberLogging(false);
+        toast({ title: 'كلمتا السر غير متطابقتين', variant: 'destructive' });
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke('client-signup', {
+        body: { phone: memberPhone.trim(), password: memberPassword },
+      });
+      if (error || (data as any)?.error) {
+        setIsMemberLogging(false);
+        toast({
+          title: 'تعذر إنشاء الحساب',
+          description: (data as any)?.error ?? error?.message ?? 'حدث خطأ',
+          variant: 'destructive',
+        });
+        return;
+      }
+      // Auto-login after signup
+      const { error: loginErr } = await signInClient(memberPhone.trim(), memberPassword);
+      setIsMemberLogging(false);
+      if (loginErr) {
+        toast({ title: 'تم إنشاء الحساب', description: 'سجل دخول دلوقتي' });
+        setMemberMode('login');
+        return;
+      }
+      toast({ title: 'تم إنشاء الحساب وتسجيل الدخول' });
+      navigate('/portal');
+      return;
+    }
+
     const { error } = await signInClient(memberPhone.trim(), memberPassword);
     setIsMemberLogging(false);
     if (error) {
