@@ -235,20 +235,6 @@ const Auth = () => {
     );
   }
 
-  const daysDiff = memberResult
-    ? differenceInCalendarDays(startOfDay(parseISO(memberResult.endDate)), startOfDay(new Date()))
-    : 0;
-  const daysRemaining = memberResult ? daysDiff + 1 : 0;
-  const statusKey: keyof typeof statusConfig = !memberResult
-    ? 'active'
-    : memberResult.isPaused
-    ? 'paused'
-    : daysDiff < 0
-    ? 'expired'
-    : daysRemaining <= 3
-    ? 'expiring'
-    : 'active';
-  const isExpired = memberResult ? statusKey === 'expired' : false;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
