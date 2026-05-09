@@ -250,7 +250,7 @@ const Auth = () => {
       <div className="flex-1 flex items-start justify-center px-4 pb-8">
         <div className="w-full max-w-md">
           {/* Back Button */}
-          {(userType !== 'selection' || showSubscriptionRequest) && (
+          {userType !== 'selection' && (
             <Button
               variant="ghost"
               onClick={goBack}
