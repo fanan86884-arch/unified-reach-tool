@@ -13,6 +13,7 @@ import {
   MessageCircle, ShoppingBag, ExternalLink, Salad, Dumbbell 
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client.runtime';
+import { signInClient } from '@/lib/portalAuth';
 import { Subscriber } from '@/types/subscriber';
 import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -102,11 +103,8 @@ const Auth = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [memberPhone, setMemberPhone] = useState('');
-  const [memberResult, setMemberResult] = useState<Subscriber | null>(null);
-  const [memberSearched, setMemberSearched] = useState(false);
-  const [isMemberSearching, setIsMemberSearching] = useState(false);
-  const [memberMode, setMemberMode] = useState<'new' | 'existing'>('existing');
-  const [showSubscriptionRequest, setShowSubscriptionRequest] = useState(false);
+  const [memberPassword, setMemberPassword] = useState('');
+  const [isMemberLogging, setIsMemberLogging] = useState(false);
   
   const { toast } = useToast();
   const { signIn, signUp, user, loading } = useAuth();
@@ -195,73 +193,37 @@ const Auth = () => {
     }
   };
 
-  const handleMemberSearch = async () => {
-    if (!memberPhone.trim()) return;
-    
-    setIsMemberSearching(true);
-    setMemberSearched(true);
-
-    try {
-      // Use the secure edge function for member lookup
-      const { data, error } = await supabase.functions.invoke('member-lookup', {
-        body: { phone: memberPhone.trim() }
+  const handleMemberLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!memberPhone.trim() || !memberPassword) return;
+    setIsMemberLogging(true);
+    const { error } = await signInClient(memberPhone.trim(), memberPassword);
+    setIsMemberLogging(false);
+    if (error) {
+      toast({
+        title: 'تعذر تسجيل الدخول',
+        description: error.message === 'Invalid login credentials'
+          ? 'رقم الموبايل أو كلمة السر غير صحيحة'
+          : (error as any).message ?? 'حدث خطأ',
+        variant: 'destructive',
       });
-
-      if (error) {
-        console.error('Member lookup error:', error);
-        throw error;
-      }
-
-      if (data?.found && data.subscriber) {
-        const sub = data.subscriber;
-        const subscriber: Subscriber = {
-          id: sub.id,
-          name: sub.name,
-          phone: sub.phone,
-          subscriptionType: sub.subscriptionType,
-          startDate: sub.startDate,
-          endDate: sub.endDate,
-          paidAmount: sub.paidAmount,
-          remainingAmount: sub.remainingAmount,
-          captain: '',
-          status: sub.status,
-          isArchived: false,
-          isPaused: sub.isPaused,
-          pausedUntil: sub.pausedUntil,
-          createdAt: '',
-          updatedAt: '',
-        };
-        setMemberResult(subscriber);
-      } else {
-        setMemberResult(null);
-      }
-    } catch (e) {
-      console.error('Search error:', e);
-      setMemberResult(null);
+      return;
     }
-    
-    setIsMemberSearching(false);
+    navigate('/portal');
   };
 
   const goBack = () => {
-    if (showSubscriptionRequest) {
-      setShowSubscriptionRequest(false);
-    } else if (userType === 'employee' && employeeStep === 'login') {
+    if (userType === 'employee' && employeeStep === 'login') {
       setEmployeeStep('pin');
       setPin('');
       setPinError('');
-    } else if (userType === 'member' && memberSearched) {
-      setMemberSearched(false);
-      setMemberResult(null);
-      setMemberPhone('');
     } else {
       setUserType('selection');
       setEmployeeStep('pin');
       setPin('');
       setPinError('');
-      setMemberSearched(false);
-      setMemberResult(null);
       setMemberPhone('');
+      setMemberPassword('');
     }
   };
 
@@ -273,20 +235,6 @@ const Auth = () => {
     );
   }
 
-  const daysDiff = memberResult
-    ? differenceInCalendarDays(startOfDay(parseISO(memberResult.endDate)), startOfDay(new Date()))
-    : 0;
-  const daysRemaining = memberResult ? daysDiff + 1 : 0;
-  const statusKey: keyof typeof statusConfig = !memberResult
-    ? 'active'
-    : memberResult.isPaused
-    ? 'paused'
-    : daysDiff < 0
-    ? 'expired'
-    : daysRemaining <= 3
-    ? 'expiring'
-    : 'active';
-  const isExpired = memberResult ? statusKey === 'expired' : false;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -302,7 +250,7 @@ const Auth = () => {
       <div className="flex-1 flex items-start justify-center px-4 pb-8">
         <div className="w-full max-w-md">
           {/* Back Button */}
-          {(userType !== 'selection' || showSubscriptionRequest) && (
+          {userType !== 'selection' && (
             <Button
               variant="ghost"
               onClick={goBack}
@@ -456,42 +404,70 @@ const Auth = () => {
             </Card>
           )}
 
-          {/* Member Section */}
-          {userType === 'member' && !memberSearched && (
+          {/* Member Section - Client Portal Login */}
+          {userType === 'member' && (
             <div className="space-y-4">
               <Card className="p-8 card-shadow">
                 <div className="text-center mb-6">
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                     <Users className="w-8 h-8 text-primary" />
                   </div>
-                  <h2 className="text-xl font-bold">استعلام عن الاشتراك</h2>
-                  <p className="text-sm text-muted-foreground mt-1">أدخل رقم هاتفك للاستعلام</p>
+                  <h2 className="text-xl font-bold">دخول العميل</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    سجّل الدخول بحسابك لمتابعة اشتراكك
+                  </p>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      value={memberPhone}
-                      onChange={(e) => setMemberPhone(e.target.value)}
-                      placeholder="أدخل رقم الهاتف..."
-                      className="pr-10"
-                      dir="ltr"
-                      onKeyDown={(e) => e.key === 'Enter' && handleMemberSearch()}
-                    />
+                <form onSubmit={handleMemberLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>رقم الموبايل</Label>
+                    <div className="relative">
+                      <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        value={memberPhone}
+                        onChange={(e) => setMemberPhone(e.target.value)}
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="01xxxxxxxxx"
+                        className="pr-10"
+                        dir="ltr"
+                        required
+                      />
+                    </div>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label>كلمة السر</Label>
+                    <div className="relative">
+                      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        value={memberPassword}
+                        onChange={(e) => setMemberPassword(e.target.value)}
+                        type="password"
+                        placeholder="••••••••"
+                        className="pr-10"
+                        dir="ltr"
+                        required
+                      />
+                    </div>
+                  </div>
+
                   <Button
-                    onClick={handleMemberSearch}
+                    type="submit"
                     className="w-full"
-                    disabled={!memberPhone.trim() || isMemberSearching}
+                    disabled={!memberPhone.trim() || !memberPassword || isMemberLogging}
                   >
-                    {isMemberSearching ? (
+                    {isMemberLogging ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      'بحث'
+                      'دخول'
                     )}
                   </Button>
-                </div>
+
+                  <p className="text-xs text-muted-foreground text-center">
+                    لو معندكش حساب، تواصل مع إدارة الجيم لإنشاء حسابك
+                  </p>
+                </form>
               </Card>
 
               {/* Diet request open to anyone (with their own phone) */}
@@ -504,170 +480,6 @@ const Auth = () => {
               </CollapsibleSection>
 
               <StoreLink />
-            </div>
-          )}
-
-          {/* Member - Subscription Result (existing members only) */}
-          {userType === 'member' && memberMode === 'existing' && memberSearched && (
-            <div className="animate-fade-in space-y-4">
-              {isMemberSearching ? (
-                <div className="text-center py-8">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-                  <p className="text-muted-foreground">جاري البحث...</p>
-                </div>
-              ) : memberResult ? (
-                <>
-                  <Card className="p-6 card-shadow animate-slide-up">
-                    <div className="flex items-start justify-between mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center">
-                          <User className="w-6 h-6 text-primary-foreground" />
-                        </div>
-                        <div>
-                          <h2 className="font-bold text-lg">{memberResult.name}</h2>
-                          <p className="text-sm text-muted-foreground">{memberResult.phone}</p>
-                        </div>
-                      </div>
-                      <Badge className={cn('border', statusConfig[statusKey].className)}>
-                        {statusConfig[statusKey].label}
-                      </Badge>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-3 bg-muted rounded-lg">
-                          <p className="text-sm text-muted-foreground mb-1">تاريخ الاشتراك</p>
-                          <p className="font-bold">
-                            {format(parseISO(memberResult.startDate), 'dd/MM/yyyy')}
-                          </p>
-                        </div>
-                        <div className="p-3 bg-muted rounded-lg">
-                          <p className="text-sm text-muted-foreground mb-1">نوع الاشتراك</p>
-                          <p className="font-bold">
-                            {subscriptionTypeLabels[memberResult.subscriptionType] || memberResult.subscriptionType}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="p-4 bg-muted rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Calendar className="w-4 h-4 text-primary" />
-                          <span className="text-sm text-muted-foreground">تاريخ الانتهاء</span>
-                        </div>
-                        <p className="font-bold text-lg">
-                          {format(parseISO(memberResult.endDate), 'dd MMMM yyyy', { locale: ar })}
-                        </p>
-                        <p
-                          className={cn(
-                            'text-sm font-medium mt-1',
-                            isExpired
-                              ? 'text-destructive'
-                              : daysRemaining <= 7
-                              ? 'text-warning'
-                              : 'text-success'
-                          )}
-                        >
-                          {isExpired ? 'الاشتراك منتهي' : `متبقي ${daysRemaining} يوم`}
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="p-3 bg-success/10 rounded-lg border border-success/20">
-                          <div className="flex items-center gap-2 mb-1">
-                            <CreditCard className="w-4 h-4 text-success" />
-                            <span className="text-sm text-muted-foreground">المدفوع</span>
-                          </div>
-                          <p className="font-bold text-success">{memberResult.paidAmount} جنيه</p>
-                        </div>
-                        <div
-                          className={cn(
-                            'p-3 rounded-lg border',
-                            memberResult.remainingAmount > 0
-                              ? 'bg-destructive/10 border-destructive/20'
-                              : 'bg-success/10 border-success/20'
-                          )}
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <CreditCard
-                              className={cn(
-                                'w-4 h-4',
-                                memberResult.remainingAmount > 0 ? 'text-destructive' : 'text-success'
-                              )}
-                            />
-                            <span className="text-sm text-muted-foreground">المتبقي</span>
-                          </div>
-                          <p
-                            className={cn(
-                              'font-bold',
-                              memberResult.remainingAmount > 0 ? 'text-destructive' : 'text-success'
-                            )}
-                          >
-                            {memberResult.remainingAmount} جنيه
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-
-                  {/* Renewal request hidden - admin handles renewals manually */}
-
-
-                  {/* Diet request section */}
-                  <CollapsibleSection title="طلب نظام غذائي" icon={Salad}>
-                    <DietRequestForm phone={memberResult.phone} name={memberResult.name} />
-                  </CollapsibleSection>
-
-                  {/* Workout request section */}
-                  <CollapsibleSection title="طلب نظام تمرين" icon={Dumbbell}>
-                    <WorkoutRequestForm phone={memberResult.phone} name={memberResult.name} />
-                  </CollapsibleSection>
-
-                  <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
-                    <ContactUsSection isEmbedded />
-                  </CollapsibleSection>
-
-                  {/* Requests history */}
-                  <CollapsibleSection title="طلباتي السابقة (غذائي)" icon={Salad}>
-                    <DietRequestsHistory phone={memberResult.phone} />
-                  </CollapsibleSection>
-
-                  <CollapsibleSection title="طلباتي السابقة (تمرين)" icon={Dumbbell}>
-                    <WorkoutRequestsHistory phone={memberResult.phone} />
-                  </CollapsibleSection>
-
-                  {/* 2B Store Link */}
-                  <StoreLink />
-                </>
-              ) : (
-                <>
-                  <Card className="p-8 text-center card-shadow">
-                    <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                      <User className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="font-bold text-lg mb-2">لم يتم العثور على اشتراك</h3>
-                    <p className="text-muted-foreground">
-                      تأكد من رقم الهاتف أو سجل اشتراك جديد
-                    </p>
-                  </Card>
-
-                  {/* Subscription request hidden - members register at the gym */}
-                  <CollapsibleSection title="طلب نظام غذائي" icon={Salad} defaultOpen>
-                    <DietRequestForm phone={memberPhone} />
-                  </CollapsibleSection>
-
-                  <CollapsibleSection title="تواصل معنا" icon={MessageCircle}>
-                    <ContactUsSection isEmbedded />
-                  </CollapsibleSection>
-
-                  {/* Diet requests history */}
-                  <CollapsibleSection title="طلباتي السابقة" icon={Salad}>
-                    <DietRequestsHistory phone={memberPhone} />
-                  </CollapsibleSection>
-
-                  {/* 2B Store Link */}
-                  <StoreLink />
-                </>
-              )}
             </div>
           )}
         </div>
