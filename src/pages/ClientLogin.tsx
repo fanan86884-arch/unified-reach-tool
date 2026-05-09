@@ -54,7 +54,10 @@ export default function ClientLogin() {
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "دخول"}
           </Button>
         </form>
-        <div className="text-center text-xs text-muted-foreground">
+        <div className="text-center text-xs">
+          <Link to="/portal/reset" className="text-primary hover:underline">نسيت كلمة السر؟</Link>
+        </div>
+        <div className="text-center text-xs text-muted-foreground border-t border-border/40 pt-3">
           <Link to="/captain/login" className="hover:text-primary">دخول الكباتن</Link>
           <span className="mx-2">·</span>
           <Link to="/auth" className="hover:text-primary">دخول الإدارة</Link>
