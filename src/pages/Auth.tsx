@@ -104,6 +104,8 @@ const Auth = () => {
   
   const [memberPhone, setMemberPhone] = useState('');
   const [memberPassword, setMemberPassword] = useState('');
+  const [memberPasswordConfirm, setMemberPasswordConfirm] = useState('');
+  const [memberMode, setMemberMode] = useState<'login' | 'signup'>('login');
   const [isMemberLogging, setIsMemberLogging] = useState(false);
   
   const { toast } = useToast();
