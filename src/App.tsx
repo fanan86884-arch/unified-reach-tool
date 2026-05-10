@@ -16,7 +16,13 @@ import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import ClientLogin from "./pages/ClientLogin";
 import ClientResetPassword from "./pages/ClientResetPassword";
-import ClientDashboard from "./pages/ClientDashboard";
+import PortalLayout from "./components/portal/PortalLayout";
+import PortalHome from "./pages/portal/PortalHome";
+import PortalSubscription from "./pages/portal/PortalSubscription";
+import PortalChat from "./pages/portal/PortalChat";
+import PortalRequests from "./pages/portal/PortalRequests";
+import PortalProfile from "./pages/portal/PortalProfile";
+import PortalNotifications from "./pages/portal/PortalNotifications";
 import CaptainLogin from "./pages/CaptainLogin";
 import CaptainDashboard from "./pages/CaptainDashboard";
 import CheckIn from "./pages/CheckIn";
@@ -106,7 +112,15 @@ const App = () => {
                 <Route path="/install" element={<Install />} />
                 <Route path="/portal/login" element={<ClientLogin />} />
                 <Route path="/portal/reset" element={<ClientResetPassword />} />
-                <Route path="/portal" element={<ClientDashboard />} />
+                <Route path="/portal" element={<PortalLayout />}>
+                  <Route index element={<Navigate to="/portal/home" replace />} />
+                  <Route path="home" element={<PortalHome />} />
+                  <Route path="subscription" element={<PortalSubscription />} />
+                  <Route path="chat" element={<PortalChat />} />
+                  <Route path="requests" element={<PortalRequests />} />
+                  <Route path="profile" element={<PortalProfile />} />
+                  <Route path="notifications" element={<PortalNotifications />} />
+                </Route>
                 <Route path="/captain/login" element={<CaptainLogin />} />
                 <Route path="/captain" element={<CaptainDashboard />} />
                 <Route path="/checkin" element={<CheckIn />} />
