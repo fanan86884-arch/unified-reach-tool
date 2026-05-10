@@ -12,9 +12,10 @@ import { sendPushNotificationToStaff } from '@/utils/sendPushNotification';
 interface DietRequestFormProps {
   phone: string;
   name?: string;
+  onSuccess?: () => void;
 }
 
-export const DietRequestForm = ({ phone, name: initialName }: DietRequestFormProps) => {
+export const DietRequestForm = ({ phone, name: initialName, onSuccess }: DietRequestFormProps) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -76,6 +77,7 @@ export const DietRequestForm = ({ phone, name: initialName }: DietRequestFormPro
 
       setIsSubmitted(true);
       toast({ title: 'تم إرسال طلب النظام الغذائي بنجاح' });
+      onSuccess?.();
     } catch (err) {
       console.error('Diet request error:', err);
       toast({
