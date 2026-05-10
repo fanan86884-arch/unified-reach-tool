@@ -11,9 +11,10 @@ import { sendPushNotificationToStaff } from '@/utils/sendPushNotification';
 interface WorkoutRequestFormProps {
   phone: string;
   name: string;
+  onSuccess?: () => void;
 }
 
-export const WorkoutRequestForm = ({ phone, name }: WorkoutRequestFormProps) => {
+export const WorkoutRequestForm = ({ phone, name, onSuccess }: WorkoutRequestFormProps) => {
   const [weight, setWeight] = useState('');
   const [goal, setGoal] = useState('');
   const [trainingLevel, setTrainingLevel] = useState('');
@@ -66,6 +67,7 @@ export const WorkoutRequestForm = ({ phone, name }: WorkoutRequestFormProps) => 
 
       setIsSubmitted(true);
       toast({ title: 'تم إرسال طلبك بنجاح' });
+      onSuccess?.();
     } catch (err) {
       console.error('Error submitting workout request:', err);
       toast({ title: 'حدث خطأ أثناء إرسال الطلب', variant: 'destructive' });
