@@ -44,13 +44,8 @@ export default function PortalLayout() {
       className="portal-theme min-h-screen bg-background text-foreground"
       dir="rtl"
       style={{
-        // Distinct teal/emerald identity — scoped to client portal only
-        ['--primary' as any]: '160 84% 45%',
-        ['--primary-foreground' as any]: '0 0% 100%',
-        ['--accent' as any]: '170 70% 40%',
-        ['--ring' as any]: '160 84% 45%',
         backgroundImage:
-          'radial-gradient(1200px 600px at 50% -200px, hsl(160 84% 45% / 0.18), transparent 60%), radial-gradient(800px 400px at 100% 100%, hsl(190 70% 40% / 0.10), transparent 60%)',
+          'radial-gradient(1200px 600px at 50% -200px, hsl(var(--primary) / 0.18), transparent 60%), radial-gradient(800px 400px at 100% 100%, hsl(var(--accent) / 0.10), transparent 60%)',
       }}
     >
       <main
