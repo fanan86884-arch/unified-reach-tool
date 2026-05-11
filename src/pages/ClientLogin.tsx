@@ -57,11 +57,6 @@ export default function ClientLogin() {
         <div className="text-center text-xs">
           <Link to="/portal/reset" className="text-primary hover:underline">نسيت كلمة السر؟</Link>
         </div>
-        <div className="text-center text-xs text-muted-foreground border-t border-border/40 pt-3">
-          <Link to="/captain/login" className="hover:text-primary">دخول الكباتن</Link>
-          <span className="mx-2">·</span>
-          <Link to="/auth" className="hover:text-primary">دخول الإدارة</Link>
-        </div>
       </Card>
     </div>
   );
