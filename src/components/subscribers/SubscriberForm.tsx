@@ -275,7 +275,9 @@ export const SubscriberForm = ({
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={formData.startDate ? parse(formData.startDate, 'yyyy-MM-dd', new Date()) : undefined}
+                    locale={ar}
+                    dir="rtl"
+                    selected={formData.startDate ? parseISO(formData.startDate) : undefined}
                     onSelect={(date) => {
                       if (date) {
                         const endDate = addDays(date, subscriptionDurations[formData.subscriptionType]);
@@ -308,7 +310,9 @@ export const SubscriberForm = ({
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={formData.endDate ? parse(formData.endDate, 'yyyy-MM-dd', new Date()) : undefined}
+                    locale={ar}
+                    dir="rtl"
+                    selected={formData.endDate ? parseISO(formData.endDate) : undefined}
                     onSelect={(date) => {
                       if (date) {
                         setFormData({
