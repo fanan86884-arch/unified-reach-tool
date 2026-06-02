@@ -7,6 +7,7 @@ import { getCachedSettings, setCachedSettings, addPendingSettingsChange } from '
 
 export interface SubscriptionPrices {
   monthly: number;
+  'bi-monthly': number;
   quarterly: number;
   'semi-annual': number;
   annual: number;
@@ -19,6 +20,7 @@ const PRICING_TIERS_CACHE_KEY = 'offline_pricing_tiers';
 
 const defaultPrices: SubscriptionPrices = {
   monthly: 250,
+  'bi-monthly': 475,
   quarterly: 500,
   'semi-annual': 900,
   annual: 1500,
@@ -26,14 +28,14 @@ const defaultPrices: SubscriptionPrices = {
 
 const defaultPricingTiers: PricingTiers = {
   male: {
-    gym: { monthly: 250, quarterly: 700, 'semi-annual': 1300, annual: 2400 },
-    gym_walking: { monthly: 350, quarterly: 950, 'semi-annual': 1800, annual: 3300 },
-    walking: { monthly: 150, quarterly: 400, 'semi-annual': 750, annual: 1400 },
+    gym: { monthly: 250, 'bi-monthly': 475, quarterly: 700, 'semi-annual': 1300, annual: 2400 },
+    gym_walking: { monthly: 350, 'bi-monthly': 665, quarterly: 950, 'semi-annual': 1800, annual: 3300 },
+    walking: { monthly: 150, 'bi-monthly': 285, quarterly: 400, 'semi-annual': 750, annual: 1400 },
   },
   female: {
-    gym: { monthly: 300, quarterly: 850, 'semi-annual': 1600, annual: 2900 },
-    gym_walking: { monthly: 400, quarterly: 1100, 'semi-annual': 2050, annual: 3800 },
-    walking: { monthly: 200, quarterly: 550, 'semi-annual': 1000, annual: 1850 },
+    gym: { monthly: 300, 'bi-monthly': 570, quarterly: 850, 'semi-annual': 1600, annual: 2900 },
+    gym_walking: { monthly: 400, 'bi-monthly': 760, quarterly: 1100, 'semi-annual': 2050, annual: 3800 },
+    walking: { monthly: 200, 'bi-monthly': 380, quarterly: 550, 'semi-annual': 1000, annual: 1850 },
   },
 };
 
@@ -103,6 +105,7 @@ export const useCloudSettings = () => {
       if (data) {
         const fetched: SubscriptionPrices = {
           monthly: Number(data.monthly_price),
+          'bi-monthly': Number((data as any).bi_monthly_price ?? Math.round(Number(data.monthly_price) * 1.9)),
           quarterly: Number(data.quarterly_price),
           'semi-annual': Number(data.semi_annual_price),
           annual: Number(data.annual_price),
@@ -120,10 +123,11 @@ export const useCloudSettings = () => {
           .insert({
             user_id: user.id,
             monthly_price: defaultPrices.monthly,
+            bi_monthly_price: defaultPrices['bi-monthly'],
             quarterly_price: defaultPrices.quarterly,
             semi_annual_price: defaultPrices['semi-annual'],
             annual_price: defaultPrices.annual,
-          });
+          } as any);
         if (insertError) console.error('Error creating settings:', insertError);
         cachePricesLegacy(defaultPrices);
         cacheTiersLegacy(defaultPricingTiers);
@@ -166,6 +170,7 @@ export const useCloudSettings = () => {
 
     const updateData = {
       monthly_price: newPrices.monthly,
+      bi_monthly_price: newPrices['bi-monthly'],
       quarterly_price: newPrices.quarterly,
       semi_annual_price: newPrices['semi-annual'],
       annual_price: newPrices.annual,

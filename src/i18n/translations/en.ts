@@ -56,6 +56,7 @@ export const en = {
   // Subscription types
   subscriptionTypes: {
     monthly: 'Monthly',
+    'bi-monthly': 'Two Months',
     quarterly: 'Quarterly',
     'semi-annual': 'Semi-Annual',
     annual: 'Annual',
@@ -63,6 +64,7 @@ export const en = {
   // Subscription labels with duration
   subscriptionLabels: {
     monthly: 'Monthly (30 days)',
+    'bi-monthly': 'Two Months (60 days)',
     quarterly: 'Quarterly (90 days)',
     'semi-annual': 'Semi-Annual (180 days)',
     annual: 'Annual (365 days)',

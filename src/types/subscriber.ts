@@ -1,6 +1,6 @@
 export type SubscriptionStatus = 'active' | 'expiring' | 'expired' | 'pending' | 'paused';
 
-export type SubscriptionType = 'monthly' | 'quarterly' | 'semi-annual' | 'annual';
+export type SubscriptionType = 'monthly' | 'bi-monthly' | 'quarterly' | 'semi-annual' | 'annual';
 
 export type Gender = 'male' | 'female';
 
