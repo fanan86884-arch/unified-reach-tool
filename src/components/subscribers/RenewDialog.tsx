@@ -20,7 +20,7 @@ interface RenewDialogProps {
 }
 
 const subscriptionDurations: Record<SubscriptionType, number> = {
-  monthly: 30, quarterly: 90, 'semi-annual': 180, annual: 365,
+  monthly: 30, 'bi-monthly': 60, quarterly: 90, 'semi-annual': 180, annual: 365,
 };
 
 export const RenewDialog = ({ isOpen, onClose, subscriber, onRenew }: RenewDialogProps) => {
