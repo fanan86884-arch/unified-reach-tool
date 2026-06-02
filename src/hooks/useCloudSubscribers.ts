@@ -384,7 +384,7 @@ export const useCloudSubscribers = () => {
     })();
 
     return { success: true, subscriber: newSubscriber };
-  }, [user, checkPhoneExists, isOnline]);
+  }, [user, subscribers, isOnline]);
 
   const updateSubscriber = useCallback(async (id: string, data: Partial<SubscriberFormData>): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: 'غير مصرح' };
