@@ -535,6 +535,7 @@ export type Database = {
       settings: {
         Row: {
           annual_price: number
+          bi_monthly_price: number
           created_at: string
           id: string
           monthly_price: number
@@ -546,6 +547,7 @@ export type Database = {
         }
         Insert: {
           annual_price?: number
+          bi_monthly_price?: number
           created_at?: string
           id?: string
           monthly_price?: number
@@ -557,6 +559,7 @@ export type Database = {
         }
         Update: {
           annual_price?: number
+          bi_monthly_price?: number
           created_at?: string
           id?: string
           monthly_price?: number
