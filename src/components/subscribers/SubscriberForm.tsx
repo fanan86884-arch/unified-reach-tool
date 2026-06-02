@@ -22,7 +22,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { addDays, format, parse } from 'date-fns';
+import { addDays, format, parse, parseISO } from 'date-fns';
+import { ar } from 'date-fns/locale';
 import { useCloudSettings } from '@/hooks/useCloudSettings';
 import { Loader2, CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -38,6 +39,7 @@ interface SubscriberFormProps {
 
 const subscriptionDurations: Record<SubscriptionType, number> = {
   monthly: 30,
+  'bi-monthly': 60,
   quarterly: 90,
   'semi-annual': 180,
   annual: 365,
@@ -124,7 +126,7 @@ export const SubscriberForm = ({
   const recalc = (updates: Partial<SubscriberFormData>) => {
     const next: SubscriberFormData = { ...formData, ...updates };
     if ('subscriptionType' in updates) {
-      const startDate = new Date(next.startDate);
+      const startDate = parseISO(next.startDate);
       next.endDate = format(addDays(startDate, subscriptionDurations[next.subscriptionType]), 'yyyy-MM-dd');
     }
     next.remainingAmount = calculateRemaining(
@@ -136,15 +138,15 @@ export const SubscriberForm = ({
     setFormData(next);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
-    try {
-      await onSubmit(formData);
-    } finally {
+    // Fire-and-forget so dialog can close instantly; parent shows toast on error
+    Promise.resolve(onSubmit(formData)).finally(() => {
       setIsSubmitting(false);
-    }
+    });
+    onClose();
   };
 
   if (settingsLoading) {
