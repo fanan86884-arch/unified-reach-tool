@@ -3,6 +3,7 @@ import { SubscriptionType } from '@/types/subscriber';
 
 export interface SubscriptionPrices {
   monthly: number;
+  'bi-monthly': number;
   quarterly: number;
   'semi-annual': number;
   annual: number;
@@ -12,6 +13,7 @@ const SETTINGS_KEY = 'gym_settings';
 
 const defaultPrices: SubscriptionPrices = {
   monthly: 200,
+  'bi-monthly': 380,
   quarterly: 500,
   'semi-annual': 900,
   annual: 1500,

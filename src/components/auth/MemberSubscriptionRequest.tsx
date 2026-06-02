@@ -27,6 +27,7 @@ interface MemberSubscriptionRequestProps {
 
 const subscriptionDurations: Record<string, number> = {
   monthly: 30,
+  'bi-monthly': 60,
   quarterly: 90,
   'semi-annual': 180,
   annual: 365,
@@ -34,6 +35,7 @@ const subscriptionDurations: Record<string, number> = {
 
 const subscriptionLabels: Record<string, string> = {
   monthly: 'شهري (30 يوم)',
+  'bi-monthly': 'شهرين (60 يوم)',
   quarterly: 'ربع سنوي (90 يوم)',
   'semi-annual': 'نصف سنوي (180 يوم)',
   annual: 'سنوي (365 يوم)',

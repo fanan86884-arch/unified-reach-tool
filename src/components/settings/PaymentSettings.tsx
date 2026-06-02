@@ -36,30 +36,32 @@ const CATEGORY_ICON: Record<SubscriptionCategory, React.ElementType> = {
 };
 const DURATION_LABEL: Record<SubscriptionType, string> = {
   monthly: 'شهري',
+  'bi-monthly': 'شهرين',
   quarterly: 'ربع سنوي',
   'semi-annual': 'نصف سنوي',
   annual: 'سنوي',
 };
 const DURATION_DAYS: Record<SubscriptionType, number> = {
   monthly: 30,
+  'bi-monthly': 60,
   quarterly: 90,
   'semi-annual': 180,
   annual: 365,
 };
-const DURATIONS: SubscriptionType[] = ['monthly', 'quarterly', 'semi-annual', 'annual'];
+const DURATIONS: SubscriptionType[] = ['monthly', 'bi-monthly', 'quarterly', 'semi-annual', 'annual'];
 const CATEGORIES: SubscriptionCategory[] = ['gym', 'gym_walking', 'walking'];
 const GENDERS: Gender[] = ['male', 'female'];
 
 const DEFAULT_TIERS: PricingTiers = {
   male: {
-    gym: { monthly: 250, quarterly: 700, 'semi-annual': 1300, annual: 2400 },
-    gym_walking: { monthly: 350, quarterly: 950, 'semi-annual': 1800, annual: 3300 },
-    walking: { monthly: 150, quarterly: 400, 'semi-annual': 750, annual: 1400 },
+    gym: { monthly: 250, 'bi-monthly': 475, quarterly: 700, 'semi-annual': 1300, annual: 2400 },
+    gym_walking: { monthly: 350, 'bi-monthly': 665, quarterly: 950, 'semi-annual': 1800, annual: 3300 },
+    walking: { monthly: 150, 'bi-monthly': 285, quarterly: 400, 'semi-annual': 750, annual: 1400 },
   },
   female: {
-    gym: { monthly: 300, quarterly: 850, 'semi-annual': 1600, annual: 2900 },
-    gym_walking: { monthly: 400, quarterly: 1100, 'semi-annual': 2050, annual: 3800 },
-    walking: { monthly: 200, quarterly: 550, 'semi-annual': 1000, annual: 1850 },
+    gym: { monthly: 300, 'bi-monthly': 570, quarterly: 850, 'semi-annual': 1600, annual: 2900 },
+    gym_walking: { monthly: 400, 'bi-monthly': 760, quarterly: 1100, 'semi-annual': 2050, annual: 3800 },
+    walking: { monthly: 200, 'bi-monthly': 380, quarterly: 550, 'semi-annual': 1000, annual: 1850 },
   },
 };
 

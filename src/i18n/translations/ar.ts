@@ -56,6 +56,7 @@ export const ar = {
   // Subscription types
   subscriptionTypes: {
     monthly: 'شهري',
+    'bi-monthly': 'شهرين',
     quarterly: 'ربع سنوي',
     'semi-annual': 'نصف سنوي',
     annual: 'سنوي',
@@ -63,6 +64,7 @@ export const ar = {
   // Subscription labels with duration
   subscriptionLabels: {
     monthly: 'شهري (30 يوم)',
+    'bi-monthly': 'شهرين (60 يوم)',
     quarterly: 'ربع سنوي (90 يوم)',
     'semi-annual': 'نصف سنوي (180 يوم)',
     annual: 'سنوي (365 يوم)',

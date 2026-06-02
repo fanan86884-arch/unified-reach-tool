@@ -279,12 +279,12 @@ export const useCloudSubscribers = () => {
       return { success: false, error: 'رقم الهاتف غير صحيح' };
     }
 
-    // Check if phone already exists (including archived) - only if online
-    if (isOnline) {
-      const phoneExists = await checkPhoneExists(normalizedPhone);
-      if (phoneExists) {
-        return { success: false, error: 'رقم الهاتف مسجل بالفعل' };
-      }
+    // Fast local-only duplicate check (instant; cache stays in sync via realtime).
+    // Skipping the remote round-trip keeps the form snappy when clicking Save.
+    const normalized = normalizeEgyptPhoneDigits(normalizedPhone) || normalizedPhone;
+    const localDup = subscribers.some(s => normalizeEgyptPhoneDigits(s.phone) === normalized);
+    if (localDup) {
+      return { success: false, error: 'رقم الهاتف مسجل بالفعل' };
     }
 
     const status = calculateStatus(data.endDate, data.remainingAmount, false);
@@ -384,7 +384,7 @@ export const useCloudSubscribers = () => {
     })();
 
     return { success: true, subscriber: newSubscriber };
-  }, [user, checkPhoneExists, isOnline]);
+  }, [user, subscribers, isOnline]);
 
   const updateSubscriber = useCallback(async (id: string, data: Partial<SubscriberFormData>): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: 'غير مصرح' };
@@ -406,12 +406,10 @@ export const useCloudSubscribers = () => {
         return { success: false, error: 'رقم الهاتف غير صحيح' };
       }
 
-      // منع تكرار الرقم عند التعديل - only if online
-      if (isOnline) {
-        const exists = await checkPhoneExists(normalizedPhone, id);
-        if (exists) {
-          return { success: false, error: 'رقم الهاتف مسجل بالفعل' };
-        }
+      // Fast local-only duplicate check (skip slow remote call)
+      const localDup = subscribers.some(s => s.id !== id && normalizeEgyptPhoneDigits(s.phone) === normalizedPhone);
+      if (localDup) {
+        return { success: false, error: 'رقم الهاتف مسجل بالفعل' };
       }
 
       updateData.phone = normalizedPhone;
