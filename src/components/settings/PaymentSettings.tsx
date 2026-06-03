@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client.runtime';
 import {
   Loader2, Save, CreditCard, Store, DollarSign, Users,
-  Copy, RotateCcw, TrendingUp, TrendingDown, Dumbbell, Footprints, Activity, ChevronDown,
+  Dumbbell, Footprints, Activity, ChevronDown,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useCloudSettings, PricingTiers } from '@/hooks/useCloudSettings';
@@ -15,11 +15,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { Gender, SubscriptionCategory, SubscriptionType } from '@/types/subscriber';
 import { cn } from '@/lib/utils';
 
