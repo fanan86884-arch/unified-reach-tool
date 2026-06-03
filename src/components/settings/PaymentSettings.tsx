@@ -47,19 +47,6 @@ const DURATIONS: SubscriptionType[] = ['monthly', 'bi-monthly', 'quarterly', 'se
 const CATEGORIES: SubscriptionCategory[] = ['gym', 'gym_walking', 'walking'];
 const GENDERS: Gender[] = ['male', 'female'];
 
-const DEFAULT_TIERS: PricingTiers = {
-  male: {
-    gym: { monthly: 250, 'bi-monthly': 475, quarterly: 700, 'semi-annual': 1300, annual: 2400 },
-    gym_walking: { monthly: 350, 'bi-monthly': 665, quarterly: 950, 'semi-annual': 1800, annual: 3300 },
-    walking: { monthly: 150, 'bi-monthly': 285, quarterly: 400, 'semi-annual': 750, annual: 1400 },
-  },
-  female: {
-    gym: { monthly: 300, 'bi-monthly': 570, quarterly: 850, 'semi-annual': 1600, annual: 2900 },
-    gym_walking: { monthly: 400, 'bi-monthly': 760, quarterly: 1100, 'semi-annual': 2050, annual: 3800 },
-    walking: { monthly: 200, 'bi-monthly': 380, quarterly: 550, 'semi-annual': 1000, annual: 1850 },
-  },
-};
-
 export const PaymentSettings = () => {
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -70,7 +57,6 @@ export const PaymentSettings = () => {
   const [settings, setSettings] = useState({ instapayNumber: '', vodafoneCashNumber: '', storeUrl: '' });
   const [tiers, setTiers] = useState<PricingTiers | null>(null);
   const [pricesDirty, setPricesDirty] = useState(false);
-  const [bulkPercent, setBulkPercent] = useState<string>('');
   // Each gender remembers which category panel is open (default: gym)
   const [openCategory, setOpenCategory] = useState<Record<Gender, SubscriptionCategory>>({
     male: 'gym',
