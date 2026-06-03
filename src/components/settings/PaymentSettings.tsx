@@ -257,15 +257,6 @@ export const PaymentSettings = () => {
                             );
                           })}
                         </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="w-full h-7 text-[11px] text-muted-foreground"
-                          onClick={() => resetCategory(gender, category)}
-                        >
-                          <RotateCcw className="w-3 h-3 ml-1" />
-                          إرجاع هذه القائمة للافتراضي
-                        </Button>
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
