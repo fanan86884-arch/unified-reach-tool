@@ -296,6 +296,7 @@ export const SubscribersList = ({
                 onWhatsApp={handleWhatsApp}
                 onPause={handlePause}
                 onResume={handleResume}
+                onHistory={handleHistory}
               />
             </div>
           ))}
@@ -345,6 +346,15 @@ export const SubscribersList = ({
           setWhatsAppSubscriber(null);
         }}
         subscriber={whatsAppSubscriber}
+      />
+
+      <SubscriberHistoryDialog
+        isOpen={isHistoryOpen}
+        onClose={() => {
+          setIsHistoryOpen(false);
+          setHistorySubscriber(null);
+        }}
+        subscriber={historySubscriber}
       />
     </div>
   );
