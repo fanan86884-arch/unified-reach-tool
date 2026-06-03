@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client.runtime';
 import {
   Loader2, Save, CreditCard, Store, DollarSign, Users,
-  Copy, RotateCcw, TrendingUp, TrendingDown, Dumbbell, Footprints, Activity, ChevronDown,
+  Dumbbell, Footprints, Activity, ChevronDown,
 } from 'lucide-react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useCloudSettings, PricingTiers } from '@/hooks/useCloudSettings';
@@ -15,11 +15,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { Gender, SubscriptionCategory, SubscriptionType } from '@/types/subscriber';
 import { cn } from '@/lib/utils';
 
@@ -52,19 +47,6 @@ const DURATIONS: SubscriptionType[] = ['monthly', 'bi-monthly', 'quarterly', 'se
 const CATEGORIES: SubscriptionCategory[] = ['gym', 'gym_walking', 'walking'];
 const GENDERS: Gender[] = ['male', 'female'];
 
-const DEFAULT_TIERS: PricingTiers = {
-  male: {
-    gym: { monthly: 250, 'bi-monthly': 475, quarterly: 700, 'semi-annual': 1300, annual: 2400 },
-    gym_walking: { monthly: 350, 'bi-monthly': 665, quarterly: 950, 'semi-annual': 1800, annual: 3300 },
-    walking: { monthly: 150, 'bi-monthly': 285, quarterly: 400, 'semi-annual': 750, annual: 1400 },
-  },
-  female: {
-    gym: { monthly: 300, 'bi-monthly': 570, quarterly: 850, 'semi-annual': 1600, annual: 2900 },
-    gym_walking: { monthly: 400, 'bi-monthly': 760, quarterly: 1100, 'semi-annual': 2050, annual: 3800 },
-    walking: { monthly: 200, 'bi-monthly': 380, quarterly: 550, 'semi-annual': 1000, annual: 1850 },
-  },
-};
-
 export const PaymentSettings = () => {
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -75,7 +57,6 @@ export const PaymentSettings = () => {
   const [settings, setSettings] = useState({ instapayNumber: '', vodafoneCashNumber: '', storeUrl: '' });
   const [tiers, setTiers] = useState<PricingTiers | null>(null);
   const [pricesDirty, setPricesDirty] = useState(false);
-  const [bulkPercent, setBulkPercent] = useState<string>('');
   // Each gender remembers which category panel is open (default: gym)
   const [openCategory, setOpenCategory] = useState<Record<Gender, SubscriptionCategory>>({
     male: 'gym',
@@ -112,61 +93,6 @@ export const PaymentSettings = () => {
     });
   };
 
-  const copyMaleToFemale = () => {
-    if (!tiers) return;
-    setPricesDirty(true);
-    setTiers({ ...tiers, female: JSON.parse(JSON.stringify(tiers.male)) });
-    toast({ title: 'تم النسخ', description: 'تم نسخ أسعار الأولاد إلى البنات' });
-  };
-
-  const copyFemaleToMale = () => {
-    if (!tiers) return;
-    setPricesDirty(true);
-    setTiers({ ...tiers, male: JSON.parse(JSON.stringify(tiers.female)) });
-    toast({ title: 'تم النسخ', description: 'تم نسخ أسعار البنات إلى الأولاد' });
-  };
-
-  const resetGender = (gender: Gender) => {
-    if (!tiers) return;
-    setPricesDirty(true);
-    setTiers({ ...tiers, [gender]: JSON.parse(JSON.stringify(DEFAULT_TIERS[gender])) });
-    toast({ title: 'تم الإرجاع', description: `تم إرجاع أسعار ${GENDER_LABEL[gender]} للقيم الافتراضية` });
-  };
-
-  const resetCategory = (gender: Gender, category: SubscriptionCategory) => {
-    if (!tiers) return;
-    setPricesDirty(true);
-    setTiers({
-      ...tiers,
-      [gender]: {
-        ...tiers[gender],
-        [category]: { ...DEFAULT_TIERS[gender][category] },
-      },
-    });
-    toast({ title: 'تم الإرجاع', description: `${CATEGORY_LABEL[category]} - ${GENDER_LABEL[gender]}` });
-  };
-
-  const applyBulkAdjust = (gender: Gender, sign: 1 | -1) => {
-    const pct = Number(bulkPercent);
-    if (!tiers || !pct || pct <= 0) {
-      toast({ title: 'أدخل نسبة صحيحة', variant: 'destructive' });
-      return;
-    }
-    const factor = 1 + (sign * pct) / 100;
-    const newGender: any = {};
-    for (const cat of CATEGORIES) {
-      newGender[cat] = {} as any;
-      for (const dur of DURATIONS) {
-        newGender[cat][dur] = Math.max(0, Math.round(tiers[gender][cat][dur] * factor));
-      }
-    }
-    setPricesDirty(true);
-    setTiers({ ...tiers, [gender]: newGender });
-    toast({
-      title: sign > 0 ? 'تمت الزيادة' : 'تم الخصم',
-      description: `${pct}% على أسعار ${GENDER_LABEL[gender]}`,
-    });
-  };
 
   const handleSavePricesOnly = async () => {
     if (!tiers) return;
@@ -244,66 +170,11 @@ export const PaymentSettings = () => {
 
           {GENDERS.map((gender) => (
             <TabsContent key={gender} value={gender} className="space-y-3 mt-4">
-              {/* Quick actions toolbar */}
-              <div className="rounded-lg border bg-card/50 p-3 space-y-3">
-                <p className="text-xs font-medium text-muted-foreground">أدوات سريعة لأسعار {GENDER_LABEL[gender]}</p>
+              <p className="text-[11px] text-muted-foreground px-1">
+                عدّل كل سعر يدوياً. لا يوجد أي تغيير تلقائي على باقي الأسعار.
+              </p>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-1 flex-1 min-w-[120px]">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={bulkPercent}
-                      onChange={(e) => setBulkPercent(e.target.value)}
-                      placeholder="٪"
-                      dir="ltr"
-                      className="h-8 text-center"
-                    />
-                    <span className="text-xs text-muted-foreground">%</span>
-                  </div>
-                  <Button size="sm" variant="outline" className="h-8" onClick={() => applyBulkAdjust(gender, 1)}>
-                    <TrendingUp className="w-3.5 h-3.5 ml-1" />
-                    زيادة
-                  </Button>
-                  <Button size="sm" variant="outline" className="h-8" onClick={() => applyBulkAdjust(gender, -1)}>
-                    <TrendingDown className="w-3.5 h-3.5 ml-1" />
-                    خصم
-                  </Button>
-                </div>
 
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 text-xs"
-                    onClick={gender === 'male' ? copyFemaleToMale : copyMaleToFemale}
-                  >
-                    <Copy className="w-3.5 h-3.5 ml-1" />
-                    نسخ من {gender === 'male' ? 'البنات' : 'الأولاد'}
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="ghost" className="h-8 text-xs text-destructive hover:text-destructive">
-                        <RotateCcw className="w-3.5 h-3.5 ml-1" />
-                        إرجاع الكل للافتراضي
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>إرجاع للأسعار الافتراضية؟</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          سيتم إرجاع كل أسعار {GENDER_LABEL[gender]} للقيم الافتراضية. لن يتم الحفظ تلقائياً.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => resetGender(gender)}>تأكيد</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
 
               {/* Three collapsible category lists */}
               {CATEGORIES.map((category) => {
@@ -372,15 +243,6 @@ export const PaymentSettings = () => {
                             );
                           })}
                         </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="w-full h-7 text-[11px] text-muted-foreground"
-                          onClick={() => resetCategory(gender, category)}
-                        >
-                          <RotateCcw className="w-3 h-3 ml-1" />
-                          إرجاع هذه القائمة للافتراضي
-                        </Button>
                       </div>
                     </CollapsibleContent>
                   </Collapsible>

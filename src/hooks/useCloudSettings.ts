@@ -105,7 +105,7 @@ export const useCloudSettings = () => {
       if (data) {
         const fetched: SubscriptionPrices = {
           monthly: Number(data.monthly_price),
-          'bi-monthly': Number((data as any).bi_monthly_price ?? Math.round(Number(data.monthly_price) * 1.9)),
+          'bi-monthly': Number((data as any).bi_monthly_price ?? 0),
           quarterly: Number(data.quarterly_price),
           'semi-annual': Number(data.semi_annual_price),
           annual: Number(data.annual_price),
