@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Edit, Trash2, Archive, RotateCcw, MessageCircle, RefreshCw, 
   ChevronDown, ChevronUp, Pause, Play, Clock, AlertCircle, ArchiveRestore,
-  Dumbbell, Footprints, Activity, History,
+  Dumbbell, Footprints, Activity,
 } from 'lucide-react';
 import { differenceInCalendarDays, parseISO, format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -22,7 +22,6 @@ interface SubscriberCardCompactProps {
   onWhatsApp: (subscriber: Subscriber) => void;
   onPause: (subscriber: Subscriber) => void;
   onResume: (id: string) => void;
-  onHistory?: (subscriber: Subscriber) => void;
   isArchived?: boolean;
 }
 
@@ -36,7 +35,6 @@ export const SubscriberCardCompact = ({
   onWhatsApp,
   onPause,
   onResume,
-  onHistory,
   isArchived = false,
 }: SubscriberCardCompactProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -318,17 +316,6 @@ export const SubscriberCardCompact = ({
                   <Archive className="w-5 h-5" />
                   <span>{t.actions.archive}</span>
                 </Button>
-                {onHistory && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-12 flex-col gap-1 text-xs"
-                    onClick={() => onHistory(subscriber)}
-                  >
-                    <History className="w-5 h-5" />
-                    <span>السجل</span>
-                  </Button>
-                )}
                 <Button 
                   variant="destructive" 
                   size="sm" 

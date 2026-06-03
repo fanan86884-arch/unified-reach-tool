@@ -2,7 +2,6 @@ import { useState, useRef, useCallback } from 'react';
 import { Subscriber, SubscriberFormData, SubscriptionStatus } from '@/types/subscriber';
 import { SubscriberCardCompact } from './SubscriberCardCompact';
 import { SubscriberForm } from './SubscriberForm';
-import { SubscriberHistoryDialog } from './SubscriberHistoryDialog';
 import { RenewDialog } from './RenewDialog';
 import { PauseDialog } from './PauseDialog';
 import { WhatsAppDialog } from './WhatsAppDialog';
@@ -79,12 +78,10 @@ export const SubscribersList = ({
   const [isRenewOpen, setIsRenewOpen] = useState(false);
   const [isPauseOpen, setIsPauseOpen] = useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [editingSubscriber, setEditingSubscriber] = useState<Subscriber | null>(null);
   const [renewingSubscriber, setRenewingSubscriber] = useState<Subscriber | null>(null);
   const [pausingSubscriber, setPausingSubscriber] = useState<Subscriber | null>(null);
   const [whatsAppSubscriber, setWhatsAppSubscriber] = useState<Subscriber | null>(null);
-  const [historySubscriber, setHistorySubscriber] = useState<Subscriber | null>(null);
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -157,11 +154,6 @@ export const SubscribersList = ({
   const handleWhatsApp = (subscriber: Subscriber) => {
     setWhatsAppSubscriber(subscriber);
     setIsWhatsAppOpen(true);
-  };
-
-  const handleHistory = (subscriber: Subscriber) => {
-    setHistorySubscriber(subscriber);
-    setIsHistoryOpen(true);
   };
 
   const captains = stats.captains.length > 0 ? stats.captains : ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
@@ -296,7 +288,6 @@ export const SubscribersList = ({
                 onWhatsApp={handleWhatsApp}
                 onPause={handlePause}
                 onResume={handleResume}
-                onHistory={handleHistory}
               />
             </div>
           ))}
@@ -346,15 +337,6 @@ export const SubscribersList = ({
           setWhatsAppSubscriber(null);
         }}
         subscriber={whatsAppSubscriber}
-      />
-
-      <SubscriberHistoryDialog
-        isOpen={isHistoryOpen}
-        onClose={() => {
-          setIsHistoryOpen(false);
-          setHistorySubscriber(null);
-        }}
-        subscriber={historySubscriber}
       />
     </div>
   );
