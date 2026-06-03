@@ -134,11 +134,14 @@ export const SubscriberHistoryDialog = ({ isOpen, onClose, subscriber }: Subscri
                     }
                   });
                 } else if (log.action_type === 'renew') {
-                  if (details.previousEndDate || details.newEndDate) {
-                    diffs.push({ key: 'endDate', from: details.previousEndDate, to: details.newEndDate });
+                  if (details.newStartDate || prev.startDate) {
+                    diffs.push({ key: 'startDate', from: prev.startDate, to: details.newStartDate });
+                  }
+                  if (details.newEndDate || prev.endDate) {
+                    diffs.push({ key: 'endDate', from: prev.endDate, to: details.newEndDate });
                   }
                   if (details.paidAmount !== undefined) {
-                    diffs.push({ key: 'paidAmount', from: 0, to: details.paidAmount });
+                    diffs.push({ key: 'paidAmount', from: prev.paidAmount ?? 0, to: details.paidAmount });
                   }
                 } else if (log.action_type === 'add') {
                   if (details.subscriptionType) diffs.push({ key: 'subscriptionType', from: '—', to: details.subscriptionType });
