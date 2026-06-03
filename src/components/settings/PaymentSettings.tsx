@@ -184,66 +184,11 @@ export const PaymentSettings = () => {
 
           {GENDERS.map((gender) => (
             <TabsContent key={gender} value={gender} className="space-y-3 mt-4">
-              {/* Quick actions toolbar */}
-              <div className="rounded-lg border bg-card/50 p-3 space-y-3">
-                <p className="text-xs font-medium text-muted-foreground">أدوات سريعة لأسعار {GENDER_LABEL[gender]}</p>
+              <p className="text-[11px] text-muted-foreground px-1">
+                عدّل كل سعر يدوياً. لا يوجد أي تغيير تلقائي على باقي الأسعار.
+              </p>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-1 flex-1 min-w-[120px]">
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={bulkPercent}
-                      onChange={(e) => setBulkPercent(e.target.value)}
-                      placeholder="٪"
-                      dir="ltr"
-                      className="h-8 text-center"
-                    />
-                    <span className="text-xs text-muted-foreground">%</span>
-                  </div>
-                  <Button size="sm" variant="outline" className="h-8" onClick={() => applyBulkAdjust(gender, 1)}>
-                    <TrendingUp className="w-3.5 h-3.5 ml-1" />
-                    زيادة
-                  </Button>
-                  <Button size="sm" variant="outline" className="h-8" onClick={() => applyBulkAdjust(gender, -1)}>
-                    <TrendingDown className="w-3.5 h-3.5 ml-1" />
-                    خصم
-                  </Button>
-                </div>
 
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 text-xs"
-                    onClick={gender === 'male' ? copyFemaleToMale : copyMaleToFemale}
-                  >
-                    <Copy className="w-3.5 h-3.5 ml-1" />
-                    نسخ من {gender === 'male' ? 'البنات' : 'الأولاد'}
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="ghost" className="h-8 text-xs text-destructive hover:text-destructive">
-                        <RotateCcw className="w-3.5 h-3.5 ml-1" />
-                        إرجاع الكل للافتراضي
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>إرجاع للأسعار الافتراضية؟</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          سيتم إرجاع كل أسعار {GENDER_LABEL[gender]} للقيم الافتراضية. لن يتم الحفظ تلقائياً.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => resetGender(gender)}>تأكيد</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
 
               {/* Three collapsible category lists */}
               {CATEGORIES.map((category) => {
