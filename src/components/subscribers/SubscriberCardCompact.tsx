@@ -318,6 +318,17 @@ export const SubscriberCardCompact = ({
                   <Archive className="w-5 h-5" />
                   <span>{t.actions.archive}</span>
                 </Button>
+                {onHistory && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-12 flex-col gap-1 text-xs"
+                    onClick={() => onHistory(subscriber)}
+                  >
+                    <History className="w-5 h-5" />
+                    <span>السجل</span>
+                  </Button>
+                )}
                 <Button 
                   variant="destructive" 
                   size="sm" 
