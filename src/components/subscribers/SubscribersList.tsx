@@ -159,6 +159,11 @@ export const SubscribersList = ({
     setIsWhatsAppOpen(true);
   };
 
+  const handleHistory = (subscriber: Subscriber) => {
+    setHistorySubscriber(subscriber);
+    setIsHistoryOpen(true);
+  };
+
   const captains = stats.captains.length > 0 ? stats.captains : ['كابتن خالد', 'كابتن محمد', 'كابتن أحمد'];
 
   // Expose method to open form externally
