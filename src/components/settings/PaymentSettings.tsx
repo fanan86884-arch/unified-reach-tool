@@ -107,61 +107,6 @@ export const PaymentSettings = () => {
     });
   };
 
-  const copyMaleToFemale = () => {
-    if (!tiers) return;
-    setPricesDirty(true);
-    setTiers({ ...tiers, female: JSON.parse(JSON.stringify(tiers.male)) });
-    toast({ title: 'تم النسخ', description: 'تم نسخ أسعار الأولاد إلى البنات' });
-  };
-
-  const copyFemaleToMale = () => {
-    if (!tiers) return;
-    setPricesDirty(true);
-    setTiers({ ...tiers, male: JSON.parse(JSON.stringify(tiers.female)) });
-    toast({ title: 'تم النسخ', description: 'تم نسخ أسعار البنات إلى الأولاد' });
-  };
-
-  const resetGender = (gender: Gender) => {
-    if (!tiers) return;
-    setPricesDirty(true);
-    setTiers({ ...tiers, [gender]: JSON.parse(JSON.stringify(DEFAULT_TIERS[gender])) });
-    toast({ title: 'تم الإرجاع', description: `تم إرجاع أسعار ${GENDER_LABEL[gender]} للقيم الافتراضية` });
-  };
-
-  const resetCategory = (gender: Gender, category: SubscriptionCategory) => {
-    if (!tiers) return;
-    setPricesDirty(true);
-    setTiers({
-      ...tiers,
-      [gender]: {
-        ...tiers[gender],
-        [category]: { ...DEFAULT_TIERS[gender][category] },
-      },
-    });
-    toast({ title: 'تم الإرجاع', description: `${CATEGORY_LABEL[category]} - ${GENDER_LABEL[gender]}` });
-  };
-
-  const applyBulkAdjust = (gender: Gender, sign: 1 | -1) => {
-    const pct = Number(bulkPercent);
-    if (!tiers || !pct || pct <= 0) {
-      toast({ title: 'أدخل نسبة صحيحة', variant: 'destructive' });
-      return;
-    }
-    const factor = 1 + (sign * pct) / 100;
-    const newGender: any = {};
-    for (const cat of CATEGORIES) {
-      newGender[cat] = {} as any;
-      for (const dur of DURATIONS) {
-        newGender[cat][dur] = Math.max(0, Math.round(tiers[gender][cat][dur] * factor));
-      }
-    }
-    setPricesDirty(true);
-    setTiers({ ...tiers, [gender]: newGender });
-    toast({
-      title: sign > 0 ? 'تمت الزيادة' : 'تم الخصم',
-      description: `${pct}% على أسعار ${GENDER_LABEL[gender]}`,
-    });
-  };
 
   const handleSavePricesOnly = async () => {
     if (!tiers) return;
