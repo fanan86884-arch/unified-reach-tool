@@ -69,7 +69,7 @@ const DEFAULT_TIERS: PricingTiers = {
 export const PaymentSettings = () => {
   const { toast } = useToast();
   const { t } = useLanguage();
-  const { pricingTiers, savePricingTiers, loading: tiersLoading } = useCloudSettings();
+  const { pricingTiers, savePricingTiers, prices, savePrices, loading: tiersLoading } = useCloudSettings();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingPrices, setSavingPrices] = useState(false);
