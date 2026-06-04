@@ -220,6 +220,10 @@ export const useCloudSettings = () => {
 
   const getPrice = useCallback(
     (type: SubscriptionType, gender?: Gender, category?: SubscriptionCategory): number => {
+      // Bi-monthly uses a single global price from settings (not gender/category tiers)
+      if (type === 'bi-monthly') {
+        return prices['bi-monthly'];
+      }
       if (gender && category) {
         return pricingTiers?.[gender]?.[category]?.[type] ?? prices[type];
       }
