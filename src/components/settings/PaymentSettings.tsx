@@ -48,7 +48,8 @@ const DURATION_DAYS: Record<SubscriptionType, number> = {
   'semi-annual': 180,
   annual: 365,
 };
-const DURATIONS: SubscriptionType[] = ['monthly', 'bi-monthly', 'quarterly', 'semi-annual', 'annual'];
+const DURATIONS: SubscriptionType[] = ['monthly', 'quarterly', 'semi-annual', 'annual'];
+const ALL_DURATIONS: SubscriptionType[] = ['monthly', 'bi-monthly', 'quarterly', 'semi-annual', 'annual'];
 const CATEGORIES: SubscriptionCategory[] = ['gym', 'gym_walking', 'walking'];
 const GENDERS: Gender[] = ['male', 'female'];
 
@@ -68,7 +69,7 @@ const DEFAULT_TIERS: PricingTiers = {
 export const PaymentSettings = () => {
   const { toast } = useToast();
   const { t } = useLanguage();
-  const { pricingTiers, savePricingTiers, loading: tiersLoading } = useCloudSettings();
+  const { pricingTiers, savePricingTiers, prices, savePrices, loading: tiersLoading } = useCloudSettings();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingPrices, setSavingPrices] = useState(false);
@@ -76,6 +77,8 @@ export const PaymentSettings = () => {
   const [tiers, setTiers] = useState<PricingTiers | null>(null);
   const [pricesDirty, setPricesDirty] = useState(false);
   const [bulkPercent, setBulkPercent] = useState<string>('');
+  const [biMonthlyInput, setBiMonthlyInput] = useState<string>('');
+  const [savingBiMonthly, setSavingBiMonthly] = useState(false);
   // Each gender remembers which category panel is open (default: gym)
   const [openCategory, setOpenCategory] = useState<Record<Gender, SubscriptionCategory>>({
     male: 'gym',
@@ -86,6 +89,29 @@ export const PaymentSettings = () => {
   useEffect(() => {
     if (pricingTiers && !pricesDirty) setTiers(pricingTiers);
   }, [pricingTiers, pricesDirty]);
+
+  useEffect(() => {
+    setBiMonthlyInput(String(prices['bi-monthly'] ?? ''));
+  }, [prices]);
+
+  const handleSaveBiMonthly = async () => {
+    const v = Number(biMonthlyInput);
+    if (!v || v <= 0) {
+      toast({ title: 'أدخل سعر صحيح', variant: 'destructive' });
+      return;
+    }
+    setSavingBiMonthly(true);
+    try {
+      await savePrices({ ...prices, 'bi-monthly': v });
+      toast({ title: '✓ تم حفظ سعر الشهرين', description: 'سيُستخدم في كل الاشتراكات والتجديدات' });
+    } catch (e) {
+      console.error(e);
+      toast({ title: t.common.error, variant: 'destructive' });
+    } finally {
+      setSavingBiMonthly(false);
+    }
+  };
+
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -232,7 +258,37 @@ export const PaymentSettings = () => {
           </Button>
         </div>
 
+        {/* Bi-monthly: single global price (not per gender/category) */}
+        <div className="rounded-lg border bg-card/50 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-semibold flex items-center gap-1.5">
+              <DollarSign className="w-3.5 h-3.5 text-primary" />
+              سعر اشتراك الشهرين (موحّد للكل)
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Input
+                type="number"
+                min={0}
+                dir="ltr"
+                value={biMonthlyInput}
+                onChange={(e) => setBiMonthlyInput(e.target.value)}
+                placeholder="0"
+                className="pr-8 text-center font-medium"
+              />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">ج</span>
+            </div>
+            <Button size="sm" onClick={handleSaveBiMonthly} disabled={savingBiMonthly} className="h-9 gap-1.5">
+              {savingBiMonthly ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              حفظ
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground">يُطبّق هذا السعر على كل المشتركين عند اختيار "شهرين" بغض النظر عن النوع أو الفئة.</p>
+        </div>
+
         <Tabs defaultValue="male" className="w-full">
+
           <TabsList className="grid w-full grid-cols-2">
             {GENDERS.map((g) => (
               <TabsTrigger key={g} value={g}>
