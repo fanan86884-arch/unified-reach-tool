@@ -219,17 +219,11 @@ export const useCloudSettings = () => {
   }, [user, isOnline, prices]);
 
   const getPrice = useCallback(
-    (type: SubscriptionType, gender?: Gender, category?: SubscriptionCategory): number => {
-      // Bi-monthly uses a single global price from settings (not gender/category tiers)
-      if (type === 'bi-monthly') {
-        return prices['bi-monthly'];
-      }
-      if (gender && category) {
-        return pricingTiers?.[gender]?.[category]?.[type] ?? prices[type];
-      }
-      return prices[type];
+    (_type: SubscriptionType, _gender?: Gender, _category?: SubscriptionCategory): number => {
+      // All prices come from the flat settings prices (single source of truth)
+      return prices[_type];
     },
-    [prices, pricingTiers]
+    [prices]
   );
 
   const calculateRemaining = useCallback(
