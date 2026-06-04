@@ -91,6 +91,29 @@ export const PaymentSettings = () => {
   }, [pricingTiers, pricesDirty]);
 
   useEffect(() => {
+    setBiMonthlyInput(String(prices['bi-monthly'] ?? ''));
+  }, [prices]);
+
+  const handleSaveBiMonthly = async () => {
+    const v = Number(biMonthlyInput);
+    if (!v || v <= 0) {
+      toast({ title: 'أدخل سعر صحيح', variant: 'destructive' });
+      return;
+    }
+    setSavingBiMonthly(true);
+    try {
+      await savePrices({ ...prices, 'bi-monthly': v });
+      toast({ title: '✓ تم حفظ سعر الشهرين', description: 'سيُستخدم في كل الاشتراكات والتجديدات' });
+    } catch (e) {
+      console.error(e);
+      toast({ title: t.common.error, variant: 'destructive' });
+    } finally {
+      setSavingBiMonthly(false);
+    }
+  };
+
+
+  useEffect(() => {
     const fetchSettings = async () => {
       try {
         const { data } = await supabase.from('contact_settings').select('instapay_number, vodafone_cash_number, store_url').limit(1).maybeSingle();
