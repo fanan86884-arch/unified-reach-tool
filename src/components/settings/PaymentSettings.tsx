@@ -258,7 +258,37 @@ export const PaymentSettings = () => {
           </Button>
         </div>
 
+        {/* Bi-monthly: single global price (not per gender/category) */}
+        <div className="rounded-lg border bg-card/50 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-semibold flex items-center gap-1.5">
+              <DollarSign className="w-3.5 h-3.5 text-primary" />
+              سعر اشتراك الشهرين (موحّد للكل)
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Input
+                type="number"
+                min={0}
+                dir="ltr"
+                value={biMonthlyInput}
+                onChange={(e) => setBiMonthlyInput(e.target.value)}
+                placeholder="0"
+                className="pr-8 text-center font-medium"
+              />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">ج</span>
+            </div>
+            <Button size="sm" onClick={handleSaveBiMonthly} disabled={savingBiMonthly} className="h-9 gap-1.5">
+              {savingBiMonthly ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              حفظ
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground">يُطبّق هذا السعر على كل المشتركين عند اختيار "شهرين" بغض النظر عن النوع أو الفئة.</p>
+        </div>
+
         <Tabs defaultValue="male" className="w-full">
+
           <TabsList className="grid w-full grid-cols-2">
             {GENDERS.map((g) => (
               <TabsTrigger key={g} value={g}>
