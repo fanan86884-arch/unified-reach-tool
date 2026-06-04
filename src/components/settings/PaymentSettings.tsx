@@ -48,7 +48,8 @@ const DURATION_DAYS: Record<SubscriptionType, number> = {
   'semi-annual': 180,
   annual: 365,
 };
-const DURATIONS: SubscriptionType[] = ['monthly', 'bi-monthly', 'quarterly', 'semi-annual', 'annual'];
+const DURATIONS: SubscriptionType[] = ['monthly', 'quarterly', 'semi-annual', 'annual'];
+const ALL_DURATIONS: SubscriptionType[] = ['monthly', 'bi-monthly', 'quarterly', 'semi-annual', 'annual'];
 const CATEGORIES: SubscriptionCategory[] = ['gym', 'gym_walking', 'walking'];
 const GENDERS: Gender[] = ['male', 'female'];
 
