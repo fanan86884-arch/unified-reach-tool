@@ -77,6 +77,8 @@ export const PaymentSettings = () => {
   const [tiers, setTiers] = useState<PricingTiers | null>(null);
   const [pricesDirty, setPricesDirty] = useState(false);
   const [bulkPercent, setBulkPercent] = useState<string>('');
+  const [biMonthlyInput, setBiMonthlyInput] = useState<string>('');
+  const [savingBiMonthly, setSavingBiMonthly] = useState(false);
   // Each gender remembers which category panel is open (default: gym)
   const [openCategory, setOpenCategory] = useState<Record<Gender, SubscriptionCategory>>({
     male: 'gym',
