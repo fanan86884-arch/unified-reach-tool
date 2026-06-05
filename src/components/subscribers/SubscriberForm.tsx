@@ -138,15 +138,15 @@ export const SubscriberForm = ({
     setFormData(next);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
-    // Fire-and-forget so dialog can close instantly; parent shows toast on error
-    Promise.resolve(onSubmit(formData)).finally(() => {
+    try {
+      await Promise.resolve(onSubmit(formData));
+    } finally {
       setIsSubmitting(false);
-    });
-    onClose();
+    }
   };
 
   if (settingsLoading) {
