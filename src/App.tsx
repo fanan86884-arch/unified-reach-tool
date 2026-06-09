@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { SplashScreen } from "@/components/SplashScreen";
 import Index from "./pages/Index";
+import Welcome from "./pages/Welcome";
 import Auth from "./pages/Auth";
 import CustomerLookup from "./pages/CustomerLookup";
 import Install from "./pages/Install";
