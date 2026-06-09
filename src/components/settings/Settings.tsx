@@ -132,8 +132,8 @@ export const Settings = () => {
       localStorage.clear();
       sessionStorage.clear();
 
-      navigate('/auth', { replace: true });
-      window.location.replace('/auth');
+      navigate('/welcome', { replace: true });
+      window.location.replace('/welcome');
     } catch (e) {
       console.error('Sign out error:', e);
       setIsSigningOut(false);
