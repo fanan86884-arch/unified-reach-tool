@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { SplashScreen } from "@/components/SplashScreen";
 import Index from "./pages/Index";
+import Welcome from "./pages/Welcome";
 import Auth from "./pages/Auth";
 import CustomerLookup from "./pages/CustomerLookup";
 import Install from "./pages/Install";
@@ -58,8 +59,38 @@ const NotificationSoundProvider = ({ children }: { children: React.ReactNode }) 
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  const [checking, setChecking] = useState(true);
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
 
-  if (loading) {
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      setRedirectTo("/welcome");
+      setChecking(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client.runtime");
+        const [{ data: client }, { data: captain }] = await Promise.all([
+          supabase.from("client_accounts").select("subscriber_id").eq("user_id", user.id).maybeSingle(),
+          supabase.from("captain_accounts").select("captain_name").eq("user_id", user.id).maybeSingle(),
+        ]);
+        if (cancelled) return;
+        if (client) setRedirectTo("/portal/home");
+        else if (captain) setRedirectTo("/captain");
+        else setRedirectTo(null);
+      } catch {
+        if (!cancelled) setRedirectTo(null);
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, loading]);
+
+  if (loading || checking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -67,9 +98,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  if (redirectTo) return <Navigate to={redirectTo} replace />;
 
   return <>{children}</>;
 };
@@ -107,6 +136,7 @@ const App = () => {
               <Sonner />
               <BrowserRouter>
                 <Routes>
+                <Route path="/welcome" element={<Welcome />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/lookup" element={<CustomerLookup />} />
                 <Route path="/install" element={<Install />} />

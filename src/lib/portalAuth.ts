@@ -26,5 +26,9 @@ export const signInCaptain = async (loginId: string, password: string) => {
 };
 
 export const signOutPortal = async () => {
+  try {
+    localStorage.removeItem("offline_auth_user");
+    localStorage.removeItem("cached_user_role");
+  } catch {}
   await supabase.auth.signOut();
 };

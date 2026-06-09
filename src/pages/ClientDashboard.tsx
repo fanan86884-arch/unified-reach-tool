@@ -58,7 +58,7 @@ export default function ClientDashboard() {
     }
     if (!session.subscriberId) {
       toast({ title: "حسابك غير مفعل", description: "تواصل مع الإدارة", variant: "destructive" });
-      signOutPortal().then(() => navigate("/portal/login"));
+      signOutPortal().then(() => navigate("/welcome"));
       return;
     }
     void loadAll(session.subscriberId);
@@ -130,7 +130,7 @@ export default function ClientDashboard() {
             <h1 className="text-xl font-bold">{sub.name}</h1>
             <p className="text-xs text-muted-foreground">{sub.phone}</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => signOutPortal().then(() => navigate("/portal/login"))}>
+          <Button variant="ghost" size="icon" onClick={() => signOutPortal().then(() => navigate("/welcome"))}>
             <LogOut className="h-4 w-4" />
           </Button>
         </div>

@@ -27,7 +27,7 @@ export default function CaptainDashboard() {
   useEffect(() => {
     if (session.loading) return;
     if (!session.userId) { navigate("/captain/login"); return; }
-    if (!session.captainName) { signOutPortal().then(() => navigate("/captain/login")); return; }
+    if (!session.captainName) { signOutPortal().then(() => navigate("/welcome")); return; }
     void loadClients();
   }, [session.loading, session.userId, session.captainName]);
 
@@ -84,7 +84,7 @@ export default function CaptainDashboard() {
             <h1 className="text-lg font-bold bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">{session.captainName}</h1>
             <p className="text-xs text-muted-foreground">{clients.length} عميل</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => signOutPortal().then(() => navigate("/captain/login"))}>
+          <Button variant="ghost" size="icon" onClick={() => signOutPortal().then(() => navigate("/welcome"))}>
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
