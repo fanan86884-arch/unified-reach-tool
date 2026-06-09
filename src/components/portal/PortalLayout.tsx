@@ -27,7 +27,7 @@ export default function PortalLayout() {
     }
     if (!session.subscriberId) {
       toast({ title: "حسابك غير مفعل", description: "تواصل مع الإدارة", variant: "destructive" });
-      signOutPortal().then(() => navigate("/portal/login", { replace: true }));
+      signOutPortal().then(() => navigate("/welcome", { replace: true }));
     }
   }, [session.loading, session.userId, session.subscriberId]);
 

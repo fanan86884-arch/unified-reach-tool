@@ -40,7 +40,7 @@ export default function PortalProfile() {
       <Button
         variant="outline"
         className="w-full text-destructive border-destructive/30 hover:bg-destructive/10"
-        onClick={() => signOutPortal().then(() => navigate("/portal/login", { replace: true }))}
+        onClick={() => signOutPortal().then(() => navigate("/welcome", { replace: true }))}
       >
         <LogOut className="h-4 w-4 ml-2" />
         تسجيل الخروج
