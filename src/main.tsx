@@ -17,12 +17,11 @@ const tryReload = () => {
     sessionStorage.setItem(RELOAD_FLAG, "1");
   } catch {}
   // Clear caches so the next load fetches fresh assets
-  if ("caches" in window) {
-    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).finally(() => {
-      window.location.reload();
-    });
+  const doReload = () => window.location.reload();
+  if (typeof caches !== "undefined") {
+    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).finally(doReload);
   } else {
-    window.location.reload();
+    doReload();
   }
 };
 
