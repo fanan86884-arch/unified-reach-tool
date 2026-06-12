@@ -31,18 +31,23 @@ export default function PortalChat() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-primary" />
-            دردشة مع الكابتن
-          </h1>
-          <p className="text-xs text-muted-foreground mt-1">{sub.captain}</p>
+      <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-card border border-border/50">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
+            {sub.captain?.trim().charAt(0) || "ك"}
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm font-semibold truncate">{sub.captain}</div>
+            <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+              متاح للرد
+            </div>
+          </div>
         </div>
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="outline" className="gap-1">
+            <Button size="sm" variant="outline" className="gap-1 shrink-0">
               <Plus className="h-4 w-4" />
               <span className="text-xs">طلب</span>
             </Button>
