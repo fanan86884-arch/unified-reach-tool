@@ -16,9 +16,11 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client.runtime';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { useCaptains } from '@/hooks/useCaptains';
+import { StaffChatPanel } from '@/components/chat/StaffChatPanel';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('subscribers');
+  const [notificationsView, setNotificationsView] = useState<'list' | 'chat'>('list');
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
   const [offlineSubscribers, setOfflineSubscribers] = useState<Subscriber[]>([]);
@@ -169,38 +171,51 @@ const Index = () => {
           transition: pullDistance === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
       >
-        <TabContent
-          activeTab={activeTab}
-          subscribers={displaySubscribers}
-          archivedSubscribers={displayArchivedSubscribers}
-          stats={stats}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
-          filterCaptain={filterCaptain}
-          setFilterCaptain={setFilterCaptain}
-          filterDateRange={filterDateRange}
-          setFilterDateRange={setFilterDateRange}
-          filterGender={filterGender}
-          setFilterGender={setFilterGender}
-          showAdminSubscribers={showAdminSubscribers}
-          setShowAdminSubscribers={setShowAdminSubscribers}
-          hiddenAdminCount={hiddenAdminCount}
-          isAdmin={isAdmin}
-          addSubscriber={addSubscriber}
-          updateSubscriber={updateSubscriber}
-          deleteSubscriber={deleteSubscriber}
-          archiveSubscriber={archiveSubscriber}
-          restoreSubscriber={restoreSubscriber}
-          renewSubscription={renewSubscription}
-          pauseSubscription={pauseSubscription}
-          resumeSubscription={resumeSubscription}
-        />
+        {activeTab === 'notifications' && notificationsView === 'chat' ? (
+          <StaffChatPanel />
+        ) : (
+          <TabContent
+            activeTab={activeTab}
+            subscribers={displaySubscribers}
+            archivedSubscribers={displayArchivedSubscribers}
+            stats={stats}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            filterCaptain={filterCaptain}
+            setFilterCaptain={setFilterCaptain}
+            filterDateRange={filterDateRange}
+            setFilterDateRange={setFilterDateRange}
+            filterGender={filterGender}
+            setFilterGender={setFilterGender}
+            showAdminSubscribers={showAdminSubscribers}
+            setShowAdminSubscribers={setShowAdminSubscribers}
+            hiddenAdminCount={hiddenAdminCount}
+            isAdmin={isAdmin}
+            addSubscriber={addSubscriber}
+            updateSubscriber={updateSubscriber}
+            deleteSubscriber={deleteSubscriber}
+            archiveSubscriber={archiveSubscriber}
+            restoreSubscriber={restoreSubscriber}
+            renewSubscription={renewSubscription}
+            pauseSubscription={pauseSubscription}
+            resumeSubscription={resumeSubscription}
+          />
+        )}
       </main>
       <BottomNav 
         activeTab={activeTab} 
-        onTabChange={setActiveTab} 
+        onTabChange={(tab) => {
+          if (tab === 'notifications') {
+            if (activeTab === 'notifications') {
+              setNotificationsView((v) => (v === 'list' ? 'chat' : 'list'));
+            } else {
+              setNotificationsView('list');
+            }
+          }
+          setActiveTab(tab);
+        }} 
         onAddSubscriber={handleAddSubscriber}
         notificationCount={notificationCount}
       />

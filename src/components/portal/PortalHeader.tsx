@@ -22,7 +22,8 @@ export const PortalHeader = () => {
   const handleBack = async () => {
     if (isHome) {
       await signOutPortal();
-      navigate("/welcome", { replace: true });
+      try { sessionStorage.removeItem("hasLoaded"); } catch {}
+      window.location.replace("/welcome");
     } else {
       navigate(-1);
     }

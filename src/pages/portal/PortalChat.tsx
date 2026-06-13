@@ -30,10 +30,10 @@ export default function PortalChat() {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-card border border-border/50">
+    <div className="-mx-4 flex flex-col" style={{ height: 'calc(100vh - 140px)' }}>
+      <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-border/40">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
             {sub.captain?.trim().charAt(0) || "ك"}
           </div>
           <div className="min-w-0">
@@ -71,7 +71,7 @@ export default function PortalChat() {
         </Popover>
       </div>
 
-      <ChatThread subscriberId={sub.id} myUserId={session.userId} myRole="client" className="min-h-[68vh]" />
+      <ChatThread subscriberId={sub.id} myUserId={session.userId} myRole="client" className="flex-1" bare />
 
       <Sheet open={openDiet} onOpenChange={setOpenDiet}>
         <SheetContent side="bottom" className="h-[90vh] overflow-y-auto" dir="rtl">
