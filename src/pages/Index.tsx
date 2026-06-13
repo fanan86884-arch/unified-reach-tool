@@ -19,6 +19,7 @@ import { useCaptains } from '@/hooks/useCaptains';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('subscribers');
+  const [notificationsView, setNotificationsView] = useState<'list' | 'chat'>('list');
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
   const [offlineSubscribers, setOfflineSubscribers] = useState<Subscriber[]>([]);
