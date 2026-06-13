@@ -12,6 +12,7 @@ interface Props {
   myUserId: string;
   myRole: "client" | "captain";
   className?: string;
+  bare?: boolean;
 }
 
 interface Msg {
@@ -33,7 +34,7 @@ const dayLabel = (d: Date) => {
   return format(d, "EEEE dd MMMM", { locale: ar });
 };
 
-export const ChatThread = ({ subscriberId, myUserId, myRole, className }: Props) => {
+export const ChatThread = ({ subscriberId, myUserId, myRole, className, bare = false }: Props) => {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -183,9 +184,13 @@ export const ChatThread = ({ subscriberId, myUserId, myRole, className }: Props)
 
   return (
     <>
-      <div className={cn("flex flex-col rounded-2xl border border-border/50 bg-card/30 backdrop-blur overflow-hidden shadow-sm", className)}>
+      <div className={cn(
+        "flex flex-col overflow-hidden",
+        bare ? "bg-transparent" : "rounded-2xl border border-border/50 bg-card/30 backdrop-blur shadow-sm",
+        className
+      )}>
         <div
-          className="flex-1 overflow-y-auto px-3 py-4 space-y-1 max-h-[68vh] min-h-[320px]"
+          className={cn("flex-1 overflow-y-auto px-3 py-4 space-y-1", bare ? "" : "max-h-[68vh] min-h-[320px]")}
           style={{
             backgroundImage:
               "radial-gradient(circle at 20% 0%, hsl(var(--primary) / 0.06), transparent 60%), radial-gradient(circle at 80% 100%, hsl(var(--accent) / 0.05), transparent 60%)",
