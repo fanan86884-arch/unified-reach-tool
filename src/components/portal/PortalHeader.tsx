@@ -38,10 +38,10 @@ export const PortalHeader = () => {
       <div className="relative flex items-center justify-between h-12">
         <button
           onClick={handleBack}
-          className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-card/60 border border-border/40 active:scale-95 transition select-none"
+          className="flex items-center gap-1 px-1 py-1.5 active:scale-90 transition select-none"
           aria-label={isHome ? "تسجيل الخروج" : "رجوع"}
         >
-          {isHome ? <LogOut className="h-4 w-4 text-destructive" /> : <ChevronRight className="h-5 w-5" />}
+          {isHome ? <LogOut className="h-5 w-5 text-destructive" /> : <ChevronRight className="h-5 w-5" />}
           <span className="text-xs font-medium">{isHome ? "خروج" : "رجوع"}</span>
         </button>
 

@@ -72,8 +72,8 @@ export default function PortalLayout() {
               >
                 {({ isActive }) => (
                   <>
-                    <div className={cn("p-1.5 rounded-2xl transition-all", isActive && "bg-primary/15")}>
-                      <Icon className="w-[22px] h-[22px]" strokeWidth={isActive ? 2.5 : 1.8} />
+                    <div className="p-1 transition-all">
+                      <Icon className="w-[22px] h-[22px]" strokeWidth={isActive ? 2.4 : 1.8} />
                     </div>
                     <span className={cn("text-[10px] mt-0.5", isActive && "font-semibold")}>{t.label}</span>
                   </>
