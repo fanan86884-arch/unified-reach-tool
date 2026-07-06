@@ -48,7 +48,7 @@ export default function OAuthConsent() {
       const { data: sess } = await supabase.auth.getSession();
       if (!sess.session) {
         const next = window.location.pathname + window.location.search;
-        window.location.href = "/welcome?next=" + encodeURIComponent(next);
+        window.location.href = "/portal/login?next=" + encodeURIComponent(next);
         return;
       }
       const { data, error } = await oauth().getAuthorizationDetails(authorizationId);
