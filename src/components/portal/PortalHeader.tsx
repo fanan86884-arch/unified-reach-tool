@@ -34,7 +34,7 @@ export const PortalHeader = () => {
       className="sticky top-0 z-40 -mx-4 px-4 mb-3"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="absolute inset-0 bg-background/85 backdrop-blur-2xl border-b border-border/40" />
+      <div className="absolute inset-0 bg-background/85 backdrop-blur-2xl" />
       <div className="relative flex items-center justify-between h-12">
         <button
           onClick={handleBack}
