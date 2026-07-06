@@ -27,6 +27,7 @@ import PortalNotifications from "./pages/portal/PortalNotifications";
 import CaptainLogin from "./pages/CaptainLogin";
 import CaptainDashboard from "./pages/CaptainDashboard";
 import CheckIn from "./pages/CheckIn";
+import OAuthConsent from "./pages/OAuthConsent";
 import { Loader2 } from "lucide-react";
 
 // Configure QueryClient — offline-friendly: don't retry when offline
@@ -154,6 +155,7 @@ const App = () => {
                 <Route path="/captain/login" element={<CaptainLogin />} />
                 <Route path="/captain" element={<CaptainDashboard />} />
                 <Route path="/checkin" element={<CheckIn />} />
+                <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                   <Route
                     path="/"
                     element={
