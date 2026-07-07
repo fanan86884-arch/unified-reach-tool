@@ -219,6 +219,16 @@ button:active, a:active, [role="button"]:active {
 }
 
 @layer utilities {
+  .portal-theme [class*="border"],
+  .portal-theme [class*="divide-"] > :not([hidden]) ~ :not([hidden]) {
+    border-color: transparent !important;
+  }
+
+  .portal-theme .shadow-sm,
+  .portal-theme [class*="shadow"] {
+    box-shadow: none !important;
+  }
+
   .font-system {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans Arabic', sans-serif;
   }

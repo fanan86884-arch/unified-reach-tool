@@ -133,8 +133,8 @@ export default function PortalHome() {
           <span className="text-5xl font-bold leading-none">{expired ? 0 : daysLeft}</span>
           <span className="text-xs opacity-80">يوم متبقي</span>
         </div>
-        <div className="h-1 bg-white/25 rounded-full overflow-hidden mt-4">
-          <div className="h-full bg-white rounded-full transition-all" style={{ width: `${progress}%` }} />
+        <div className="h-1 bg-primary-foreground/20 rounded-full overflow-hidden mt-4">
+          <div className="h-full bg-primary-foreground/70 rounded-full transition-all" style={{ width: `${progress}%` }} />
         </div>
 
         <div className="mt-3 flex items-center justify-between text-[11px] opacity-85">
