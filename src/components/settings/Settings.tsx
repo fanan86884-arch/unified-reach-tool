@@ -19,8 +19,12 @@ import {
   Moon,
   Sun,
   Palette,
-  Shield
+  Shield,
+  Brain
 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AITrainingChat } from './AITrainingChat';
+import { AITrainingSettings } from './AITrainingSettings';
 import { useState, useEffect, forwardRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -232,6 +236,23 @@ export const Settings = () => {
       {isAdmin && (
         <SettingsSection title={t.settings.paymentInfo} icon={CreditCard}>
           <PaymentSettings />
+        </SettingsSection>
+      )}
+
+      {isAdmin && (
+        <SettingsSection title="تدريب مساعد التغذية" icon={Brain}>
+          <Tabs defaultValue="chat" className="mt-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="chat">محادثة تدريبية</TabsTrigger>
+              <TabsTrigger value="library">مكتبة الأمثلة</TabsTrigger>
+            </TabsList>
+            <TabsContent value="chat" className="mt-4">
+              <AITrainingChat />
+            </TabsContent>
+            <TabsContent value="library" className="mt-4">
+              <AITrainingSettings />
+            </TabsContent>
+          </Tabs>
         </SettingsSection>
       )}
 
