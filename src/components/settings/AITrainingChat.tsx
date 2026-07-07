@@ -45,6 +45,7 @@ export const AITrainingChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [examples, setExamples] = useState<TrainingExample[]>([]);
   const [pendingSaveContent, setPendingSaveContent] = useState<string | null>(null);
+  const [saveType, setSaveType] = useState<'diet' | 'workout'>('diet');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
