@@ -113,8 +113,9 @@ export const AITrainingChat = () => {
 
     // Check for save commands client-side
     const lowerMsg = userMessage.toLowerCase();
-    const isDietSave = (lowerMsg.includes('احفظ') || lowerMsg.includes('حفظ')) && (lowerMsg.includes('غذائي') || lowerMsg.includes('دايت'));
-    const isWorkoutSave = (lowerMsg.includes('احفظ') || lowerMsg.includes('حفظ')) && (lowerMsg.includes('تمرين') || lowerMsg.includes('تمارين'));
+    const hasSave = lowerMsg.includes('احفظ') || lowerMsg.includes('حفظ');
+    const isDietSave = hasSave && (lowerMsg.includes('غذائي') || lowerMsg.includes('دايت') || (saveType === 'diet' && !lowerMsg.includes('تمرين')));
+    const isWorkoutSave = hasSave && (lowerMsg.includes('تمرين') || lowerMsg.includes('تمارين') || (saveType === 'workout' && !lowerMsg.includes('غذائي')));
 
     if (isDietSave && pendingSaveContent) {
       await handleSaveTraining('diet', pendingSaveContent);
