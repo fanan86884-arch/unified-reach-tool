@@ -1,114 +1,36 @@
-# المشروع: بورتال العميل + بوابة الكابتن
+# خطة: تدريب نموذج النظام الغذائي
 
-نبني نظامين منفصلين عن لوحة الإدارة الحالية:
-1. **بورتال العميل** (`/portal`) — كل مشترك يدخل بحسابه ويتابع بياناته
-2. **بوابة الكابتن** (`/captain`) — كل كابتن يشوف عملاءه ويضيف ملاحظات
+المكونات موجودة في المشروع (`AITrainingChat`, `AITrainingSettings`) لكنها **غير مربوطة بأي واجهة**، والـ Edge Function `chat-diet` يقرأ من `ai_training_examples` بالفعل. الخطة تفعّل الوصول إليها وتحسّن الاستفادة منها.
 
-## 1. قاعدة البيانات (Migration)
+## 1) قسم جديد داخل الإعدادات
+إضافة قسم "تدريب مساعد التغذية" في `src/components/settings/Settings.tsx` (متاح للأدمن فقط) يحتوي على تبويبين:
+- **محادثة تدريبية** — عرض `AITrainingChat` للتدريب بالحوار وإضافة أمثلة سريعة.
+- **مكتبة الأمثلة** — عرض `AITrainingSettings` لإضافة/حذف/تفعيل أمثلة يدوياً (عنوان + محتوى النظام).
 
-### جدول `client_accounts`
-يربط رقم الموبايل بـ `auth.users` للعملاء + بـ `subscribers.id`
-- `id`, `user_id` (auth.users), `subscriber_id` (subscribers), `phone` (unique), `created_at`
-- RLS: العميل يقرأ/يحدث صفه فقط، الأدمن يدير كله
+يظهر القسم مع أيقونة Brain داخل `SettingsSection` (Collapsible) بنفس نمط باقي الأقسام.
 
-### جدول `captain_accounts`
-يربط الكابتن بحساب auth
-- `id`, `user_id` (auth.users), `captain_name` (يطابق `subscribers.captain`), `created_at`
-- RLS: الكابتن يقرأ صفه، الأدمن يدير
+## 2) دعم اختيار النوع في المحادثة
+حالياً `handleSaveTraining` يعمل diet/workout حسب كلمات المستخدم. سنضيف Toggle أعلى المحادثة (نظام غذائي / برنامج تمرين) يحدّد النوع الافتراضي للحفظ بدون الاعتماد فقط على تحليل النص، مع إبقاء اكتشاف الكلمات كاحتياطي.
 
-### جدول `attendance` (الحضور)
-- `id`, `subscriber_id`, `client_user_id`, `checked_in_at`, `qr_token`
-- RLS: العميل يضيف لنفسه ويقرأ سجله، الأدمن والكابتن (لعملاءه) يقرأوا
+## 3) تحسين الـ System Prompt (chat-diet)
+- زيادة عدد الأمثلة المُحمّلة من 3 إلى 5 وزيادة اقتطاع كل مثال من 1500 إلى 3000 حرف.
+- إضافة قسم "قواعد الحسابات" في البرومبت يفرض:
+  - توزيع الماكروز (بروتين/كارب/دهون) لكل وجبة.
+  - إجمالي السعرات في نهاية النظام لا يخالف السعرات المستهدفة ±50.
+  - عدد الوجبات = `mealsCount` بالضبط.
+- إضافة سطر يوجّه النموذج لمحاكاة **أسلوب** الأمثلة (بنية الوجبات، طريقة الكتابة) وليس نسخها.
 
-### جدول `client_notes` (ملاحظات الكابتن للعميل)
-- `id`, `subscriber_id`, `captain_user_id`, `note`, `created_at`
-- RLS: الكابتن يدير ملاحظاته على عملاءه، العميل يقرأ ملاحظاته
+## 4) صفحة "ما تعلمته"
+زر سريع موجود بالفعل ("ما تعلمته") — سنجعله يعرض بطاقة ملخّصة (عدد الأمثلة، آخر 3 عناوين) بدل إرسال رسالة للنموذج، لتجربة أوضح للأدمن.
 
-### جدول `gym_qr_tokens`
-QR ثابت معلق في الجيم
-- `id`, `token` (unique secret), `label`, `is_active`, `created_at`
+## 5) صلاحيات
+`ai_training_examples` مربوطة بـ RLS. سنتأكد أن القراءة/الكتابة مسموحة للأدمن فقط عبر `has_role(auth.uid(), 'admin')`. لو السياسات الحالية أقل تقييداً سيتم تعديلها بمهاجرة قصيرة.
 
-### جدول `client_notifications`
-- `id`, `subscriber_id`, `title`, `body`, `type` (expiry/offer/reminder), `is_read`, `created_at`
-- RLS: العميل يقرأ/يحدث صفه
+## تفاصيل تقنية
+- **ملفات تُعدّل**: `src/components/settings/Settings.tsx` (قسم جديد)، `src/components/settings/AITrainingChat.tsx` (Toggle النوع)، `supabase/functions/chat-diet/index.ts` (البرومبت والأمثلة).
+- **مهاجرة اختيارية**: تشديد سياسات `ai_training_examples` على الأدمن فقط.
+- **لا تغييرات** على مخطط الجدول أو الـ Edge Function `ai-chat`.
 
-### تحديثات أخرى
-- Function `has_client_access(_user_id, _subscriber_id)` و `has_captain_access(_user_id, _captain_name)`
-- Trigger يولد إشعار قرب انتهاء (cron منفصل لاحقاً، حالياً client-side check)
-
-## 2. المصادقة (بدون OTP، رقم موبايل + كلمة سر)
-
-نستخدم Supabase Auth بإيميل صناعي:
-- العميل: `{phone_normalized}@client.gym` + كلمة السر اللي الأدمن يحددها
-- الكابتن: `{captain_slug}@captain.gym` + كلمة السر
-
-### Edge Functions جديدة
-- `create-client-account` — الأدمن يولد حساب لمشترك (يأخذ subscriber_id + كلمة سر)
-- `create-captain-account` — الأدمن يولد حساب لكابتن
-- `client-login` — يحول رقم الموبايل لإيميل صناعي ويسجل الدخول
-- `captain-login` — نفس الفكرة
-
-## 3. واجهات جديدة
-
-### بورتال العميل (`/portal`)
-- `/portal/login` — رقم موبايل + كلمة سر
-- `/portal` (dashboard):
-  - بطاقة الاشتراك: نوع، تاريخ بداية/انتهاء، أيام متبقية، مدفوع/متبقي
-  - **QR كود العضوية** (يحتوي subscriber_id موقّع)
-  - أزرار: واتساب الجيم، طلب تجديد، Check-in (مسح QR الجيم)
-  - تبويب: سجل الاشتراكات (من `renewal_history`)
-  - تبويب: سجل الحضور
-  - تبويب: ملاحظات الكابتن
-  - تبويب: الإشعارات
-
-### بوابة الكابتن (`/captain`)
-- `/captain/login`
-- `/captain` (dashboard): قائمة العملاء المعينين له فقط، البحث، عرض تفاصيل أي عميل، إضافة/حذف ملاحظات
-
-### في لوحة الإدارة
-- تبويب جديد في **Settings**: "حسابات العملاء" — توليد كلمة سر لأي مشترك ونسخها
-- نفس التبويب: "حسابات الكباتن" — توليد حساب لكل كابتن
-
-## 4. QR Check-in
-
-- صفحة `/checkin?token=XXX` — لما العميل يمسح QR من تطبيقه:
-  - لو مسجل دخول كعميل → يضيف صف في `attendance` مع التاريخ
-  - لو مش مسجل → يحوله لـ `/portal/login` ثم يكمل
-- في الإعدادات: زر "اطبع QR الجيم" يعرض QR كبير بالـ token
-
-## 5. الإشعارات الذكية
-
-- في dashboard العميل: نقرأ `end_date` ولو فاضل ≤7 أيام نعرض banner تحذير
-- نولد صف في `client_notifications` تلقائياً عبر trigger أو Edge Function
-- استخدام push_subscriptions الموجود لإرسال push notification لما الإشعار يتولد
-
-## التفاصيل التقنية
-
-```text
-Routes:
-/portal/login          → ClientLogin.tsx
-/portal                → ClientDashboard.tsx (protected)
-/portal/history        → داخل tabs
-/captain/login         → CaptainLogin.tsx
-/captain               → CaptainDashboard.tsx (protected)
-/checkin?token=XXX     → CheckIn.tsx
-
-Hooks:
-useClientAuth()        → wraps useAuth + يتحقق من client_accounts
-useCaptainAuth()       → نفس الفكرة
-useClientData()        → يجيب subscriber + renewal_history + notes + notifications
-useCaptainClients()    → يجيب subscribers WHERE captain = my captain_name
-
-Libraries:
-- qrcode.react (موجود غالباً، لو لا نضيفه) لتوليد QR
-- html5-qrcode أو @yudiel/react-qr-scanner لمسح QR
-```
-
-## ملاحظات مهمة
-
-- **لن نلمس** نظام الموظفين الحالي (PIN 4807) — هو لإدارة الجيم
-- بورتال العميل والكابتن منفصلين تماماً عن `/auth` الحالي
-- نستخدم `client.runtime.ts` كالعادة
-- التصميم: أسود خالص + برتقالي ذهبي + نفس الـ Design tokens
-- بسبب حجم العمل: هنبدأ بالـ migration والـ Edge Functions، ثم بورتال العميل، ثم الكابتن، ثم Check-in والإشعارات في تيار واحد
-
+## خارج النطاق
+- Fine-tuning حقيقي للنموذج (غير مدعوم عبر Gateway).
+- تدريب نموذج التمرين — نفس البنية جاهزة ويمكن تفعيلها لاحقاً بنفس الطريقة.

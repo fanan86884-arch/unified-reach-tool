@@ -45,6 +45,7 @@ export const AITrainingChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [examples, setExamples] = useState<TrainingExample[]>([]);
   const [pendingSaveContent, setPendingSaveContent] = useState<string | null>(null);
+  const [saveType, setSaveType] = useState<'diet' | 'workout'>('diet');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -112,8 +113,9 @@ export const AITrainingChat = () => {
 
     // Check for save commands client-side
     const lowerMsg = userMessage.toLowerCase();
-    const isDietSave = (lowerMsg.includes('احفظ') || lowerMsg.includes('حفظ')) && (lowerMsg.includes('غذائي') || lowerMsg.includes('دايت'));
-    const isWorkoutSave = (lowerMsg.includes('احفظ') || lowerMsg.includes('حفظ')) && (lowerMsg.includes('تمرين') || lowerMsg.includes('تمارين'));
+    const hasSave = lowerMsg.includes('احفظ') || lowerMsg.includes('حفظ');
+    const isDietSave = hasSave && (lowerMsg.includes('غذائي') || lowerMsg.includes('دايت') || (saveType === 'diet' && !lowerMsg.includes('تمرين')));
+    const isWorkoutSave = hasSave && (lowerMsg.includes('تمرين') || lowerMsg.includes('تمارين') || (saveType === 'workout' && !lowerMsg.includes('غذائي')));
 
     if (isDietSave && pendingSaveContent) {
       await handleSaveTraining('diet', pendingSaveContent);
@@ -232,10 +234,22 @@ export const AITrainingChat = () => {
             {examples.filter(e => e.is_active).length} مثال في الذاكرة
           </p>
         </div>
-        <Badge variant="secondary">
-          <Sparkles className="w-3 h-3 ml-1" />
-          ذكي
-        </Badge>
+        <div className="flex items-center gap-1 rounded-full bg-muted p-1">
+          <button
+            onClick={() => setSaveType('diet')}
+            className={`text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1 transition ${saveType === 'diet' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+          >
+            <Salad className="w-3 h-3" />
+            غذائي
+          </button>
+          <button
+            onClick={() => setSaveType('workout')}
+            className={`text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1 transition ${saveType === 'workout' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+          >
+            <Dumbbell className="w-3 h-3" />
+            تمرين
+          </button>
+        </div>
       </div>
 
       {/* Messages */}

@@ -49,13 +49,14 @@ async function getTrainingExamples(supabaseUrl: string, supabaseKey: string, typ
       .select('title, plan_content')
       .eq('type', type)
       .eq('is_active', true)
-      .limit(3);
+      .order('created_at', { ascending: false })
+      .limit(5);
 
     if (error || !data || data.length === 0) return '';
 
-    let examples = '\n\n📚 أمثلة من أنظمة سابقة للاسترشاد بها:\n';
+    let examples = '\n\n📚 أمثلة من أنظمة سابقة — استرشد بأسلوب الكتابة والبنية، لا تنسخها حرفياً:\n';
     data.forEach((example: { title: string; plan_content: string }, i: number) => {
-      examples += `\n--- مثال ${i + 1}: ${example.title} ---\n${example.plan_content.slice(0, 1500)}...\n`;
+      examples += `\n--- مثال ${i + 1}: ${example.title} ---\n${example.plan_content.slice(0, 3000)}\n`;
     });
     
     return examples;
@@ -138,13 +139,15 @@ ${trainingExamples}
 - ملعقة زيت زيتون
 إجمالي الوجبة: 400 سعرة
 
-قواعد المحتوى:
+قواعد المحتوى والحسابات (صارمة):
 1. اكتب بالعربية فقط
 2. استخدم أطعمة متوفرة في مصر وبأسعار معقولة
 3. اذكر الكميات بالجرام أو بالملاعق/الأكواب
-4. اذكر السعرات الحرارية لكل وجبة
-5. عند طلب تعديل، عدل النظام مباشرة
-6. استخدم نفس أسلوب الأمثلة السابقة إذا وُجدت`;
+4. اذكر السعرات لكل وجبة، وفي نهاية النظام اذكر "الإجمالي اليومي: X سعرة" ويجب أن يكون في حدود ${Math.round(targetCalories)} ± 50 سعرة
+5. عدد الوجبات يجب أن يساوي ${clientData.mealsCount} بالضبط
+6. وزّع البروتين على الوجبات ليصل الإجمالي إلى ${Math.round(clientData.weight * (clientData.goal === 'muscle_gain' ? 2 : 1.6))} جرام تقريباً
+7. عند طلب تعديل، عدل النظام مباشرة بدون إعادة كتابة كل شيء
+8. استرشد بأسلوب وبنية الأمثلة السابقة (إن وُجدت) دون نسخها حرفياً`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
