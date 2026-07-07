@@ -49,13 +49,14 @@ async function getTrainingExamples(supabaseUrl: string, supabaseKey: string, typ
       .select('title, plan_content')
       .eq('type', type)
       .eq('is_active', true)
-      .limit(3);
+      .order('created_at', { ascending: false })
+      .limit(5);
 
     if (error || !data || data.length === 0) return '';
 
-    let examples = '\n\n📚 أمثلة من أنظمة سابقة للاسترشاد بها:\n';
+    let examples = '\n\n📚 أمثلة من أنظمة سابقة — استرشد بأسلوب الكتابة والبنية، لا تنسخها حرفياً:\n';
     data.forEach((example: { title: string; plan_content: string }, i: number) => {
-      examples += `\n--- مثال ${i + 1}: ${example.title} ---\n${example.plan_content.slice(0, 1500)}...\n`;
+      examples += `\n--- مثال ${i + 1}: ${example.title} ---\n${example.plan_content.slice(0, 3000)}\n`;
     });
     
     return examples;
