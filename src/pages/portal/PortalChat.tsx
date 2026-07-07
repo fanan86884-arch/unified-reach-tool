@@ -31,7 +31,7 @@ export default function PortalChat() {
 
   return (
     <div className="-mx-4 flex flex-col" style={{ height: 'calc(100vh - 140px)' }}>
-      <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-border/40">
+      <div className="flex items-center justify-between gap-3 px-4 py-2">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
             {sub.captain?.trim().charAt(0) || "ك"}

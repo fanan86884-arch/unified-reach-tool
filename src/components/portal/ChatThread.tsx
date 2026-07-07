@@ -186,7 +186,7 @@ export const ChatThread = ({ subscriberId, myUserId, myRole, className, bare = f
     <>
       <div className={cn(
         "flex flex-col overflow-hidden",
-        bare ? "bg-transparent" : "rounded-2xl border border-border/50 bg-card/30 backdrop-blur shadow-sm",
+        bare ? "bg-transparent" : "rounded-2xl bg-card/30 backdrop-blur",
         className
       )}>
         <div
@@ -234,7 +234,7 @@ export const ChatThread = ({ subscriberId, myUserId, myRole, className, bare = f
               >
                 <div
                   className={cn(
-                    "max-w-[78%] px-3 py-2 text-sm shadow-sm",
+                    "max-w-[78%] px-3 py-2 text-sm",
                     mine
                       ? "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground"
                       : "bg-muted text-foreground",
@@ -283,7 +283,7 @@ export const ChatThread = ({ subscriberId, myUserId, myRole, className, bare = f
         </div>
 
         {pendingFile && (
-          <div className="border-t border-border/50 p-2 flex items-center gap-2 bg-muted/40">
+          <div className="p-2 flex items-center gap-2 bg-muted/40">
             {previewUrl && pendingFile.type.startsWith("image/") ? (
               <img src={previewUrl} alt="" className="h-12 w-12 object-cover rounded-lg" />
             ) : (
@@ -296,7 +296,7 @@ export const ChatThread = ({ subscriberId, myUserId, myRole, className, bare = f
           </div>
         )}
 
-        <div className="border-t border-border/50 p-2 flex gap-1 items-end bg-background/60 backdrop-blur">
+        <div className="p-2 flex gap-1 items-end bg-background/60 backdrop-blur">
           <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={pickFile} />
           <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={pickFile} />
           <Button size="icon" variant="ghost" type="button" className="h-9 w-9 shrink-0" onClick={() => cameraRef.current?.click()} title="صورة">
