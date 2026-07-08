@@ -54,9 +54,9 @@ async function getTrainingExamples(supabaseUrl: string, supabaseKey: string, typ
 
     if (error || !data || data.length === 0) return '';
 
-    let examples = '\n\n📚 أمثلة من أنظمة سابقة — استرشد بأسلوب الكتابة والبنية، لا تنسخها حرفياً:\n';
+    let examples = '\n\nمثال مرجعي واحد (للأسلوب فقط، لا تنسخه ولا تعتمد على كمياته):\n';
     data.forEach((example: { title: string; plan_content: string }, i: number) => {
-      examples += `\n--- مثال ${i + 1}: ${example.title} ---\n${example.plan_content.slice(0, 3000)}\n`;
+      examples += `\n--- ${example.title} ---\n${example.plan_content.slice(0, 1500)}\n`;
     });
     
     return examples;
