@@ -50,7 +50,7 @@ async function getTrainingExamples(supabaseUrl: string, supabaseKey: string, typ
       .eq('type', type)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(1);
 
     if (error || !data || data.length === 0) return '';
 
