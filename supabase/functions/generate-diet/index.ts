@@ -63,43 +63,49 @@ serve(async (req) => {
     
     let targetCalories = tdee;
     if (dietRequest.goal === 'weight_loss') {
-      targetCalories = tdee - 500; // 500 calorie deficit
+      targetCalories = tdee - 500;
     } else if (dietRequest.goal === 'muscle_gain') {
-      targetCalories = tdee + 300; // 300 calorie surplus
+      targetCalories = tdee + 300;
     }
 
-    const systemPrompt = `أنت خبير تغذية رياضية متخصص في صحة اللياقة البدنية. مهمتك إنشاء نظام غذائي يومي مفصل ومخصص للعميل.
+    const targetProtein = Math.round(dietRequest.weight * (dietRequest.goal === 'muscle_gain' ? 2 : 1.6));
+    const roundedCalories = Math.round(targetCalories);
 
-قواعد مهمة:
-1. اكتب بالعربية فقط
-2. استخدم أطعمة متوفرة في مصر وبأسعار معقولة
-3. قسّم النظام حسب عدد الوجبات المطلوب
-4. اذكر الكميات بالجرام أو بالملاعق/الأكواب
-5. اذكر السعرات الحرارية لكل وجبة
-6. أضف نصائح للترطيب والمكملات إذا لزم
-7. اجعل الأطباق متنوعة وشهية
+    const systemPrompt = `أنت خبير تغذية رياضية. مهمتك إنشاء نظام غذائي يومي دقيق ومحسوب بعناية.
 
-السعرات المستهدفة: ${Math.round(targetCalories)} سعرة حرارية يومياً
-البروتين المطلوب: ${Math.round(dietRequest.weight * (dietRequest.goal === 'muscle_gain' ? 2 : 1.6))} جرام يومياً`;
+قواعد صارمة يجب الالتزام بها حرفياً:
+1. اكتب بالعربية فقط، بدون إيموجي أو رموز تعبيرية
+2. عدد الوجبات = ${dietRequest.mealsCount} بالضبط. لا تضف وجبات إضافية ولا سناكات غير مطلوبة.
+3. إجمالي السعرات اليومي يجب أن يكون بين ${roundedCalories - 30} و ${roundedCalories + 30} سعرة (هامش ±30 فقط).
+4. إجمالي البروتين اليومي = ${targetProtein} جرام تقريباً (±10 جرام).
+5. لكل مكون في الوجبة اذكر: اسم الطعام + الكمية بالجرام + السعرات + البروتين بين قوسين.
+6. في نهاية كل وجبة اذكر: "إجمالي الوجبة: X سعرة | Y جم بروتين".
+7. في نهاية النظام اذكر قسم "الإجمالي اليومي":
+   - السعرات: X
+   - البروتين: X جم
+   - الكارب: X جم
+   - الدهون: X جم
+8. استخدم أطعمة مصرية متوفرة وبأسعار معقولة.
+9. لا تضاعف الكميات. حافظ على حصص واقعية (مثال: صدر فرخة 150جم، أرز مطبوخ 100جم).
+10. لا تكتب مقدمات أو ترحيب أو نصائح طويلة. مباشرة النظام.
 
-    const userPrompt = `أنشئ نظام غذائي يومي مفصل للعميل التالي:
+معلومات الحساب:
+- الوزن: ${dietRequest.weight} كجم
+- الهدف: ${goalLabels[dietRequest.goal] || dietRequest.goal}
+- السعرات المستهدفة: ${roundedCalories} سعرة/يوم
+- البروتين المطلوب: ${targetProtein} جرام/يوم`;
+
+    const userPrompt = `أنشئ نظام غذائي يومي للعميل:
 
 الاسم: ${dietRequest.name}
-الوزن: ${dietRequest.weight} كجم
-الطول: ${dietRequest.height} سم
-العمر: ${dietRequest.age} سنة
+الوزن: ${dietRequest.weight} كجم | الطول: ${dietRequest.height} سم | العمر: ${dietRequest.age} سنة
 النوع: ${genderLabels[dietRequest.gender] || dietRequest.gender}
 مستوى النشاط: ${activityLabels[dietRequest.activityLevel] || dietRequest.activityLevel}
 الهدف: ${goalLabels[dietRequest.goal] || dietRequest.goal}
-موعد النوم: ${dietRequest.sleepTime}
-موعد الاستيقاظ: ${dietRequest.wakeTime}
-عدد الوجبات المطلوب: ${dietRequest.mealsCount} وجبات
+موعد الاستيقاظ: ${dietRequest.wakeTime} | موعد النوم: ${dietRequest.sleepTime}
+عدد الوجبات: ${dietRequest.mealsCount}
 
-أرجو تقديم:
-1. جدول الوجبات مع التوقيتات المناسبة بناءً على مواعيد النوم والاستيقاظ
-2. تفاصيل كل وجبة مع الكميات الدقيقة
-3. إجمالي السعرات والبروتين لكل وجبة
-4. نصائح إضافية للنجاح`;
+وزع الوجبات بتوقيتات مناسبة بين الاستيقاظ والنوم. تأكد من مطابقة السعرات والبروتين للمستهدف.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -108,7 +114,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -140,7 +146,7 @@ serve(async (req) => {
     const data = await response.json();
     const dietPlan = data.choices?.[0]?.message?.content || "لم يتم إنشاء النظام الغذائي";
 
-    return new Response(JSON.stringify({ dietPlan, targetCalories: Math.round(targetCalories) }), {
+    return new Response(JSON.stringify({ dietPlan, targetCalories: roundedCalories }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
