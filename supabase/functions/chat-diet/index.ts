@@ -50,13 +50,13 @@ async function getTrainingExamples(supabaseUrl: string, supabaseKey: string, typ
       .eq('type', type)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(1);
 
     if (error || !data || data.length === 0) return '';
 
-    let examples = '\n\n📚 أمثلة من أنظمة سابقة — استرشد بأسلوب الكتابة والبنية، لا تنسخها حرفياً:\n';
+    let examples = '\n\nمثال مرجعي واحد (للأسلوب فقط، لا تنسخه ولا تعتمد على كمياته):\n';
     data.forEach((example: { title: string; plan_content: string }, i: number) => {
-      examples += `\n--- مثال ${i + 1}: ${example.title} ---\n${example.plan_content.slice(0, 3000)}\n`;
+      examples += `\n--- ${example.title} ---\n${example.plan_content.slice(0, 1500)}\n`;
     });
     
     return examples;
@@ -139,15 +139,17 @@ ${trainingExamples}
 - ملعقة زيت زيتون
 إجمالي الوجبة: 400 سعرة
 
-قواعد المحتوى والحسابات (صارمة):
+قواعد المحتوى والحسابات (صارمة جداً):
 1. اكتب بالعربية فقط
-2. استخدم أطعمة متوفرة في مصر وبأسعار معقولة
-3. اذكر الكميات بالجرام أو بالملاعق/الأكواب
-4. اذكر السعرات لكل وجبة، وفي نهاية النظام اذكر "الإجمالي اليومي: X سعرة" ويجب أن يكون في حدود ${Math.round(targetCalories)} ± 50 سعرة
-5. عدد الوجبات يجب أن يساوي ${clientData.mealsCount} بالضبط
-6. وزّع البروتين على الوجبات ليصل الإجمالي إلى ${Math.round(clientData.weight * (clientData.goal === 'muscle_gain' ? 2 : 1.6))} جرام تقريباً
-7. عند طلب تعديل، عدل النظام مباشرة بدون إعادة كتابة كل شيء
-8. استرشد بأسلوب وبنية الأمثلة السابقة (إن وُجدت) دون نسخها حرفياً`;
+2. استخدم أطعمة مصرية متوفرة وبأسعار معقولة
+3. لكل مكون اذكر: الاسم + الكمية بالجرام + السعرات + البروتين
+4. إجمالي السعرات اليومي يجب أن يكون بين ${Math.round(targetCalories) - 30} و ${Math.round(targetCalories) + 30} سعرة (هامش ±30 فقط)
+5. عدد الوجبات = ${clientData.mealsCount} بالضبط. لا تضف وجبات أو سناكات إضافية
+6. إجمالي البروتين اليومي = ${Math.round(clientData.weight * (clientData.goal === 'muscle_gain' ? 2 : 1.6))} جرام (±10 جم)
+7. حافظ على حصص واقعية: صدر فرخة 150جم، أرز مطبوخ 100جم، بيض 2-3 حبات
+8. لا تضاعف الكميات. لا تكرر الأطعمة بكميات كبيرة
+9. في نهاية النظام اذكر "الإجمالي اليومي": السعرات، البروتين، الكارب، الدهون
+10. عند طلب تعديل، عدل الوجبة المطلوبة فقط بدون إعادة كتابة كل شيء`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -156,7 +158,7 @@ ${trainingExamples}
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
