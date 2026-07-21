@@ -20,7 +20,6 @@ const navRoute = new NavigationRoute(navigationHandler, {
 registerRoute(navRoute);
 
 // Offline navigation fallback — if network/cache both fail, serve offline.html
-import { setCatchHandler } from "workbox-routing";
 setCatchHandler(async ({ request }) => {
   if (request.mode === "navigate" || request.destination === "document") {
     const cached = await caches.match("/index.html");
