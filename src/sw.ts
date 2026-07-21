@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
 import { cleanupOutdatedCaches, precacheAndRoute, createHandlerBoundToURL } from "workbox-precaching";
-import { registerRoute, NavigationRoute } from "workbox-routing";
+import { registerRoute, NavigationRoute, setCatchHandler } from "workbox-routing";
 import { CacheFirst, StaleWhileRevalidate, NetworkFirst } from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
 
@@ -14,11 +14,21 @@ precacheAndRoute(self.__WB_MANIFEST);
 
 // App Shell: always serve cached index.html for SPA navigations.
 const navigationHandler = createHandlerBoundToURL("/index.html");
-registerRoute(
-  new NavigationRoute(navigationHandler, {
-    denylist: [/^\/~oauth/, /^\/api\//, /\.(?:json|png|jpg|jpeg|svg|ico|css|js|map|txt|woff2?)$/],
-  })
-);
+const navRoute = new NavigationRoute(navigationHandler, {
+  denylist: [/^\/~oauth/, /^\/api\//, /\.(?:json|png|jpg|jpeg|svg|ico|css|js|map|txt|woff2?)$/],
+});
+registerRoute(navRoute);
+
+// Offline navigation fallback — if network/cache both fail, serve offline.html
+setCatchHandler(async ({ request }) => {
+  if (request.mode === "navigate" || request.destination === "document") {
+    const cached = await caches.match("/index.html");
+    if (cached) return cached;
+    const offline = await caches.match("/offline.html");
+    if (offline) return offline;
+  }
+  return Response.error();
+});
 
 // Static assets: Cache First — serve from cache instantly, update in background
 registerRoute(
