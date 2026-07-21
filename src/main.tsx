@@ -12,6 +12,9 @@ const isChunkLoadError = (msg: string) =>
   );
 
 const tryReload = () => {
+  // Never wipe caches or reload while offline — that kills the offline app shell
+  // and traps the user in a white screen. Let the SW serve cached assets instead.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
   try {
     if (sessionStorage.getItem(RELOAD_FLAG)) return;
     sessionStorage.setItem(RELOAD_FLAG, "1");
@@ -19,7 +22,10 @@ const tryReload = () => {
   // Clear caches so the next load fetches fresh assets
   const doReload = () => window.location.reload();
   if (typeof caches !== "undefined") {
-    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).finally(doReload);
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => !k.startsWith("workbox-precache")).map((k) => caches.delete(k))))
+      .finally(doReload);
   } else {
     doReload();
   }
