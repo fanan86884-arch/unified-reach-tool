@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
 import { cleanupOutdatedCaches, precacheAndRoute, createHandlerBoundToURL } from "workbox-precaching";
-import { registerRoute, NavigationRoute } from "workbox-routing";
+import { registerRoute, NavigationRoute, setCatchHandler } from "workbox-routing";
 import { CacheFirst, StaleWhileRevalidate, NetworkFirst } from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
 
